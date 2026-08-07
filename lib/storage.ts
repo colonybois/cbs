@@ -1,14 +1,40 @@
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/lib/firebase";
+import { compressImage } from "@/lib/image-compression";
 
 export type StorageFolder = "site-assets" | "events" | "flashback";
 
+const MAX_INLINE_IMAGE_BYTES = 850 * 1024;
+
+function toDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Unable to prepare the image for upload."));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
+  });
+}
+
+function canUseInlineFallback(error: unknown) {
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+  return ["storage/object-not-found", "storage/unknown", "storage/retry-limit-exceeded"].includes(code);
+}
+
 export async function uploadImageToStorage(file: File, folder: StorageFolder): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("Only image files can be uploaded.");
-  const filename = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+  const optimizedFile = await compressImage(file);
+  const filename = `${Date.now()}_${optimizedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const fileRef = ref(storage, `${folder}/${filename}`);
-  const snapshot = await uploadBytes(fileRef, file, { contentType: file.type });
-  return getDownloadURL(snapshot.ref);
+  try {
+    const snapshot = await uploadBytes(fileRef, optimizedFile, { contentType: optimizedFile.type });
+    return getDownloadURL(snapshot.ref);
+  } catch (error) {
+    if (!canUseInlineFallback(error)) throw error;
+    if (optimizedFile.size > MAX_INLINE_IMAGE_BYTES) {
+      throw new Error("The image could not be reduced enough to save. Please choose a smaller image.");
+    }
+    return toDataUrl(optimizedFile);
+  }
 }
 
 export const uploadImage = uploadImageToStorage;
