@@ -2,9 +2,11 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { compressImage } from "@/lib/image-compression";
 
-export type StorageFolder = "site-assets" | "events" | "flashback";
+export type StorageFolder = "site-assets" | "events" | "flashback" | "payment-proofs";
 
-const MAX_INLINE_IMAGE_BYTES = 850 * 1024;
+// Firestore documents have a 1 MiB limit. A data URL is larger than the source
+// image because it is base64 encoded, so keep the fallback comfortably below it.
+const MAX_INLINE_IMAGE_BYTES = 700 * 1024;
 
 function toDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -17,7 +19,13 @@ function toDataUrl(file: File): Promise<string> {
 
 function canUseInlineFallback(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
-  return ["storage/object-not-found", "storage/unknown", "storage/retry-limit-exceeded"].includes(code);
+  return [
+    "storage/object-not-found",
+    "storage/bucket-not-found",
+    "storage/unknown",
+    "storage/retry-limit-exceeded",
+    "storage/unauthorized",
+  ].includes(code);
 }
 
 export async function uploadImageToStorage(file: File, folder: StorageFolder): Promise<string> {
