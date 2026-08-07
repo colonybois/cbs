@@ -1,0 +1,6 @@
+import Link from "next/link";
+import { COLONY_BOIS_ASSETS } from "@/lib/assets";
+
+export default function HeroSection() {
+  return <section className="grid-lines relative isolate overflow-hidden rounded-3xl border border-orange-200 bg-orange-50 px-7 py-16 sm:px-14"><img src={COLONY_BOIS_ASSETS.heroIdol.src} alt={COLONY_BOIS_ASSETS.heroIdol.alt} className="absolute inset-y-0 right-0 -z-10 h-full w-1/2 object-cover object-top opacity-25"/><div className="max-w-3xl"><p className="mb-5 text-sm font-bold uppercase tracking-[.22em] text-orange-600">Vinayaka Chavathi 2026 · Colony Pandal</p><h1 className="text-4xl font-black leading-tight text-slate-900 sm:text-6xl">Bappa is home. <span className="text-orange-600">Let&apos;s celebrate.</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">Your home for pandal timings, festival moments, and transparent Chanda collection by Colony Bois.</p><div className="mt-8 flex flex-wrap gap-3"><a href="#donate" className="rounded-xl bg-orange-500 px-5 py-3 font-bold text-white hover:bg-orange-600">Donate / Chanda</a><Link href="/login" className="rounded-xl border border-orange-300 bg-white px-5 py-3 font-bold text-orange-700 hover:bg-orange-50">Portal login</Link></div></div></section>;
+}

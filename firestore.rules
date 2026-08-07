@@ -1,0 +1,77 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      // Public registrations may choose either supported role.
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && (request.resource.data.role == 'member' || request.resource.data.role == 'admin')
+        && request.resource.data.status == 'active';
+      // A member cannot promote themselves or change their own account status.
+      allow update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status;
+      allow write: if isAdmin();
+    }
+
+    match /online_donations/{donationId} {
+      allow create: if request.resource.data.residentName is string
+        && request.resource.data.phone is string
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.transactionId is string
+        && request.resource.data.status == 'pending';
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /chanda_collections/{collectionId} {
+      allow create: if signedIn()
+        && request.resource.data.collectedByUid == request.auth.uid;
+      allow read: if signedIn()
+        && (resource.data.collectedByUid == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    match /donations/{donationId} {
+      allow create: if signedIn()
+        && request.resource.data.collectorId == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0;
+      allow read: if signedIn()
+        && (resource.data.collectorId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    match /handovers/{handoverId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /flashback/{flashbackId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

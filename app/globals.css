@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { background: #ffffff; scroll-behavior: smooth; }
+  body { margin: 0; background: #ffffff; color: #0f172a; font-family: Arial, Helvetica, sans-serif; }
+  ::selection { background: #f97316; color: #ffffff; }
+  input, select, textarea { outline: none; color: #0f172a; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #fff7ed; }
+  ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+}
+
+.grid-lines { background-image: linear-gradient(rgba(249,115,22,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,.09) 1px, transparent 1px); background-size: 36px 36px; }
+
+/* Legacy utility remapping keeps every route in the shared light design system. */
+body .bg-slate-950, body .bg-slate-950\/85, body .bg-slate-950\/75 { background-color: #fff7ed; }
+body .bg-slate-900, body .bg-slate-900\/70 { background-color: #ffffff; }
+body .bg-white\/\[\.03\], body .bg-white\/\[\.04\], body .bg-white\/5 { background-color: #fff7ed; }
+body .border-white\/5, body .border-white\/10, body .border-white\/15 { border-color: #fed7aa; }
+body .divide-white\/5 > :not([hidden]) ~ :not([hidden]), body .divide-white\/10 > :not([hidden]) ~ :not([hidden]) { border-color: #ffedd5; }
+body .text-white, body .text-slate-200 { color: #0f172a; }
+body .text-slate-300, body .text-slate-400 { color: #475569; }
+body .text-slate-500 { color: #64748b; }
+body .text-slate-950 { color: #ffffff; }
+body .text-amber-300, body .text-amber-400 { color: #c2410c; }
+body .bg-amber-400, body .bg-emerald-400 { background-color: #f97316; }
+body .hover\:bg-amber-300:hover, body .hover\:bg-emerald-300:hover { background-color: #ea580c; }
+body .bg-amber-400\/10, body .bg-amber-400\/15, body .bg-emerald-400\/10, body .bg-emerald-400\/15 { background-color: #fff7ed; }
+body .text-emerald-300 { color: #c2410c; }
+body .border-emerald-400\/20, body .border-emerald-400\/25, body .border-emerald-400\/30 { border-color: #fed7aa; }
+body .shadow-xl, body .shadow-2xl { box-shadow: 0 12px 30px rgba(234, 88, 12, .10); }

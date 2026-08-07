@@ -1,0 +1,12 @@
+export type UserRole = "admin" | "member";
+export type UserStatus = "active" | "blocked";
+export type ChandaStatus = "pending_handover" | "settled";
+export type OnlinePaymentStatus = "pending" | "approved" | "rejected";
+export type PaymentMode = "cash" | "upi";
+export interface UserProfile { uid: string; name: string; phone: string; role: UserRole; status: UserStatus; createdAt: string; }
+export interface ChandaCollection { id: string; collectedByUid: string; collectedByName: string; residentName: string; houseOrFlatNo: string; phone: string; amount: number; paymentMode: PaymentMode; status: ChandaStatus; settledByAdmin?: string; settledAt?: string; createdAt: string; }
+export interface OnlineChandaSubmission { id: string; residentName: string; phone: string; amount: number; transactionId: string; screenshotUrl: string; status: OnlinePaymentStatus; verifiedBy?: string; verifiedAt?: string; createdAt: string; }
+export interface PandalEvent { id: string; title: string; description: string; eventDate: string; timeSlot: string; venue: string; imageUrl?: string; status: "upcoming" | "completed"; createdAt: string; }
+export interface GalleryItem { id: string; title: string; caption: string; imageUrl: string; slideOrderIndex: number; status: "published" | "hidden"; uploadedBy: string; createdAt: string; }
+export interface Member { id: string; name: string; area: string; phone: string; balance: number; total: number; status: "Active" | "Offline"; }
+export interface Donation { id: string; donor: string; phone: string; amount: number; method: "UPI" | "Cash"; status: "Verified" | "Pending" | "Settled"; date: string; collector?: string; }

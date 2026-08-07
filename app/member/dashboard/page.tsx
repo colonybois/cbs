@@ -1,0 +1,4 @@
+"use client";
+import { useAuth } from "@/lib/auth-context";
+import LogDonationForm from "@/components/member/LogDonationForm";
+export default function MemberDashboard() { const { uid, name, loading } = useAuth(); if (loading) return <p className="text-slate-600">Loading collection portal...</p>; if (!uid) return <p className="text-slate-600">Please sign in to log collections.</p>; return <div className="space-y-6"><div><p className="text-sm font-bold uppercase tracking-widest text-orange-600">My Chanda collection portal</p><h1 className="mt-2 text-3xl font-black text-slate-900">Hello, {name || "Volunteer"} 👋</h1><p className="mt-2 text-slate-600">Record door-to-door donations and issue instant collection receipts.</p></div><LogDonationForm collectorId={uid} collectorName={name || "Colony Bois Collector"}/></div>; }

@@ -1,0 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import Card from "@/components/ui/Card";
+import { db } from "@/lib/firebase";
+import type { PandalEvent } from "@/types";
+
+export default function EventsSection() { const [events, setEvents] = useState<PandalEvent[]>([]); const [loading, setLoading] = useState(true); useEffect(() => { const unsubscribe = onSnapshot(query(collection(db, "events"), orderBy("eventDate", "asc")), snapshot => { setEvents(snapshot.docs.map(document => ({ id: document.id, ...document.data() } as PandalEvent))); setLoading(false); }, () => { setEvents([]); setLoading(false); }); return unsubscribe; }, []); return <div><p className="text-sm font-bold uppercase tracking-widest text-orange-600">Vinayaka Chavathi</p><h2 className="mt-2 text-3xl font-black text-slate-900">Pandal events & schedule</h2><p className="mt-3 max-w-2xl text-slate-600">Festival activities published live by Colony Bois organizers.</p><div className="mt-7 space-y-4">{loading ? <Card className="p-6 text-center text-slate-500">Loading festival schedule...</Card> : events.length === 0 ? <Card className="p-8 text-center"><div className="text-3xl">🪔</div><h3 className="mt-3 font-bold text-slate-900">No events published yet</h3><p className="mt-2 text-sm text-slate-600">Please check back soon for the festival schedule.</p></Card> : events.map(event => <Card key={event.id} className="flex gap-5 p-5"><div className="w-20 shrink-0 rounded-xl bg-orange-50 px-2 py-3 text-center text-xs font-black text-orange-700">{event.eventDate}</div><div><h3 className="font-bold text-slate-900">{event.title}</h3><p className="mt-1 text-sm font-semibold text-orange-600">🕐 {event.timeSlot} · {event.venue}</p><p className="mt-2 text-sm text-slate-600">{event.description}</p></div></Card>)}</div></div>; }

@@ -1,0 +1,3 @@
+import type { ButtonHTMLAttributes, ReactNode } from "react";
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode; variant?: "primary" | "secondary" | "ghost" };
+export default function Button({ children, variant = "primary", className = "", ...props }: Props) { const styles = { primary: "bg-saffron text-white hover:bg-saffron-600", secondary: "bg-festive-amber text-white hover:bg-saffron-600", ghost: "border border-saffron-200 text-saffron-700 hover:bg-saffron-50" }; return <button className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${styles[variant]} ${className}`} {...props}>{children}</button>; }
