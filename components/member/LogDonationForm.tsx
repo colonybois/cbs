@@ -2,7 +2,178 @@
 
 import { useState, type FormEvent } from "react";
 import { collection, doc, increment, serverTimestamp, writeBatch } from "firebase/firestore";
+import { QRCodeSVG } from "qrcode.react";
 import { db } from "@/lib/firebase";
+import { COLONY_BOIS_CONTACT } from "@/lib/constants";
+
 type Props = { collectorId: string; collectorName: string };
 type Receipt = { receiptNo: string; residentName: string; amount: number; paymentMode: "cash" | "upi" };
-export default function LogDonationForm({ collectorId, collectorName }: Props) { const [residentName, setResidentName] = useState(""); const [houseNo, setHouseNo] = useState(""); const [paymentMode, setPaymentMode] = useState<"cash" | "upi">("cash"); const [amount, setAmount] = useState(""); const [loading, setLoading] = useState(false); const [lastReceipt, setLastReceipt] = useState<Receipt | null>(null); const [error, setError] = useState(""); const upiUri = `upi://pay?pa=colonybois3@ybl&pn=${encodeURIComponent("Colony Bois Rampuram")}&am=${amount || "0"}&cu=INR&tn=${encodeURIComponent(`Chanda from ${residentName || "Donor"}`)}`; const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}`; const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!residentName || !amount || Number(amount) <= 0) { setError("Please enter donor name and a valid amount."); return; } setLoading(true); setError(""); try { const value = Number(amount); const receiptNo = `CB-${Date.now().toString().slice(-5)}`; const batch = writeBatch(db); const donationRef = doc(collection(db, "donations")); const userRef = doc(db, "users", collectorId); batch.set(donationRef, { receiptNo, residentName, houseNo, paymentMode, amount: value, collectorId, collectorName, createdAt: serverTimestamp() }); batch.update(userRef, paymentMode === "cash" ? { cashTotal: increment(value), pendingHandover: increment(value) } : { upiTotal: increment(value) }); await batch.commit(); setLastReceipt({ receiptNo, residentName, amount: value, paymentMode }); setResidentName(""); setHouseNo(""); setAmount(""); } catch (reason) { setError(reason instanceof Error ? `Failed to log donation: ${reason.message}` : "Failed to log donation."); } finally { setLoading(false); } }; return <div className="mx-auto max-w-lg rounded-2xl border border-orange-100 bg-white p-6 shadow-sm"><h2 className="mb-4 text-xl font-bold text-slate-900">✍️ Log Resident Donation</h2>{lastReceipt ? <div className="mb-2 rounded-xl border border-orange-200 bg-orange-50 p-5 text-center"><span className="text-3xl">🎉</span><h3 className="mt-2 font-bold text-slate-900">Donation Recorded!</h3><p className="mt-1 text-xs text-slate-500">Receipt No: <strong>{lastReceipt.receiptNo}</strong></p><p className="mt-2 text-sm text-slate-700">Received <strong>₹{lastReceipt.amount}</strong> via <span className="font-semibold uppercase text-orange-600">{lastReceipt.paymentMode}</span> from {lastReceipt.residentName}.</p><button onClick={() => setLastReceipt(null)} className="mt-5 w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-600">Log Another Donation</button></div> : <form onSubmit={submit} className="space-y-4"><label className="block text-sm font-semibold text-slate-700">Donor Name *<input required value={residentName} onChange={event => setResidentName(event.target.value)} placeholder="e.g. Ramesh Kumar" className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"/></label><div className="grid grid-cols-2 gap-3"><label className="block text-sm font-semibold text-slate-700">House / Flat No.<input value={houseNo} onChange={event => setHouseNo(event.target.value)} placeholder="e.g. H.No 4-12" className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"/></label><label className="block text-sm font-semibold text-slate-700">Amount (₹) *<input required min="1" type="number" value={amount} onChange={event => setAmount(event.target.value)} placeholder="e.g. 501" className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"/></label></div><div><p className="mb-1.5 text-sm font-semibold text-slate-700">Payment Method *</p><div className="grid grid-cols-2 gap-3"><button type="button" onClick={() => setPaymentMode("cash")} className={`rounded-xl border px-4 py-2.5 font-bold transition ${paymentMode === "cash" ? "border-orange-500 bg-orange-500 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}>💵 Cash</button><button type="button" onClick={() => setPaymentMode("upi")} className={`rounded-xl border px-4 py-2.5 font-bold transition ${paymentMode === "upi" ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}>📲 UPI / QR</button></div></div>{paymentMode === "upi" && <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-center"><p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Ask Donor to Scan & Pay</p>{amount && Number(amount) > 0 ? <div className="flex flex-col items-center"><div className="inline-block rounded-xl border border-emerald-100 bg-white p-3 shadow-sm"><img src={qrCodeUrl} alt="UPI Payment QR Code" className="h-48 w-48 object-contain"/></div><p className="mt-2 text-lg font-extrabold text-slate-900">₹{amount}</p><p className="text-xs text-slate-500">Pre-filled for {residentName || "Donor"}</p></div> : <p className="py-6 text-sm font-medium text-emerald-700">⚠️ Please enter the amount above to generate the payment QR code.</p>}</div>}{error && <p className="text-sm text-rose-600">{error}</p>}<button disabled={loading} type="submit" className="w-full rounded-xl bg-slate-900 py-3 font-bold text-white hover:bg-slate-800 disabled:opacity-50">{loading ? "Logging Entry..." : "Confirm & Save Collection"}</button></form>}</div>; }
+
+export default function LogDonationForm({ collectorId, collectorName }: Props) {
+  const [residentName, setResidentName] = useState("");
+  const [houseNo, setHouseNo] = useState("");
+  const [paymentMode, setPaymentMode] = useState<"cash" | "upi">("cash");
+  const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [lastReceipt, setLastReceipt] = useState<Receipt | null>(null);
+  const [error, setError] = useState("");
+
+  const upiValue = `upi://pay?pa=${COLONY_BOIS_CONTACT.upiId}&pn=${encodeURIComponent("Colony Bois Rampuram")}&am=${amount || "0"}&cu=INR&tn=${encodeURIComponent(`Chanda from ${residentName || "Donor"}`)}`;
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!residentName || !amount || Number(amount) <= 0) {
+      setError("Please enter donor name and a valid amount.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const value = Number(amount);
+      const receiptNo = `CB-${Date.now().toString().slice(-5)}`;
+      const batch = writeBatch(db);
+      const donationRef = doc(collection(db, "donations"));
+      const userRef = doc(db, "users", collectorId);
+      batch.set(donationRef, {
+        receiptNo, residentName, houseNo, paymentMode,
+        amount: value, collectorId, collectorName,
+        createdAt: serverTimestamp(),
+      });
+      batch.update(userRef,
+        paymentMode === "cash"
+          ? { cashTotal: increment(value), pendingHandover: increment(value) }
+          : { upiTotal: increment(value) }
+      );
+      await batch.commit();
+      setLastReceipt({ receiptNo, residentName, amount: value, paymentMode });
+      setResidentName(""); setHouseNo(""); setAmount("");
+    } catch (reason) {
+      setError(reason instanceof Error ? `Failed to log donation: ${reason.message}` : "Failed to log donation.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-lg rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
+      <h2 className="mb-4 text-xl font-bold text-slate-900">✍️ Log Resident Donation</h2>
+
+      {lastReceipt ? (
+        <div className="mb-2 rounded-xl border border-orange-200 bg-orange-50 p-5 text-center">
+          <span className="text-3xl">🎉</span>
+          <h3 className="mt-2 font-bold text-slate-900">Donation Recorded!</h3>
+          <p className="mt-1 text-xs text-slate-500">Receipt No: <strong>{lastReceipt.receiptNo}</strong></p>
+          <p className="mt-2 text-sm text-slate-700">
+            Received <strong>₹{lastReceipt.amount}</strong> via{" "}
+            <span className="font-semibold uppercase text-orange-600">{lastReceipt.paymentMode}</span>{" "}
+            from {lastReceipt.residentName}.
+          </p>
+          <button
+            onClick={() => setLastReceipt(null)}
+            className="mt-5 w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-600"
+          >
+            Log Another Donation
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="space-y-4">
+          {/* Donor name */}
+          <label className="block text-sm font-semibold text-slate-700">
+            Donor Name *
+            <input
+              required
+              value={residentName}
+              onChange={e => setResidentName(e.target.value)}
+              placeholder="e.g. Ramesh Kumar"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </label>
+
+          {/* House + Amount */}
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm font-semibold text-slate-700">
+              House / Flat No.
+              <input
+                value={houseNo}
+                onChange={e => setHouseNo(e.target.value)}
+                placeholder="e.g. H.No 4-12"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Amount (₹) *
+              <input
+                required
+                min="1"
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="e.g. 501"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </label>
+          </div>
+
+          {/* Payment method */}
+          <div>
+            <p className="mb-1.5 text-sm font-semibold text-slate-700">Payment Method *</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMode("cash")}
+                className={`rounded-xl border px-4 py-2.5 font-bold transition ${paymentMode === "cash" ? "border-orange-500 bg-orange-500 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}
+              >
+                💵 Cash
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMode("upi")}
+                className={`rounded-xl border px-4 py-2.5 font-bold transition ${paymentMode === "upi" ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}
+              >
+                📲 UPI / QR
+              </button>
+            </div>
+          </div>
+
+          {/* UPI QR panel */}
+          {paymentMode === "upi" && (
+            <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-center">
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Ask Donor to Scan &amp; Pay</p>
+              {amount && Number(amount) > 0 ? (
+                <div className="flex flex-col items-center">
+                  <div className="inline-block rounded-xl border border-emerald-100 bg-white p-3 shadow-sm">
+                    <QRCodeSVG
+                      value={upiValue}
+                      size={192}
+                      bgColor="#ffffff"
+                      fgColor="#1e1b4b"
+                      level="H"
+                      includeMargin={false}
+                    />
+                  </div>
+                  <p className="mt-2 text-lg font-extrabold text-slate-900">₹{amount}</p>
+                  <p className="text-xs text-slate-500">Pre-filled for {residentName || "Donor"}</p>
+                  <p className="mt-1 text-xs text-slate-400">UPI ID: <span className="font-semibold text-slate-600">{COLONY_BOIS_CONTACT.upiId}</span></p>
+                </div>
+              ) : (
+                <p className="py-6 text-sm font-medium text-emerald-700">
+                  ⚠️ Enter the amount above to generate the QR code.
+                </p>
+              )}
+            </div>
+          )}
+
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+
+          <button
+            disabled={loading}
+            type="submit"
+            className="w-full rounded-xl bg-slate-900 py-3 font-bold text-white hover:bg-slate-800 disabled:opacity-50"
+          >
+            {loading ? "Logging Entry..." : "Confirm & Save Collection"}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}

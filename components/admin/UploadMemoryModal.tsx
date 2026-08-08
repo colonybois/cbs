@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -11,49 +11,207 @@ import { useAuth } from "@/lib/auth-context";
 type CollectionName = "flashback" | "events";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-export default function UploadMemoryModal({ open, onClose, collectionName = "flashback" }: { open: boolean; onClose: () => void; collectionName?: CollectionName }) {
+export default function UploadMemoryModal({
+  open,
+  onClose,
+  collectionName = "flashback",
+}: {
+  open: boolean;
+  onClose: () => void;
+  collectionName?: CollectionName;
+}) {
   const { uid, role } = useAuth();
   const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectFile = (selected: File | null) => {
-    if (selected && selected.size > MAX_FILE_SIZE) {
+  // Reset all state whenever the modal opens/closes
+  useEffect(() => {
+    if (!open) {
+      setTitle("");
+      setCaption("");
+      setYear(String(new Date().getFullYear()));
       setFile(null);
+      setPreview(null);
+      setError("");
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [open]);
+
+  const selectFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0] ?? null;
+    if (!selected) return;
+    if (selected.size > MAX_FILE_SIZE) {
+      setFile(null);
+      setPreview(null);
       setError("Please choose an image smaller than 5 MB.");
       return;
     }
     setFile(selected);
+    setPreview(URL.createObjectURL(selected));
     setError("");
   };
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (role !== "admin" || !uid) { setError("Only verified admins can upload memories."); return; }
-    if (!file) { setError("Choose an image to upload."); return; }
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (role !== "admin" || !uid) {
+      setError("Only verified admins can upload memories.");
+      return;
+    }
+    if (!file) {
+      setError("Choose an image to upload.");
+      return;
+    }
+    if (!title.trim()) {
+      setError("Please enter a title.");
+      return;
+    }
     setUploading(true);
     setError("");
     try {
       const imageUrl = await uploadImage(file, collectionName as StorageFolder);
-      await addDoc(collection(db, collectionName), collectionName === "flashback" ? {
-        title: title.trim(),
-        caption: caption.trim(),
-        year: Number(year),
-        imageUrl,
-        slideOrderIndex: Date.now(),
-        status: "published",
-        uploadedBy: uid,
-        createdAt: serverTimestamp(),
-      } : {
-        title: title.trim(), year: Number(year), imageUrl, caption: caption.trim(), uploadedBy: uid, createdAt: serverTimestamp(),
-      });
-      setTitle(""); setCaption(""); setFile(null); onClose();
+      if (collectionName === "flashback") {
+        await addDoc(collection(db, "flashback"), {
+          title: title.trim(),
+          caption: caption.trim(),
+          year: Number(year),
+          imageUrl,
+          slideOrderIndex: Date.now(),
+          status: "published",
+          uploadedBy: uid,
+          createdAt: serverTimestamp(),
+        });
+      } else {
+        await addDoc(collection(db, "events"), {
+          title: title.trim(),
+          caption: caption.trim(),
+          year: Number(year),
+          imageUrl,
+          uploadedBy: uid,
+          createdAt: serverTimestamp(),
+        });
+      }
+      onClose();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Upload failed. Check your admin access and try again.");
-    } finally { setUploading(false); }
+      console.error("[UploadMemoryModal] upload failed:", reason);
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Upload failed. Check your admin access and try again."
+      );
+    } finally {
+      setUploading(false);
+    }
   };
 
-  return <Modal open={open} onClose={onClose} title={collectionName === "flashback" ? "Upload Utsav memory" : "Upload event poster"}><form onSubmit={submit} className="space-y-3"><fieldset disabled={uploading} className="space-y-3 disabled:opacity-60"><input required value={title} onChange={event => setTitle(event.target.value)} placeholder="Memory title" className="w-full rounded-xl border border-orange-200 p-3"/>{collectionName === "flashback" && <input required value={year} onChange={event => setYear(event.target.value)} min="2000" max="2100" type="number" placeholder="Celebration year" className="w-full rounded-xl border border-orange-200 p-3"/>}<textarea value={caption} onChange={event => setCaption(event.target.value)} placeholder="Caption / description" className="min-h-24 w-full rounded-xl border border-orange-200 p-3"/><label className="block rounded-xl border border-dashed border-orange-300 bg-orange-50 p-3 text-sm font-semibold text-slate-700">Choose photo (max 5 MB)<input required type="file" accept="image/*" onChange={event => selectFile(event.target.files?.[0] || null)} className="mt-2 block w-full text-xs"/>{file && <span className="mt-2 block text-xs text-orange-700">{file.name}</span>}</label></fieldset>{error && <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{error}</p>}<Button disabled={uploading} type="submit" className="w-full">{uploading ? "Uploading Photo..." : "Upload photo"}</Button></form></Modal>;
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={collectionName === "flashback" ? "Upload Utsav memory" : "Upload event poster"}
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <fieldset disabled={uploading} className="space-y-4 disabled:opacity-60">
+
+          {/* Title */}
+          <label className="block text-sm font-semibold text-slate-700">
+            Title *
+            <input
+              required
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. Ganesh Chaturthi 2024"
+              className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </label>
+
+          {/* Year — flashback only */}
+          {collectionName === "flashback" && (
+            <label className="block text-sm font-semibold text-slate-700">
+              Celebration Year *
+              <input
+                required
+                type="number"
+                min="2000"
+                max="2100"
+                value={year}
+                onChange={e => setYear(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </label>
+          )}
+
+          {/* Caption */}
+          <label className="block text-sm font-semibold text-slate-700">
+            Caption <span className="font-normal text-slate-400">(optional)</span>
+            <textarea
+              value={caption}
+              onChange={e => setCaption(e.target.value)}
+              placeholder="Short description…"
+              rows={2}
+              className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </label>
+
+          {/* File picker */}
+          {preview ? (
+            <div className="relative">
+              <img
+                src={preview}
+                alt="Preview"
+                className="h-44 w-full rounded-xl object-cover border border-orange-200"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setFile(null);
+                  setPreview(null);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+                className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600"
+                aria-label="Remove image"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 py-6 text-sm font-semibold text-orange-600 hover:border-orange-400 hover:bg-orange-100 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4 4 4"/>
+              </svg>
+              Choose photo (max 5 MB)
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={selectFile}
+          />
+        </fieldset>
+
+        {/* Error */}
+        {error && (
+          <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+            {error}
+          </p>
+        )}
+
+        <Button disabled={uploading || !file} type="submit" className="w-full">
+          {uploading ? "Uploading…" : "Upload photo"}
+        </Button>
+      </form>
+    </Modal>
+  );
 }

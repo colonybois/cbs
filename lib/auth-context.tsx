@@ -29,8 +29,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const snapshot = await getDoc(doc(db, "users", user.uid));
         const data = snapshot.data() as Partial<UserProfile> | undefined;
-        setProfile({ uid: user.uid, name: data?.name || user.displayName || user.email?.split("@")[0] || "Colony Bois Member", phone: data?.phone || "", role: data?.role === "admin" ? "admin" : "member", status: data?.status === "blocked" ? "blocked" : "active", createdAt: data?.createdAt || "" });
-      } catch { setProfile({ uid: user.uid, name: user.displayName || user.email?.split("@")[0] || "Colony Bois Member", phone: "", role: "member", status: "active", createdAt: "" }); }
+        const status: UserStatus = data?.status === "active" || data?.status === "pending" || data?.status === "rejected" || data?.status === "blocked" ? data.status : "pending";
+        if (status !== "active") { await firebaseSignOut(auth); setProfile(null); return; }
+        setProfile({ uid: user.uid, name: data?.name || user.displayName || user.email?.split("@")[0] || "Colony Bois Member", phone: data?.phone || "", role: data?.role === "admin" ? "admin" : "member", status, createdAt: data?.createdAt || "" });
+      } catch { await firebaseSignOut(auth); setProfile(null); }
       setLoading(false);
     });
   }, []);
@@ -38,11 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const credential = await signInWithEmailAndPassword(auth, email, password);
     const snapshot = await getDoc(doc(db, "users", credential.user.uid));
-    const role = snapshot.data()?.role === "admin" ? "admin" : "member";
+    const data = snapshot.data();
+    if (data?.status !== "active") {
+      await firebaseSignOut(auth);
+      throw new Error(data?.status === "pending" ? "PENDING_APPROVAL" : "ACCOUNT_NOT_ACTIVE");
+    }
+    const role = data?.role === "admin" ? "admin" : "member";
     return role;
   };
   const signOut = () => firebaseSignOut(auth);
-  return <AuthContext.Provider value={{ uid: profile?.uid || "", name: profile?.name || "", role: profile?.role || "member", status: profile?.status || "active", signedIn: !!profile, loading, signIn, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ uid: profile?.uid || "", name: profile?.name || "", role: profile?.role || "member", status: profile?.status || "pending", signedIn: !!profile, loading, signIn, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() { const value = useContext(AuthContext); if (!value) throw new Error("useAuth must be used inside AuthProvider"); return value; }

@@ -6,22 +6,28 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
+    function isActive() {
       return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function isAdmin() {
+      return isActive()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /users/{userId} {
+      // A new user may read only their own pending profile to learn its status.
       allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      // Public registrations may choose either supported role.
+      // Firebase Authentication creates request.auth before this profile is written.
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.uid == userId
         && (request.resource.data.role == 'member' || request.resource.data.role == 'admin')
-        && request.resource.data.status == 'active';
-      // A member cannot promote themselves or change their own account status.
-      allow update: if signedIn()
+        && request.resource.data.status == 'pending';
+      // An active user may update their own profile without altering access state.
+      allow update: if isActive()
         && request.auth.uid == userId
         && request.resource.data.role == resource.data.role
         && request.resource.data.status == resource.data.status;
@@ -33,25 +39,24 @@ service cloud.firestore {
         && request.resource.data.phone is string
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
-        && request.resource.data.transactionId is string
         && request.resource.data.status == 'pending';
       allow read, update, delete: if isAdmin();
     }
 
     match /chanda_collections/{collectionId} {
-      allow create: if signedIn()
+      allow create: if isActive()
         && request.resource.data.collectedByUid == request.auth.uid;
-      allow read: if signedIn()
+      allow read: if isActive()
         && (resource.data.collectedByUid == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
     }
 
     match /donations/{donationId} {
-      allow create: if signedIn()
+      allow create: if isActive()
         && request.resource.data.collectorId == request.auth.uid
         && request.resource.data.amount is number
         && request.resource.data.amount > 0;
-      allow read: if signedIn()
+      allow read: if isActive()
         && (resource.data.collectorId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
     }

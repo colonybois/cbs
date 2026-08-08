@@ -8,7 +8,7 @@ export const COLONY_BOIS_CONTACT = {
   platformName: "Colony Bois",
   tagline: "Ganesh Utsav Youth - Rampuram",
   email: "colonybois3@gmail.com",
-  festival: "Vinayaka Chavathi (Ganesh Chaturthi)",
+  upiId: "9121429608@axl",
   instagram: {
     handle: "@colony_bois",
     url: "https://www.instagram.com/colony_bois?igsh=MWdtaWdkN3VmeHprZA==",

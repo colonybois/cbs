@@ -1,32 +1,218 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { QRCodeSVG } from "qrcode.react";
 import { db } from "@/lib/firebase";
-import { COLONY_BOIS_ASSETS } from "@/lib/assets";
-
-type App = "phonepe" | "gpay" | "paytm" | "upi";
-
-const paymentApps: { id: App; label: string; scheme: string }[] = [
-  { id: "phonepe", label: "PhonePe", scheme: "phonepe://pay" },
-  { id: "gpay", label: "Google Pay", scheme: "tez://upi/pay" },
-  { id: "paytm", label: "Paytm", scheme: "paytmmp://pay" },
-  { id: "upi", label: "Any UPI app", scheme: "upi://pay" },
-];
-
-function BrandIcon({ app }: { app: App }) {
-  if (app === "phonepe") return <svg viewBox="0 0 40 40" aria-hidden="true" className="h-9 w-9"><circle cx="20" cy="20" r="19" fill="#5f259f"/><path fill="white" d="M13 10h10.5c5.8 0 8.5 3.2 8.5 7.3 0 4.8-3.8 8.2-9.7 8.2h-3.1v5.2H13V10Zm6.2 5.2v5.2h3c2.2 0 3.5-1 3.5-2.6 0-1.7-1.2-2.6-3.5-2.6h-3Z"/></svg>;
-  if (app === "gpay") return <svg viewBox="0 0 72 40" aria-hidden="true" className="h-9 w-12"><path fill="#4285f4" d="M20 8a12 12 0 1 0 0 24c5.3 0 9.6-3.8 10.6-8.8H20v-6h17c.2 1 .3 2 .3 3 0 10-6.8 17-17.3 17C10.1 37 2 29 2 20S10.1 3 20 3c4.6 0 8.5 1.7 11.4 4.5L27.3 12A10 10 0 0 0 20 8Z"/><path fill="#34a853" d="M42 8h6v5h5v5h-5v14h-6V18h-4v-5h4V8Z"/><path fill="#ea4335" d="M57 13h6v19h-6z"/><circle cx="60" cy="8" r="3" fill="#fbbc04"/></svg>;
-  if (app === "paytm") return <svg viewBox="0 0 64 40" aria-hidden="true" className="h-9 w-12"><rect x="2" y="6" width="60" height="28" rx="6" fill="#e8f7fb"/><text x="8" y="26" fill="#002e6e" fontSize="17" fontWeight="800" fontFamily="Arial, sans-serif">Pay</text><text x="36" y="26" fill="#00b9f1" fontSize="17" fontWeight="800" fontFamily="Arial, sans-serif">tm</text></svg>;
-  return <svg viewBox="0 0 40 40" aria-hidden="true" className="h-9 w-9"><circle cx="20" cy="20" r="19" fill="white" stroke="#d1d5db" strokeWidth="2"/><path d="M9 14h15" stroke="#f58220" strokeWidth="4"/><path d="M9 20h21" stroke="#fff" strokeWidth="4"/><path d="M9 26h15" stroke="#138808" strokeWidth="4"/><path d="m25 10 7 10-7 10" fill="none" stroke="#273a8a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-}
+import { uploadImageToStorage } from "@/lib/storage";
 
 export default function DonateSection() {
-  const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [amount, setAmount] = useState(""); const [transactionId, setTransactionId] = useState(""); const [step, setStep] = useState<"details" | "confirm">("details"); const [loading, setLoading] = useState(false); const [success, setSuccess] = useState(false); const [error, setError] = useState(""); const [qrUnavailable, setQrUnavailable] = useState(false);
-  const valid = name.trim().length > 0 && phone.length === 10 && Number(amount) > 0;
-  const getUpiUrl = (scheme = "upi://pay") => `${scheme}?pa=colonybois3@ybl&pn=Colony%20Bois%20Rampuram&am=${encodeURIComponent(amount)}&cu=INR&tn=Chanda%20Contribution`;
-  const startPayment = (scheme: string) => { if (!valid) { setError("Enter your name, 10-digit mobile number, and amount to continue."); return; } setError(""); setStep("confirm"); window.location.href = getUpiUrl(scheme); };
-  const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!/^.{12,}$/.test(transactionId.trim())) { setError("Please enter the 12-digit UPI UTR / Transaction ID."); return; } setLoading(true); setError(""); try { await addDoc(collection(db, "online_donations"), { residentName: name.trim(), phone, amount: Number(amount), transactionId: transactionId.trim(), status: "pending", createdAt: serverTimestamp() }); setSuccess(true); setName(""); setPhone(""); setAmount(""); setTransactionId(""); } catch (reason) { setError(reason instanceof Error ? `Submission failed: ${reason.message}` : "Submission failed. Please try again."); } finally { setLoading(false); } };
-  const reset = () => { setSuccess(false); setStep("details"); setError(""); };
-  return <div className="py-4"><div className="mx-auto max-w-5xl"><div className="mb-8 text-center"><h2 className="text-3xl font-extrabold text-slate-900">🚩 Online <span className="text-orange-600">Chanda / Contribution</span></h2><p className="mt-2 text-slate-600">Choose your preferred way to pay after entering your details.</p></div>{success ? <div className="rounded-2xl border-2 border-orange-400 bg-orange-50 p-8 text-center"><span className="text-4xl">🚩</span><h3 className="mt-2 text-xl font-bold text-slate-900">Jai Dev Ganesha!</h3><p className="mt-1 text-slate-700">Your contribution details have been logged for verification.</p><button onClick={reset} className="mt-6 rounded-lg bg-orange-500 px-6 py-2.5 font-bold text-white hover:bg-orange-600">Submit Another Contribution</button></div> : <div className="rounded-2xl border border-orange-100 bg-orange-50/40 p-6 shadow-sm md:p-8"><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-semibold text-slate-700">Your Name *<input required value={name} onChange={event => setName(event.target.value)} placeholder="Enter full name" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"/></label><label className="block text-sm font-semibold text-slate-700">Mobile Number *<input required maxLength={10} value={phone} onChange={event => setPhone(event.target.value.replace(/\D/g, ""))} placeholder="10-digit mobile number" inputMode="numeric" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"/></label></div><label className="mt-4 block text-sm font-semibold text-slate-700">Amount (₹) *<input required min="1" type="number" value={amount} onChange={event => setAmount(event.target.value)} placeholder="Amount e.g. 501" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"/></label><div className="mt-8 grid items-stretch gap-7 md:grid-cols-[1fr_auto_1fr]"><section className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="font-bold text-slate-900">Open a payment app</h3><p className="mt-1 text-sm text-slate-500">Pay with your installed UPI app.</p><div className="mt-4 grid grid-cols-2 gap-3">{paymentApps.map(app => <button key={app.id} type="button" onClick={() => startPayment(app.scheme)} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm font-bold text-slate-800 transition hover:border-orange-400 hover:bg-orange-50"><BrandIcon app={app.id}/>{app.label}</button>)}</div></section><div className="flex items-center justify-center md:flex-col"><span className="h-px w-full bg-orange-200 md:h-full md:w-px"/><span className="-mx-3 rounded-full border border-orange-300 bg-white px-3 py-1 text-xs font-black text-orange-600 md:-my-3">OR</span></div><section className="rounded-2xl border border-orange-200 bg-white p-5 text-center"><h3 className="font-bold text-slate-900">Scan the static QR</h3><p className="mt-1 text-sm text-slate-500">Use any UPI scanner to pay directly.</p><div className="mt-4 rounded-xl bg-orange-50 p-3">{qrUnavailable ? <p className="py-16 text-sm text-orange-700">Add <b>payment-qr.jpg</b> to public/assets to display the QR code.</p> : <img src={COLONY_BOIS_ASSETS.paymentQr.src} alt={COLONY_BOIS_ASSETS.paymentQr.alt} className="mx-auto aspect-square w-full max-w-[220px] object-contain" onError={() => setQrUnavailable(true)}/>}</div></section></div>{error && <p className="mt-4 text-sm text-rose-600">{error}</p>}{step === "confirm" && <form onSubmit={submit} className="mt-7 space-y-4 border-t border-orange-200 pt-6"><div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">Payment app opened for ₹{amount}. Once paid, enter the UPI reference number below.</div><label className="block text-sm font-semibold text-slate-700">12-Digit UPI UTR / Ref No. *<input required minLength={12} value={transactionId} onChange={event => setTransactionId(event.target.value)} placeholder="e.g. 4231XXXXXXXX" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"/></label><button disabled={loading} type="submit" className="w-full rounded-lg bg-slate-900 py-3 font-bold text-white hover:bg-slate-800 disabled:opacity-50">{loading ? "Submitting Details..." : "Submit Receipt Details"}</button></form>}</div>}</div></div>;
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [amount, setAmount] = useState("");
+
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleScreenshotChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setScreenshot(file);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setScreenshotPreview(url);
+    } else {
+      setScreenshotPreview(null);
+    }
+  };
+
+  const removeScreenshot = () => {
+    setScreenshot(null);
+    setScreenshotPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (name.trim().length === 0) { setError("Please enter your name."); return; }
+    if (phone.length !== 10) { setError("Enter a valid 10-digit mobile number."); return; }
+    if (Number(amount) <= 0) { setError("Enter a valid amount."); return; }
+
+    setLoading(true);
+    setError("");
+    try {
+      let screenshotUrl: string | null = null;
+      if (screenshot) {
+        screenshotUrl = await uploadImageToStorage(screenshot, "payment-proofs");
+      }
+      await addDoc(collection(db, "online_donations"), {
+        residentName: name.trim(),
+        phone,
+        amount: Number(amount),
+        transactionId: null,
+        screenshotUrl,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+      setSuccess(true);
+      setName(""); setPhone(""); setAmount("");
+      setScreenshot(null); setScreenshotPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (reason) {
+      setError(reason instanceof Error ? `Submission failed: ${reason.message}` : "Submission failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reset = () => { setSuccess(false); setError(""); };
+
+  if (success) {
+    return (
+      <div className="rounded-2xl border-2 border-orange-400 bg-orange-50 p-10 text-center">
+        <span className="text-5xl">🚩</span>
+        <h3 className="mt-3 text-xl font-bold text-slate-900">Jai Dev Ganesha!</h3>
+        <p className="mt-2 text-slate-700">Your contribution has been logged for verification. Thank you!</p>
+        <button onClick={reset} className="mt-6 rounded-lg bg-orange-500 px-6 py-2.5 font-bold text-white hover:bg-orange-600">
+          Submit Another Contribution
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-4">
+      <div className="mx-auto max-w-3xl">
+
+        {/* Heading */}
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-extrabold text-slate-900">
+            🚩 Online <span className="text-orange-600">Chanda / Contribution</span>
+          </h2>
+          <p className="mt-2 text-slate-500">Scan the QR, pay, then fill in your details below.</p>
+        </div>
+
+        {/* QR Code — generated from UPI ID, always scannable */}
+        <div className="mb-8 flex justify-center">
+          <div className="rounded-2xl border border-orange-200 bg-white p-5 shadow-md shadow-orange-100/50 text-center">
+            <p className="mb-4 text-sm font-bold uppercase tracking-wider text-orange-600">Scan &amp; Pay via any UPI app</p>
+            <div className="inline-block rounded-xl bg-white p-3 shadow-inner ring-1 ring-orange-100">
+              <QRCodeSVG
+                value="upi://pay?pa=9121429608@axl&pn=Colony%20Bois%20Rampuram&cu=INR"
+                size={200}
+                bgColor="#ffffff"
+                fgColor="#1e1b4b"
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+            <p className="mt-4 text-xs text-slate-500">
+              UPI ID: <span className="font-bold text-slate-800 select-all">9121429608@axl</span>
+            </p>
+            <p className="mt-1 text-xs text-slate-400">Works with PhonePe, GPay, Paytm, BHIM &amp; all UPI apps</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={submit} className="rounded-2xl border border-orange-100 bg-orange-50/40 p-6 shadow-sm md:p-8 space-y-5">
+          <p className="text-sm font-semibold text-slate-600">After paying, fill in your details:</p>
+
+          {/* Name + Phone */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-semibold text-slate-700">
+              Your Name *
+              <input
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Full name"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Mobile Number *
+              <input
+                required
+                maxLength={10}
+                inputMode="numeric"
+                value={phone}
+                onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
+                placeholder="10-digit number"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </label>
+          </div>
+
+          {/* Amount */}
+          <label className="block text-sm font-semibold text-slate-700">
+            Amount Paid (₹) *
+            <input
+              required
+              type="number"
+              min="1"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="e.g. 501"
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </label>
+
+
+          {/* Screenshot upload */}
+          <div>
+            <p className="text-sm font-semibold text-slate-700">Payment Screenshot <span className="font-normal text-slate-400">(optional but recommended)</span></p>
+            {screenshotPreview ? (
+              <div className="mt-2 relative inline-block">
+                <img
+                  src={screenshotPreview}
+                  alt="Payment screenshot preview"
+                  className="h-48 rounded-xl border border-orange-200 object-contain bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={removeScreenshot}
+                  aria-label="Remove screenshot"
+                  className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-white py-5 text-sm font-semibold text-orange-600 hover:border-orange-400 hover:bg-orange-50 transition"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4 4 4"/>
+                </svg>
+                Upload payment screenshot
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleScreenshotChange}
+            />
+          </div>
+
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-50 transition"
+          >
+            {loading ? "Submitting…" : "Submit Contribution Details"}
+          </button>
+        </form>
+
+      </div>
+    </div>
+  );
 }
