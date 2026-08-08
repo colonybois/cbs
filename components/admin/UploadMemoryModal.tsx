@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import { uploadImage, type StorageFolder } from "@/lib/storage";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+import { recordAudit } from "@/lib/audit";
 
 type CollectionName = "flashback" | "events";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -20,10 +21,14 @@ export default function UploadMemoryModal({
   onClose: () => void;
   collectionName?: CollectionName;
 }) {
-  const { uid, role } = useAuth();
+  const { uid, role, name } = useAuth();
   const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
   const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [credit, setCredit] = useState("");
+  const [relatedEvent, setRelatedEvent] = useState("");
+  const [featured, setFeatured] = useState(false);
+  const [published, setPublished] = useState(true);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -36,6 +41,7 @@ export default function UploadMemoryModal({
       setTitle("");
       setCaption("");
       setYear(String(new Date().getFullYear()));
+      setCredit(""); setRelatedEvent(""); setFeatured(false); setPublished(true);
       setFile(null);
       setPreview(null);
       setError("");
@@ -77,16 +83,20 @@ export default function UploadMemoryModal({
     try {
       const imageUrl = await uploadImage(file, collectionName as StorageFolder);
       if (collectionName === "flashback") {
-        await addDoc(collection(db, "flashback"), {
+        const added = await addDoc(collection(db, "flashback"), {
           title: title.trim(),
           caption: caption.trim(),
           year: Number(year),
           imageUrl,
+          credit: credit.trim() || null,
+          relatedEvent: relatedEvent.trim() || null,
+          featured,
           slideOrderIndex: Date.now(),
-          status: "published",
+          status: published ? "published" : "hidden",
           uploadedBy: uid,
           createdAt: serverTimestamp(),
         });
+        await recordAudit({ actorId: uid, actorName: name || "Admin", action: "Uploaded gallery image", module: "Gallery", targetId: added.id, newValue: { title: title.trim(), year: Number(year), featured, published }, approvalStatus: "approved" });
       } else {
         await addDoc(collection(db, "events"), {
           title: title.trim(),
@@ -130,6 +140,9 @@ export default function UploadMemoryModal({
               className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
           </label>
+
+          {collectionName === "flashback" && <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm font-semibold text-slate-700">Related event <input value={relatedEvent} onChange={e => setRelatedEvent(e.target.value)} placeholder="Optional event name" className="mt-1 w-full rounded-xl border border-orange-200 p-3" /></label><label className="block text-sm font-semibold text-slate-700">Photo credit <input value={credit} onChange={e => setCredit(e.target.value)} placeholder="Optional public credit" className="mt-1 w-full rounded-xl border border-orange-200 p-3" /></label></div>}
+          {collectionName === "flashback" && <div className="flex gap-5 text-sm font-semibold text-slate-700"><label><input type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} className="mr-2"/>Featured memory</label><label><input type="checkbox" checked={published} onChange={e => setPublished(e.target.checked)} className="mr-2"/>Publish now</label></div>}
 
           {/* Year — flashback only */}
           {collectionName === "flashback" && (

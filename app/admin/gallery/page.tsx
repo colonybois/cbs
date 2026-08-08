@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Button from "@/components/ui/Button";
 import UploadMemoryModal from "@/components/admin/UploadMemoryModal";
+import { useAuth } from "@/lib/auth-context";
+import { recordAudit } from "@/lib/audit";
 
-type Memory = { id: string; title: string; year: number; imageUrl: string; caption?: string };
+type Memory = { id: string; title: string; year: number; imageUrl: string; caption?: string; featured?: boolean; status?: "published" | "hidden" };
 
 function IconReplace() {
   return (
@@ -49,6 +51,7 @@ function ActionDialog({ item, onReplace, onDelete, onCancel, deleting }: {
 }
 
 export default function AdminGallery() {
+  const { uid, name } = useAuth();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -70,7 +73,7 @@ export default function AdminGallery() {
   const handleDelete = async () => {
     if (!actionTarget) return;
     setDeleting(true);
-    try { await deleteDoc(doc(db, "flashback", actionTarget.id)); }
+    try { await deleteDoc(doc(db, "flashback", actionTarget.id)); if (uid && name) await recordAudit({ actorId: uid, actorName: name, action: "Deleted gallery image", module: "Gallery", targetId: actionTarget.id, previousValue: { title: actionTarget.title, year: actionTarget.year }, approvalStatus: "approved" }); }
     catch (e) { console.error("Delete failed:", e); }
     finally { setDeleting(false); setActionTarget(null); }
   };
@@ -79,6 +82,12 @@ export default function AdminGallery() {
     if (!actionTarget) return;
     setReplaceTarget(actionTarget);
     setActionTarget(null);
+  };
+  const toggle = async (item: Memory, field: "featured" | "status") => {
+    if (!uid || !name) return;
+    const next = field === "featured" ? !item.featured : item.status === "hidden" ? "published" : "hidden";
+    await updateDoc(doc(db, "flashback", item.id), { [field]: next });
+    await recordAudit({ actorId: uid, actorName: name, action: field === "featured" ? `${next ? "Featured" : "Unfeatured"} gallery image` : `${next === "published" ? "Published" : "Unpublished"} gallery image`, module: "Gallery", targetId: item.id, previousValue: { [field]: field === "featured" ? !!item.featured : item.status || "published" }, newValue: { [field]: next }, approvalStatus: "approved" });
   };
 
   return (
@@ -128,6 +137,7 @@ export default function AdminGallery() {
               <span className="absolute left-2 top-2 rounded-lg bg-orange-500/90 px-2 py-0.5 text-xs font-black text-white shadow">
                 {item.year}
               </span>
+              {item.featured && <span className="absolute right-2 top-2 rounded-lg bg-amber-400 px-2 py-0.5 text-xs font-black text-slate-900">Featured</span>}
               {/* Hover icons */}
               <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
                 <span className="rounded-full bg-white/90 p-2 text-slate-700"><IconReplace /></span>
@@ -141,6 +151,8 @@ export default function AdminGallery() {
           ))}
         </div>
       )}
+
+      {!loading && sorted.length > 0 && <div className="mt-5 flex flex-wrap gap-2">{sorted.map(item => <div key={item.id} className="flex items-center gap-2 rounded-lg border border-orange-100 bg-white px-3 py-2 text-xs"><span className="max-w-32 truncate font-semibold text-slate-700">{item.title}</span><button onClick={() => void toggle(item, "featured")} className="font-bold text-orange-700">{item.featured ? "Unfeature" : "Feature"}</button><button onClick={() => void toggle(item, "status")} className="font-bold text-slate-600">{item.status === "hidden" ? "Publish" : "Hide"}</button></div>)}</div>}
 
       {/* Action dialog */}
       {actionTarget && (

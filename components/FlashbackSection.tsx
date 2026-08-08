@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-type Flashback = { id: string; title: string; year: number; imageUrl: string; caption?: string };
+type Flashback = { id: string; title: string; year: number; imageUrl: string; caption?: string; relatedEvent?: string; credit?: string; featured?: boolean; status?: "published" | "hidden" };
 
 const AUTO_SCROLL_SPEED = 0.6;   // px per animation frame
 const AUTO_SCROLL_PAUSE  = 3000; // ms pause when user interacts
@@ -14,6 +14,7 @@ export default function FlashbackSection() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Flashback | null>(null);
   const [failed, setFailed] = useState<Set<string>>(new Set());
+  const [selectedYear, setSelectedYear] = useState<number | "all">("all");
 
   const scrollRef   = useRef<HTMLDivElement>(null);
   const rafRef      = useRef<number>(0);
@@ -22,6 +23,14 @@ export default function FlashbackSection() {
 
   const [canLeft,  setCanLeft]  = useState(false);
   const [canRight, setCanRight] = useState(false);
+  const publishedMemories = memories.filter(memory => memory.status !== "hidden");
+  const years = [...new Set(publishedMemories.map(memory => memory.year))].sort((a, b) => b - a);
+  const visibleMemories = publishedMemories.filter(memory => selectedYear === "all" || memory.year === selectedYear);
+  const selectedIndex = selected ? visibleMemories.findIndex(memory => memory.id === selected.id) : -1;
+  const moveSelected = (direction: -1 | 1) => {
+    if (selectedIndex < 0 || visibleMemories.length < 2) return;
+    setSelected(visibleMemories[(selectedIndex + direction + visibleMemories.length) % visibleMemories.length]);
+  };
 
   // ── Firestore ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -52,12 +61,12 @@ export default function FlashbackSection() {
     const ro = new ResizeObserver(updateArrows);
     ro.observe(el);
     return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
-  }, [memories]);
+  }, [visibleMemories]);
 
   // ── Auto-scroll loop ─────────────────────────────────────────────────────
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || memories.length === 0) return;
+    if (!el || visibleMemories.length === 0) return;
 
     const tick = () => {
       if (!pausedRef.current && el) {
@@ -73,7 +82,7 @@ export default function FlashbackSection() {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [memories]);
+  }, [visibleMemories]);
 
   // ── Pause helpers ────────────────────────────────────────────────────────
   const pauseAutoScroll = () => {
@@ -96,6 +105,7 @@ export default function FlashbackSection() {
       <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Past celebrations &amp; memories</p>
       <h2 className="mt-2 text-3xl font-black text-slate-900">Utsav Flashback</h2>
       <p className="mt-3 text-slate-600">A live collection of Colony Bois pandal themes, devotion, and beautiful memories.</p>
+      {!loading && years.length > 0 && <div className="mt-5 flex flex-wrap gap-2"><button onClick={() => setSelectedYear("all")} className={`rounded-full px-3 py-1.5 text-sm font-bold ${selectedYear === "all" ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-700 hover:bg-orange-100"}`}>All</button>{years.map(year => <button key={year} onClick={() => setSelectedYear(year)} className={`rounded-full px-3 py-1.5 text-sm font-bold ${selectedYear === year ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-700 hover:bg-orange-100"}`}>{year}</button>)}</div>}
 
       {/* Skeleton */}
       {loading && (
@@ -107,7 +117,7 @@ export default function FlashbackSection() {
       )}
 
       {/* Empty */}
-      {!loading && memories.length === 0 && (
+      {!loading && publishedMemories.length === 0 && (
         <div className="mt-7 rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-10 text-center">
           <div className="text-4xl">📸</div>
           <h3 className="mt-3 font-bold text-slate-900">Memories are coming soon</h3>
@@ -116,7 +126,7 @@ export default function FlashbackSection() {
       )}
 
       {/* Scroll strip */}
-      {!loading && memories.length > 0 && (
+      {!loading && visibleMemories.length > 0 && (
         <div className="relative mt-7">
 
           {/* Left arrow */}
@@ -150,7 +160,7 @@ export default function FlashbackSection() {
             onMouseLeave={() => { pausedRef.current = false; }}
             onTouchStart={pauseAutoScroll}
           >
-            {memories.map(memory => (
+            {visibleMemories.map(memory => (
               <button
                 key={memory.id}
                 onClick={() => { pauseAutoScroll(); setSelected(memory); }}
@@ -203,6 +213,7 @@ export default function FlashbackSection() {
             className="max-h-full max-w-3xl overflow-hidden rounded-2xl bg-black"
             onClick={e => e.stopPropagation()}
           >
+            {visibleMemories.length > 1 && <><button onClick={() => moveSelected(-1)} aria-label="Previous image" className="absolute left-5 top-1/2 rounded-full bg-white/90 px-3 py-2 text-2xl text-slate-900">‹</button><button onClick={() => moveSelected(1)} aria-label="Next image" className="absolute right-5 top-1/2 rounded-full bg-white/90 px-3 py-2 text-2xl text-slate-900">›</button></>}
             <img
               src={selected.imageUrl}
               alt={`${selected.year} ${selected.title}`}
@@ -212,6 +223,7 @@ export default function FlashbackSection() {
             <div className="bg-white px-4 py-3">
               <p className="font-bold text-slate-900">{selected.year} · {selected.title}</p>
               {selected.caption && <p className="mt-0.5 text-sm text-slate-500">{selected.caption}</p>}
+              <div className="mt-2 flex flex-wrap gap-x-4 text-xs text-slate-500">{selected.relatedEvent && <span>Event: {selected.relatedEvent}</span>}{selected.credit && <span>Credit: {selected.credit}</span>}</div>
             </div>
           </div>
         </div>
