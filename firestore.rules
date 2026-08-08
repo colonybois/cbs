@@ -65,7 +65,8 @@ service cloud.firestore {
       allow create: if isActive()
         && request.resource.data.collectorId == request.auth.uid
         && request.resource.data.amount is number
-        && request.resource.data.amount > 0;
+        && request.resource.data.amount > 0
+        && request.resource.data.status == 'pending_approval';
       allow read: if isActive()
         && (resource.data.collectorId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
