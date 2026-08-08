@@ -3,6 +3,7 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
+import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 import { db } from "@/lib/firebase";
 import { uploadImageToStorage } from "@/lib/storage";
 
@@ -17,6 +18,24 @@ export default function DonateSection() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const enteredAmount = Number(amount);
+  const hasValidAmount = Number.isFinite(enteredAmount) && enteredAmount > 0;
+  const upiPaymentLink = `upi://pay?${new URLSearchParams({
+    pa: COLONY_BOIS_CONTACT.upiId,
+    pn: "Colony Bois Rampuram",
+    cu: "INR",
+    tn: "Chanda contribution",
+    ...(hasValidAmount ? { am: enteredAmount.toFixed(2) } : {}),
+  }).toString()}`;
+
+  const payChanda = () => {
+    if (!hasValidAmount) {
+      setError("Enter a Chanda amount before opening your UPI app.");
+      return;
+    }
+    setError("");
+    window.location.assign(upiPaymentLink);
+  };
 
   const handleScreenshotChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
@@ -101,7 +120,7 @@ export default function DonateSection() {
             <p className="mb-4 text-sm font-bold uppercase tracking-wider text-orange-600">Scan &amp; Pay via any UPI app</p>
             <div className="inline-block rounded-xl bg-white p-3 shadow-inner ring-1 ring-orange-100">
               <QRCodeSVG
-                value="upi://pay?pa=9121429608@axl&pn=Colony%20Bois%20Rampuram&cu=INR"
+                value={upiPaymentLink}
                 size={200}
                 bgColor="#ffffff"
                 fgColor="#1e1b4b"
@@ -110,7 +129,7 @@ export default function DonateSection() {
               />
             </div>
             <p className="mt-4 text-xs text-slate-500">
-              UPI ID: <span className="font-bold text-slate-800 select-all">9121429608@axl</span>
+              UPI ID: <span className="font-bold text-slate-800 select-all">{COLONY_BOIS_CONTACT.upiId}</span>
             </p>
             <p className="mt-1 text-xs text-slate-400">Works with PhonePe, GPay, Paytm, BHIM &amp; all UPI apps</p>
           </div>
@@ -154,11 +173,24 @@ export default function DonateSection() {
               type="number"
               min="1"
               value={amount}
-              onChange={e => setAmount(e.target.value)}
+              onChange={e => { setAmount(e.target.value); setError(""); }}
               placeholder="e.g. 501"
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </label>
+
+          <div className="rounded-xl border border-orange-200 bg-white p-4">
+            <p className="text-sm font-bold text-slate-900">Pay directly with UPI</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">Enter your amount above, then open Google Pay, PhonePe, Paytm, BHIM, or another available UPI app to complete the payment.</p>
+            <button
+              type="button"
+              onClick={payChanda}
+              className="mt-4 w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600 sm:w-auto sm:px-8"
+            >
+              Pay Chanda via UPI →
+            </button>
+            <p className="mt-3 text-xs leading-5 text-slate-500">You will be redirected to your UPI app. After payment, return here and submit your contribution details below for verification. Payment is not marked successful until it is verified.</p>
+          </div>
 
 
           {/* Screenshot upload */}
