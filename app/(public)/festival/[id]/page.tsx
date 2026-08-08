@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, doc, getDoc, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -40,8 +40,8 @@ export default function FestivalDayDetail() {
       setDay(current);
 
       // load siblings
-      const all = await getDocs(query(collection(db, "festival_days"), where("status", "==", "published"), orderBy("displayOrder", "asc")));
-      const list = all.docs.map(d => ({ id: d.id, ...d.data() } as FestivalDay));
+      const all = await getDocs(query(collection(db, "festival_days"), orderBy("displayOrder", "asc")));
+      const list = all.docs.map(d => ({ id: d.id, ...d.data() } as FestivalDay)).filter(item => item.status === "published");
       const idx = list.findIndex(d => d.id === id);
       setPrev(idx > 0 ? list[idx - 1] : null);
       setNext(idx < list.length - 1 ? list[idx + 1] : null);

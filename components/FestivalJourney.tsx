@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 
@@ -23,8 +23,8 @@ export default function FestivalJourney() {
 
   useEffect(() => {
     const unsub = onSnapshot(
-      query(collection(db, "festival_days"), where("status", "==", "published"), orderBy("displayOrder", "asc")),
-      snap => { setDays(snap.docs.map(d => ({ id: d.id, ...d.data() } as FestivalDay))); setLoading(false); },
+      query(collection(db, "festival_days"), orderBy("displayOrder", "asc")),
+      snap => { setDays(snap.docs.map(d => ({ id: d.id, ...d.data() } as FestivalDay)).filter(day => day.status === "published")); setLoading(false); },
       () => setLoading(false)
     );
     return unsub;

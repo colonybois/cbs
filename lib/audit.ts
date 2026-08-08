@@ -14,5 +14,6 @@ export type AuditEntry = {
 
 /** Audit entries are append-only in Firestore rules. Do not store secrets or payment proofs here. */
 export function recordAudit(entry: AuditEntry) {
-  return addDoc(collection(db, "admin_audit_logs"), { ...entry, createdAt: serverTimestamp() });
+  const auditId = `AUD-${new Date().getFullYear()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+  return addDoc(collection(db, "admin_audit_logs"), { ...entry, auditId, createdAt: serverTimestamp() });
 }
