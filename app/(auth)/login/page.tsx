@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useAuth } from "@/lib/auth-context";
 import { db } from "@/lib/firebase";
 import Button from "@/components/ui/Button";
@@ -28,8 +28,10 @@ export default function Login() {
     event.preventDefault(); setError(""); setSubmitting(true);
     try {
       if (mode === "signin") { routeFor(await signIn(email, password)); return; }
-      const registration = await getDoc(doc(db, "site_settings", "registration"));
-      if (registration.data()?.registrationsOpen === false) throw new Error("REGISTRATION_CLOSED");
+      // The listener above supplies this UI state. Do not make a second Firestore
+      // read here: when Firestore is reconnecting that read can leave the form
+      // stuck in its submitting state. The create rule still enforces this server-side.
+      if (registrationsOpen === false) throw new Error("REGISTRATION_CLOSED");
       await register(name, email, password, role);
       // New accounts must be approved before signing in; sign out only after the
       // profile write is complete so Firestore receives an authenticated request.
