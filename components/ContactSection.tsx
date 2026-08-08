@@ -2,23 +2,10 @@
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 
 export default function ContactSection() {
-  const { instagram, phoneNumbers, pandalLocation } = COLONY_BOIS_CONTACT;
+  const { phoneNumbers, pandalLocation } = COLONY_BOIS_CONTACT;
 
   return (
-    <section aria-label="Contact Colony Bois" className="space-y-5">
-
-      {/* Instagram */}
-      <a href={instagram.url} target="_blank" rel="noreferrer"
-        className="block rounded-2xl border border-orange-300 bg-white p-5 shadow-md shadow-orange-100/50 transition hover:bg-orange-50">
-        <p className="text-sm font-bold uppercase tracking-wider text-orange-600">Follow the celebrations</p>
-        <div className="mt-2 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-xl text-white">◎</span>
-          <div><h2 className="font-bold text-slate-900">Instagram</h2><p className="text-sm text-slate-600">{instagram.handle}</p></div>
-          <span className="ml-auto text-orange-600">↗</span>
-        </div>
-      </a>
-
-      {/* Email + Phone  |  Pandal location — two columns on md+ */}
+    <section aria-label="Contact Colony Bois">
       <div className="grid gap-5 md:grid-cols-2">
 
         {/* Left: email + phone */}
