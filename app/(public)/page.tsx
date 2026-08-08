@@ -31,13 +31,13 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <section id="donate" className="scroll-mt-24"><DonateSection /></section>
       <section id="contact" className="scroll-mt-24">
         <p className="text-sm font-bold uppercase tracking-widest text-orange-600">We&apos;re here to help</p>
         <h2 className="mt-2 text-3xl font-black text-slate-900">Contact Colony Bois</h2>
         <p className="mt-3 max-w-xl text-slate-600">For pandal information, volunteering or festival support, reach our organizers directly.</p>
         <div className="mt-7 max-w-3xl"><ContactSection /></div>
       </section>
-      <section id="donate" className="scroll-mt-24"><DonateSection /></section>
     </div>
   );
 }
