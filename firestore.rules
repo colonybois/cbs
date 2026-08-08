@@ -42,7 +42,10 @@ service cloud.firestore {
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.status == 'pending';
-      allow read, update, delete: if isAdmin();
+      // Allow public read of approved donations where donor consented to public display (for Supporters section)
+      allow get: if isAdmin() || (resource.data.status == 'approved' && resource.data.showPublicName == true);
+      allow list: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     // Audit entries are append-only. Administrators may inspect them but cannot
@@ -67,8 +70,11 @@ service cloud.firestore {
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.status == 'pending_approval';
-      allow read: if isActive()
+      // get: member reads their own; admin reads any
+      allow get: if isActive()
         && (resource.data.collectorId == request.auth.uid || isAdmin());
+      // list: member queries filtered by their own collectorId; admin queries all
+      allow list: if isActive();
       allow update, delete: if isAdmin();
     }
 
