@@ -11,6 +11,9 @@ export default function DonateSection() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [message, setMessage] = useState("");
+  const [showQrCode, setShowQrCode] = useState(false);
 
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
@@ -71,13 +74,15 @@ export default function DonateSection() {
         residentName: name.trim(),
         phone,
         amount: Number(amount),
-        transactionId: null,
+        transactionId: transactionId.trim() || null,
+        message: message.trim() || null,
+        paymentMethod: "upi",
         screenshotUrl,
         status: "pending",
         createdAt: serverTimestamp(),
       });
       setSuccess(true);
-      setName(""); setPhone(""); setAmount("");
+      setName(""); setPhone(""); setAmount(""); setTransactionId(""); setMessage("");
       setScreenshot(null); setScreenshotPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (reason) {
@@ -112,27 +117,6 @@ export default function DonateSection() {
             🚩 Online <span className="text-orange-600">Chanda / Contribution</span>
           </h2>
           <p className="mt-2 text-slate-500">Scan the QR, pay, then fill in your details below.</p>
-        </div>
-
-        {/* QR Code — generated from UPI ID, always scannable */}
-        <div className="mb-8 flex justify-center">
-          <div className="rounded-2xl border border-orange-200 bg-white p-5 shadow-md shadow-orange-100/50 text-center">
-            <p className="mb-4 text-sm font-bold uppercase tracking-wider text-orange-600">Scan &amp; Pay via any UPI app</p>
-            <div className="inline-block rounded-xl bg-white p-3 shadow-inner ring-1 ring-orange-100">
-              <QRCodeSVG
-                value={upiPaymentLink}
-                size={200}
-                bgColor="#ffffff"
-                fgColor="#1e1b4b"
-                level="H"
-                includeMargin={false}
-              />
-            </div>
-            <p className="mt-4 text-xs text-slate-500">
-              UPI ID: <span className="font-bold text-slate-800 select-all">{COLONY_BOIS_CONTACT.upiId}</span>
-            </p>
-            <p className="mt-1 text-xs text-slate-400">Works with PhonePe, GPay, Paytm, BHIM &amp; all UPI apps</p>
-          </div>
         </div>
 
         {/* Form */}
@@ -182,15 +166,29 @@ export default function DonateSection() {
           <div className="rounded-xl border border-orange-200 bg-white p-4">
             <p className="text-sm font-bold text-slate-900">Pay directly with UPI</p>
             <p className="mt-1 text-sm leading-6 text-slate-600">Enter your amount above, then open Google Pay, PhonePe, Paytm, BHIM, or another available UPI app to complete the payment.</p>
-            <button
-              type="button"
-              onClick={payChanda}
-              className="mt-4 w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600 sm:w-auto sm:px-8"
-            >
-              Pay Chanda via UPI →
-            </button>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <button type="button" onClick={() => { setShowQrCode(false); payChanda(); }} className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600">Pay Chanda via UPI →</button>
+              <button type="button" onClick={() => { if (!hasValidAmount) { setError("Enter a Chanda amount before showing the payment QR code."); return; } setError(""); setShowQrCode(true); }} className="w-full rounded-lg border-2 border-orange-300 bg-orange-50 py-3 font-bold text-orange-700 transition hover:bg-orange-100">Pay using QR Code</button>
+            </div>
             <p className="mt-3 text-xs leading-5 text-slate-500">You will be redirected to your UPI app. After payment, return here and submit your contribution details below for verification. Payment is not marked successful until it is verified.</p>
+            {showQrCode && (
+              <div className="mt-5 border-t border-orange-100 pt-5 text-center">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-600">Scan &amp; Pay via any UPI app</p>
+                <div className="inline-block rounded-xl bg-white p-3 shadow-inner ring-1 ring-orange-100"><QRCodeSVG value={upiPaymentLink} size={200} bgColor="#ffffff" fgColor="#1e1b4b" level="H" includeMargin={false} /></div>
+                <p className="mt-4 text-xs text-slate-500">UPI ID: <span className="font-bold text-slate-800 select-all">{COLONY_BOIS_CONTACT.upiId}</span></p>
+                <p className="mt-1 text-xs text-slate-400">Works with PhonePe, GPay, Paytm, BHIM &amp; all UPI apps</p>
+              </div>
+            )}
           </div>
+
+          <label className="block text-sm font-semibold text-slate-700">
+            UPI Reference / Transaction Number <span className="font-normal text-slate-400">(if available)</span>
+            <input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="Enter the UPI reference after payment" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          </label>
+          <label className="block text-sm font-semibold text-slate-700">
+            Message or payment details <span className="font-normal text-slate-400">(optional)</span>
+            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3} placeholder="Any details you would like us to know" className="mt-1 w-full resize-y rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          </label>
 
 
           {/* Screenshot upload */}

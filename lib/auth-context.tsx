@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db, initAnalytics } from "@/lib/firebase";
+import { recordAudit } from "@/lib/audit";
 import type { UserProfile, UserRole, UserStatus } from "@/types";
 
 type AuthState = {
@@ -46,9 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data?.status === "pending" ? "PENDING_APPROVAL" : "ACCOUNT_NOT_ACTIVE");
     }
     const role = data?.role === "admin" ? "admin" : "member";
+    if (role === "admin") {
+      void recordAudit({ actorId: credential.user.uid, actorName: data?.name || credential.user.displayName || credential.user.email || "Admin", action: "Admin login", module: "Authentication" });
+    }
     return role;
   };
-  const signOut = () => firebaseSignOut(auth);
+  const signOut = async () => {
+    if (profile?.role === "admin") {
+      try { await recordAudit({ actorId: profile.uid, actorName: profile.name, action: "Admin logout", module: "Authentication" }); } catch { /* Logging must not prevent sign-out. */ }
+    }
+    await firebaseSignOut(auth);
+  };
   return <AuthContext.Provider value={{ uid: profile?.uid || "", name: profile?.name || "", role: profile?.role || "member", status: profile?.status || "pending", signedIn: !!profile, loading, signIn, signOut }}>{children}</AuthContext.Provider>;
 }
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import Card from "@/components/ui/Card";
 import { db } from "@/lib/firebase";
+import { recordAudit } from "@/lib/audit";
+import { useAuth } from "@/lib/auth-context";
 
 type PendingUser = { id: string; name: string; email: string; role: "admin" | "member"; createdAt?: { toDate?: () => Date } | string };
 
@@ -17,6 +19,7 @@ export default function Approvals() {
   const [registrations, setRegistrations] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { uid, name } = useAuth();
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -27,9 +30,14 @@ export default function Approvals() {
     return unsub;
   }, []);
 
-  const review = async (id: string, status: "active" | "rejected") => {
+  const review = async (user: PendingUser, status: "active" | "rejected") => {
+    if (!uid || !name) return;
+    if (user.id === uid) { setError("You cannot approve or reject your own request."); return; }
     setError("");
-    try { await updateDoc(doc(db, "users", id), { status, reviewedAt: new Date().toISOString() }); }
+    try {
+      await updateDoc(doc(db, "users", user.id), { status, reviewedAt: new Date().toISOString(), reviewedBy: uid, reviewedByName: name });
+      await recordAudit({ actorId: uid, actorName: name, action: status === "active" ? "Approved account request" : "Rejected account request", module: "Admin Approvals", targetId: user.id, previousValue: { status: "pending", requestedRole: user.role }, newValue: { status, requestedBy: user.name || user.email }, approvalStatus: status === "active" ? "approved" : "rejected" });
+    }
     catch { setError("Could not update this registration. Please try again."); }
   };
 
@@ -60,13 +68,13 @@ export default function Approvals() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => void review(user.id, "active")}
+                onClick={() => void review(user, "active")}
                 className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-bold text-white hover:bg-orange-600"
               >
                 Approve
               </button>
               <button
-                onClick={() => void review(user.id, "rejected")}
+                onClick={() => void review(user, "rejected")}
                 className="rounded-lg border border-rose-300 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50"
               >
                 Decline

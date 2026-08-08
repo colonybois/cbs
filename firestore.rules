@@ -45,6 +45,14 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Audit entries are append-only. Administrators may inspect them but cannot
+    // alter or remove historical records from the client.
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
     match /chanda_collections/{collectionId} {
       allow create: if isActive()
         && request.resource.data.collectedByUid == request.auth.uid;
