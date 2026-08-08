@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { setDoc } from "firebase/firestore";
 import { useAuth } from "@/lib/auth-context";
 import { auth, db } from "@/lib/firebase";
 import Button from "@/components/ui/Button";
@@ -12,10 +13,47 @@ import type { UserRole } from "@/types";
 export default function Login() {
   const { signIn } = useAuth(); const router = useRouter();
   const [mode, setMode] = useState<"signin" | "register">("signin");
+  const [registrationsOpen, setRegistrationsOpen] = useState<boolean | null>(null);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [role, setRole] = useState<UserRole>("member");
   const [error, setError] = useState(""); const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "site_settings", "registration"), snap => {
+      setRegistrationsOpen(snap.data()?.registrationsOpen !== false);
+    }, () => setRegistrationsOpen(true));
+    return unsub;
+  }, []);
+
   const routeFor = (userRole: UserRole) => router.push(userRole === "admin" ? "/admin/dashboard" : "/member/dashboard");
   const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(""); setSubmitting(true); try { if (mode === "signin") { routeFor(await signIn(email, password)); return; } const registration = await getDoc(doc(db, "site_settings", "registration")); if (registration.data()?.registrationsOpen === false) throw new Error("REGISTRATION_CLOSED"); const credential = await createUserWithEmailAndPassword(auth, email, password); await updateProfile(credential.user, { displayName: name.trim() }); await setDoc(doc(db, "users", credential.user.uid), { uid: credential.user.uid, name: name.trim(), email: email.trim(), phone: "", role, status: "pending", createdAt: new Date().toISOString() }); await auth.signOut(); setMode("signin"); setError("Your account registration is pending admin approval. Please contact an administrator."); } catch (reason) { const code = reason instanceof Error ? reason.message : ""; setError(code === "REGISTRATION_CLOSED" ? "Registrations are currently closed. Please contact an administrator." : code === "PENDING_APPROVAL" ? "Your account registration is pending admin approval. Please contact an administrator." : mode === "signin" ? "Unable to sign in. Check your email and password, then try again." : "Unable to create your account. Please try again."); } finally { setSubmitting(false); } };
   const changeMode = (next: "signin" | "register") => { setMode(next); setError(""); };
-  return <div className="mx-auto mt-8 max-w-md rounded-3xl border border-orange-200 bg-white p-7 shadow-xl shadow-orange-100/50"><div className="flex rounded-xl bg-orange-50 p-1"><button onClick={() => changeMode("signin")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === "signin" ? "bg-white text-orange-700 shadow-sm" : "text-slate-600"}`}>Sign in</button><button onClick={() => changeMode("register")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === "register" ? "bg-white text-orange-700 shadow-sm" : "text-slate-600"}`}>Register</button></div><p className="mt-6 text-sm font-bold uppercase tracking-widest text-orange-600">Colony Bois secure access</p><h1 className="mt-2 text-3xl font-black text-slate-900">{mode === "signin" ? "Welcome back" : "Create an account"}</h1><p className="mt-2 text-sm text-slate-600">{mode === "signin" ? "Sign in with your organizer or volunteer account." : "Choose your access role and start using Colony Bois."}</p><form onSubmit={submit} className="mt-6 space-y-3">{mode === "register" && <input required value={name} onChange={event => setName(event.target.value)} placeholder="Full name" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>}<input required value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-xl border border-orange-200 bg-white p-3"/><input required minLength={6} value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password (at least 6 characters)" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>{mode === "register" && <select value={role} onChange={event => setRole(event.target.value as UserRole)} className="w-full rounded-xl border border-orange-200 bg-white p-3"><option value="member">Volunteer / Member</option><option value="admin">Admin</option></select>}{error && <p role="alert" className="text-sm text-rose-600">{error}</p>}<Button disabled={submitting} type="submit" className="w-full">{submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</Button></form></div>;
+
+  const regClosed = registrationsOpen === false;
+
+  return <div className="mx-auto mt-8 max-w-md rounded-3xl border border-orange-200 bg-white p-7 shadow-xl shadow-orange-100/50">
+    <div className="flex rounded-xl bg-orange-50 p-1">
+      <button onClick={() => changeMode("signin")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === "signin" ? "bg-white text-orange-700 shadow-sm" : "text-slate-600"}`}>Sign in</button>
+      <button onClick={() => changeMode("register")} disabled={regClosed} className={`flex-1 rounded-lg py-2 text-sm font-bold disabled:cursor-not-allowed ${mode === "register" ? "bg-white text-orange-700 shadow-sm" : regClosed ? "text-slate-400" : "text-slate-600"}`}>
+        Register {regClosed && <span className="ml-1 text-xs">(Closed)</span>}
+      </button>
+    </div>
+    {regClosed && mode === "register" && (
+      <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+        🔒 Registration is currently closed. Please contact an administrator.
+      </div>
+    )}
+    <p className="mt-6 text-sm font-bold uppercase tracking-widest text-orange-600">Colony Bois secure access</p>
+    <h1 className="mt-2 text-3xl font-black text-slate-900">{mode === "signin" ? "Welcome back" : "Create an account"}</h1>
+    <p className="mt-2 text-sm text-slate-600">{mode === "signin" ? "Sign in with your organizer or volunteer account." : "Choose your access role and start using Colony Bois."}</p>
+    {!(regClosed && mode === "register") && (
+      <form onSubmit={submit} className="mt-6 space-y-3">
+        {mode === "register" && <input required value={name} onChange={event => setName(event.target.value)} placeholder="Full name" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>}
+        <input required value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
+        <input required minLength={6} value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password (at least 6 characters)" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
+        {mode === "register" && <select value={role} onChange={event => setRole(event.target.value as UserRole)} className="w-full rounded-xl border border-orange-200 bg-white p-3"><option value="member">Volunteer / Member</option><option value="admin">Admin</option></select>}
+        {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
+        <Button disabled={submitting} type="submit" className="w-full">{submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</Button>
+      </form>
+    )}
+  </div>;
 }

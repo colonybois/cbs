@@ -85,6 +85,7 @@ export default function DonateSection() {
       });
       setSuccess(true);
       setName(""); setPhone(""); setAmount(""); setTransactionId(""); setMessage("");
+      setShowPublicName(false);
       setScreenshot(null); setScreenshotPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (reason) {
@@ -234,6 +235,20 @@ export default function DonateSection() {
           </div>
 
           {error && <p className="text-sm text-rose-600">{error}</p>}
+
+          {/* Public name consent */}
+          <label className="flex items-start gap-3 cursor-pointer rounded-xl border border-orange-200 bg-white p-4">
+            <input
+              type="checkbox"
+              checked={showPublicName}
+              onChange={e => setShowPublicName(e.target.checked)}
+              className="mt-0.5 h-4 w-4 flex-none accent-orange-500"
+            />
+            <span className="text-sm text-slate-700">
+              <span className="font-semibold">Display my name on the Colony Bois website</span>
+              <span className="block mt-0.5 text-slate-500 font-normal">After admin approval, your name will appear in the public Supporters section. Your phone number and payment details will never be shown.</span>
+            </span>
+          </label>
 
           <button
             type="submit"
