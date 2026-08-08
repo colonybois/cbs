@@ -22,7 +22,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
   const [error, setError] = useState("");
   const [showQr, setShowQr] = useState(false);
 
-  const upiValue = `upi://pay?pa=${COLONY_BOIS_CONTACT.upiId}&pn=${encodeURIComponent("Colony Bois Rampuram")}&am=${amount || "0"}&cu=INR&tn=${encodeURIComponent(`Chanda from ${residentName || "Donor"}`)}`;
+  const upiValue = `upi://pay?pa=${COLONY_BOIS_CONTACT.upiId}&pn=${encodeURIComponent("Colony Bois Rampuram")}&am=${amount || "0"}&cu=INR&tn=${encodeURIComponent(`Chanda from ${residentName || "Donor"} | ref:${collectorId.slice(-6)}`)}`;
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
