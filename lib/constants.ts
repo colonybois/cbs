@@ -14,9 +14,9 @@ export const COLONY_BOIS_CONTACT = {
     url: "https://www.instagram.com/colony_bois?igsh=MWdtaWdkN3VmeHprZA==",
   },
   phoneNumbers: [
-    { label: "Organizer 1", number: "+918106565698", display: "+91 81065 65698" },
-    { label: "Organizer 2", number: "+917997752156", display: "+91 79977 52156" },
-    { label: "Organizer 3", number: "+919121429608", display: "+91 91214 29608" },
+    { label: "Organizer 1", number: "+919121429608", display: "+91 91214 29608" },
+    { label: "Organizer 2", number: "+918106565698", display: "+91 81065 65698" },
+    { label: "Organizer 3", number: "+917997752156", display: "+91 79977 52156" },
   ],
   pandalLocation: {
     title: "Colony Bois Vinayaka Pandal",

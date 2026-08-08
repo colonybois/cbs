@@ -8,7 +8,7 @@ import { COLONY_BOIS_ASSETS } from "@/lib/assets";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 
 const publicSections = [["Home", "hero"], ["Donate / Chanda", "donate"], ["Events", "events"], ["Gallery & Flashback", "gallery"], ["Contact", "contact"]] as const;
-const adminLinks = [["Dashboard", "/admin/dashboard"], ["Members", "/admin/members"], ["Events", "/admin/events"], ["Gallery", "/admin/gallery"], ["Approvals", "/admin/approvals"]] as const;
+const adminLinks = [["Dashboard", "/admin/dashboard"], ["Members", "/admin/members"], ["Events", "/admin/events"], ["Gallery", "/admin/gallery"], ["Festival Days", "/admin/festival-days"], ["Approvals", "/admin/approvals"]] as const;
 const memberLinks = [["My Dashboard", "/member/dashboard"]] as const;
 
 export default function Header() {
