@@ -2,16 +2,14 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { setDoc } from "firebase/firestore";
 import { useAuth } from "@/lib/auth-context";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import Button from "@/components/ui/Button";
 import type { UserRole } from "@/types";
 
 export default function Login() {
-  const { signIn } = useAuth(); const router = useRouter();
+  const { signIn, register, signOut } = useAuth(); const router = useRouter();
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [registrationsOpen, setRegistrationsOpen] = useState<boolean | null>(null);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [role, setRole] = useState<UserRole>("member");
@@ -32,10 +30,10 @@ export default function Login() {
       if (mode === "signin") { routeFor(await signIn(email, password)); return; }
       const registration = await getDoc(doc(db, "site_settings", "registration"));
       if (registration.data()?.registrationsOpen === false) throw new Error("REGISTRATION_CLOSED");
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(credential.user, { displayName: name.trim() });
-      await setDoc(doc(db, "users", credential.user.uid), { uid: credential.user.uid, name: name.trim(), email: email.trim(), phone: "", role, status: "pending", createdAt: new Date().toISOString() });
-      await auth.signOut();
+      await register(name, email, password, role);
+      // New accounts must be approved before signing in; sign out only after the
+      // profile write is complete so Firestore receives an authenticated request.
+      await signOut();
       setMode("signin");
       setError("Your account registration is pending admin approval. Please contact an administrator.");
     } catch (reason) {
