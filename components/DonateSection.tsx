@@ -13,6 +13,7 @@ export default function DonateSection() {
   const [amount, setAmount] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [message, setMessage] = useState("");
+  const [showPublicName, setShowPublicName] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
 
   const [screenshot, setScreenshot] = useState<File | null>(null);
@@ -78,6 +79,7 @@ export default function DonateSection() {
         message: message.trim() || null,
         paymentMethod: "upi",
         screenshotUrl,
+        showPublicName,
         status: "pending",
         createdAt: serverTimestamp(),
       });
