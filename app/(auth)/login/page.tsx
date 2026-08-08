@@ -25,7 +25,38 @@ export default function Login() {
   }, []);
 
   const routeFor = (userRole: UserRole) => router.push(userRole === "admin" ? "/admin/dashboard" : "/member/dashboard");
-  const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(""); setSubmitting(true); try { if (mode === "signin") { routeFor(await signIn(email, password)); return; } const registration = await getDoc(doc(db, "site_settings", "registration")); if (registration.data()?.registrationsOpen === false) throw new Error("REGISTRATION_CLOSED"); const credential = await createUserWithEmailAndPassword(auth, email, password); await updateProfile(credential.user, { displayName: name.trim() }); await setDoc(doc(db, "users", credential.user.uid), { uid: credential.user.uid, name: name.trim(), email: email.trim(), phone: "", role, status: "pending", createdAt: new Date().toISOString() }); await auth.signOut(); setMode("signin"); setError("Your account registration is pending admin approval. Please contact an administrator."); } catch (reason) { const code = reason instanceof Error ? reason.message : ""; setError(code === "REGISTRATION_CLOSED" ? "Registrations are currently closed. Please contact an administrator." : code === "PENDING_APPROVAL" ? "Your account registration is pending admin approval. Please contact an administrator." : mode === "signin" ? "Unable to sign in. Check your email and password, then try again." : "Unable to create your account. Please try again."); } finally { setSubmitting(false); } };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setError(""); setSubmitting(true);
+    try {
+      if (mode === "signin") { routeFor(await signIn(email, password)); return; }
+      const registration = await getDoc(doc(db, "site_settings", "registration"));
+      if (registration.data()?.registrationsOpen === false) throw new Error("REGISTRATION_CLOSED");
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(credential.user, { displayName: name.trim() });
+      await setDoc(doc(db, "users", credential.user.uid), { uid: credential.user.uid, name: name.trim(), email: email.trim(), phone: "", role, status: "pending", createdAt: new Date().toISOString() });
+      await auth.signOut();
+      setMode("signin");
+      setError("Your account registration is pending admin approval. Please contact an administrator.");
+    } catch (reason) {
+      // Firebase Auth error codes come as reason.code, custom errors as reason.message
+      const code = (reason instanceof Error && "code" in reason)
+        ? (reason as { code: string }).code
+        : reason instanceof Error ? reason.message : "";
+      const msg =
+        code === "REGISTRATION_CLOSED" ? "Registrations are currently closed. Please contact an administrator." :
+        code === "PENDING_APPROVAL" ? "Your account is pending admin approval. Please wait for confirmation." :
+        code === "auth/email-already-in-use" ? "An account with this email already exists. Try signing in instead." :
+        code === "auth/weak-password" ? "Password must be at least 6 characters." :
+        code === "auth/invalid-email" ? "Please enter a valid email address." :
+        code === "auth/operation-not-allowed" ? "Email/password registration is not enabled. Please contact an administrator." :
+        code === "auth/too-many-requests" ? "Too many attempts. Please wait a few minutes and try again." :
+        code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential" ? "Incorrect email or password." :
+        mode === "signin" ? "Unable to sign in. Check your email and password and try again." :
+        "Unable to create your account. Please try again.";
+      setError(msg);
+    } finally { setSubmitting(false); }
+  };
   const changeMode = (next: "signin" | "register") => { setMode(next); setError(""); };
 
   const regClosed = registrationsOpen === false;
