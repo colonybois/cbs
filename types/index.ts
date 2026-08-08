@@ -3,6 +3,31 @@ export type UserStatus = "pending" | "active" | "rejected" | "blocked";
 export type ChandaStatus = "pending_handover" | "settled";
 export type OnlinePaymentStatus = "pending" | "approved" | "rejected";
 export type PaymentMode = "cash" | "upi";
+
+export type ComityDesignation =
+  | "President" | "Vice President" | "Secretary" | "Treasurer"
+  | "General Secretary" | "Event Coordinator" | "Decoration Coordinator"
+  | "Cultural Coordinator" | "Chanda Coordinator" | "Volunteer Coordinator"
+  | "Committee Member";
+
+export interface ComityMember {
+  id: string;
+  fullName: string;
+  designation: ComityDesignation;
+  memberSince: string;
+  bio: string;
+  photoUrl: string;
+  publicContact: string;
+  showContact: boolean;
+  featured: boolean;
+  active: boolean;
+  publicVisible: boolean;
+  displayOrder: number;
+  createdBy: string;
+  createdAt: { toDate?: () => Date } | string | null;
+  updatedAt: { toDate?: () => Date } | string | null;
+}
+
 export interface UserProfile { uid: string; name: string; phone: string; role: UserRole; status: UserStatus; createdAt: string; }
 export interface ChandaCollection { id: string; collectedByUid: string; collectedByName: string; residentName: string; houseOrFlatNo: string; phone: string; amount: number; paymentMode: PaymentMode; status: ChandaStatus; settledByAdmin?: string; settledAt?: string; createdAt: string; }
 export interface OnlineChandaSubmission { id: string; residentName: string; phone: string; amount: number; transactionId: string; screenshotUrl: string; status: OnlinePaymentStatus; verifiedBy?: string; verifiedAt?: string; createdAt: string; }

@@ -5,6 +5,7 @@ import EventsSection from "@/components/EventsSection";
 import FestivalJourney from "@/components/FestivalJourney";
 import ContactSection from "@/components/ContactSection";
 import SupportersSection from "@/components/SupportersSection";
+import ComityMembersSection from "@/components/ComityMembersSection";
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <section id="events" className="scroll-mt-24"><EventsSection /></section>
       <section id="festival" className="scroll-mt-24"><FestivalJourney /></section>
       <section id="supporters" className="scroll-mt-24"><SupportersSection /></section>
+      <section id="comity" className="scroll-mt-24"><ComityMembersSection /></section>
       <section id="about" className="scroll-mt-24">
         <div className="mx-auto max-w-4xl rounded-3xl border border-orange-200 bg-orange-50/50 p-6 shadow-md shadow-orange-100/50 sm:p-10">
           <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Our story</p>
