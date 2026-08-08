@@ -10,7 +10,6 @@ export default function HomePage() {
     <div className="space-y-20 pb-8">
       <section id="hero" className="scroll-mt-24"><HeroSection /></section>
       <section id="gallery" className="scroll-mt-24"><FlashbackSection /></section>
-      <section id="donate" className="scroll-mt-24"><DonateSection /></section>
       <section id="events" className="scroll-mt-24"><EventsSection /></section>
       <section id="festival" className="scroll-mt-24"><FestivalJourney /></section>
       <section id="contact" className="scroll-mt-24">
@@ -19,6 +18,7 @@ export default function HomePage() {
         <p className="mt-3 max-w-xl text-slate-600">For pandal information, volunteering or festival support, reach our organizers directly.</p>
         <div className="mt-7 max-w-3xl"><ContactSection /></div>
       </section>
+      <section id="donate" className="scroll-mt-24"><DonateSection /></section>
     </div>
   );
 }

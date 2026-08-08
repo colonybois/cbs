@@ -23,12 +23,11 @@ export default function ContactSection() {
             <p className="text-sm font-bold uppercase tracking-wider text-orange-600">Talk to us</p>
             <div className="mt-2 space-y-2">
               {phoneNumbers.map(contact => (
-                <a key={contact.number} href={`tel:${contact.number}`} className="flex items-center justify-between rounded-xl bg-orange-50 p-3 hover:bg-orange-100 transition">
+                <a key={contact.number} href={`tel:${contact.number}`} className="flex items-center rounded-xl bg-orange-50 p-3 hover:bg-orange-100 transition">
                   <div>
                     <p className="text-xs font-semibold text-slate-600">{contact.label}</p>
                     <p className="font-bold text-slate-900">{contact.display}</p>
                   </div>
-                  <span className="text-orange-500 text-lg">📞</span>
                 </a>
               ))}
             </div>
