@@ -1,15 +1,9 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(public)/page": "app/(public)/page.js",
-  "/(public)/events/page": "app/(public)/events/page.js",
-  "/admin/dashboard/page": "app/admin/dashboard/page.js",
-  "/admin/events/page": "app/admin/events/page.js",
-  "/(public)/donate/page": "app/(public)/donate/page.js",
-  "/(public)/gallery/page": "app/(public)/gallery/page.js",
-  "/(public)/contact/page": "app/(public)/contact/page.js",
   "/admin/approvals/page": "app/admin/approvals/page.js",
+  "/(public)/page": "app/(public)/page.js",
   "/admin/gallery/page": "app/admin/gallery/page.js",
-  "/admin/members/page": "app/admin/members/page.js",
-  "/member/dashboard/page": "app/member/dashboard/page.js"
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/members/page": "app/admin/members/page.js"
 }
