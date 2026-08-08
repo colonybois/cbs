@@ -65,10 +65,14 @@ service cloud.firestore {
     }
 
     match /donations/{donationId} {
+      // Volunteers may submit only cash collections. Verified UPI collections
+      // must be written by the trusted payment-provider webhook (Admin SDK),
+      // which bypasses these client rules.
       allow create: if isActive()
         && request.resource.data.collectorId == request.auth.uid
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
+        && request.resource.data.paymentMode == 'cash'
         && request.resource.data.status == 'pending_approval';
       // get: member reads their own; admin reads any
       allow get: if isActive()

@@ -10,6 +10,8 @@ type TsLike = { toDate?: () => Date } | string | null;
 type Donation = {
   id: string; receiptNo?: string; residentName?: string; houseNo?: string;
   amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
+  paymentVerificationStatus?: "verified" | "pending" | "failed" | "not_applicable";
+  paymentTransactionId?: string;
   status?: string; createdAt?: TsLike;
   approvedByName?: string; approvedAt?: TsLike;
 };
@@ -38,6 +40,8 @@ function ReceiptModal({ d, name, onClose }: { d: Donation; name: string; onClose
     d.houseNo ? `House: ${d.houseNo}` : null,
     `Amount: ₹${Number(d.amount || 0).toLocaleString()}`,
     `Method: ${(d.paymentMode ?? "").toUpperCase()}`,
+    d.paymentMode === "upi" ? `Payment: ${d.paymentVerificationStatus === "verified" ? "Verified" : "Verification pending"}` : null,
+    d.paymentTransactionId ? `Payment ID: ${d.paymentTransactionId}` : null,
     `Collected by: ${name}`,
     `Status: ${d.status === "approved" ? "✅ Verified" : "⏳ Pending"}`,
     d.approvedByName ? `Approved by: ${d.approvedByName}` : null,
@@ -60,6 +64,8 @@ function ReceiptModal({ d, name, onClose }: { d: Donation; name: string; onClose
             d.houseNo ? ["House", d.houseNo] : null,
             ["Amount", `₹${Number(d.amount || 0).toLocaleString()}`],
             ["Method", (d.paymentMode ?? "").toUpperCase()],
+            d.paymentMode === "upi" ? ["Payment", d.paymentVerificationStatus === "verified" ? "Verified ✅" : "Verification Pending"] : null,
+            d.paymentTransactionId ? ["Payment ID", d.paymentTransactionId] : null,
             ["Collected by", name],
             ["Date", dateFmt(d.createdAt)],
             ["Status", d.status === "approved" ? "✅ Verified" : d.status === "rejected" ? "❌ Rejected" : "⏳ Pending Approval"],
@@ -211,6 +217,7 @@ export default function MemberDashboard() {
                   <div className="min-w-0">
                     <p className="font-bold text-slate-900 truncate">{d.residentName || "Donor"}</p>
                     <p className="text-xs text-slate-400">{dateFmt(d.createdAt)}</p>
+                    {d.paymentMode === "upi" && <p className={`text-xs font-semibold ${d.paymentVerificationStatus === "verified" ? "text-emerald-700" : "text-amber-700"}`}>{d.paymentVerificationStatus === "verified" ? "UPI · Payment Verified" : "UPI · Payment Verification Pending"}</p>}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-none">
                     <p className="font-black text-orange-600">₹{Number(d.amount || 0).toLocaleString()}</p>

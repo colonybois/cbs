@@ -7,7 +7,7 @@ import { db } from "@/lib/firebase";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 
 type Props = { collectorId: string; collectorName: string };
-type Receipt = { receiptNo: string; residentName: string; amount: number; paymentMode: "cash" | "upi"; houseNo: string };
+type Receipt = { receiptNo: string; residentName: string; amount: number; paymentMode: "cash" | "upi"; houseNo: string; paymentVerified?: boolean };
 
 const genRef = () => `COL-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
 
@@ -26,6 +26,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (paymentMode !== "cash") return;
     if (!residentName.trim()) { setError("Enter donor name."); return; }
     if (!amount || Number(amount) <= 0) { setError("Enter a valid amount."); return; }
     setLoading(true); setError("");
@@ -42,6 +43,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         collectorId,
         collectorName,
         status: "pending_approval",
+        paymentVerificationStatus: "not_applicable",
         createdAt: serverTimestamp(),
       });
       setLastReceipt({ receiptNo, residentName: residentName.trim(), amount: value, paymentMode, houseNo: houseNo.trim() });
@@ -124,10 +126,12 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </div>
         </div>
 
-        {/* UPI QR panel */}
+        {/* A QR code alone cannot prove payment. A provider webhook must create
+            UPI records after verification, so this path intentionally has no
+            submit or "I've paid" action. */}
         {paymentMode === "upi" && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-center space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Ask donor to scan &amp; pay</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Scan QR / pay via UPI</p>
             {Number(amount) > 0 ? (
               <>
                 <div className="flex flex-col items-center">
@@ -142,6 +146,10 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
                   className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">
                   Open UPI App →
                 </a>
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-800">
+                  <p className="font-bold">🟡 Waiting for payment</p>
+                  <p className="mt-1">This payment will be submitted only after the connected payment provider verifies it. No collection record has been created yet.</p>
+                </div>
               </>
             ) : (
               <p className="py-4 text-sm font-medium text-emerald-700">⚠ Enter amount above to show QR</p>
@@ -149,20 +157,23 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </div>
         )}
 
-        {/* Note */}
-        <label className="block text-sm font-semibold text-slate-700">
-          Receipt / Transaction Note <span className="font-normal text-slate-400">(optional)</span>
-          <input value={note} onChange={e => setNote(e.target.value)} placeholder="Any reference or note"
-            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
-        </label>
+        {paymentMode === "cash" && (
+          <label className="block text-sm font-semibold text-slate-700">
+            Receipt / Collection Note <span className="font-normal text-slate-400">(optional)</span>
+            <input value={note} onChange={e => setNote(e.target.value)} placeholder="Any receipt reference or note"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          </label>
+        )}
 
         {error && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
 
-        <button type="submit" disabled={loading}
-          className="w-full rounded-xl bg-orange-500 py-4 text-base font-black text-white shadow-md hover:bg-orange-600 disabled:opacity-50 transition">
-          {loading ? "Submitting…" : "Submit Collection →"}
-        </button>
-        <p className="text-center text-xs text-slate-400">Collection will be visible after admin approval</p>
+        {paymentMode === "cash" && <>
+          <button type="submit" disabled={loading}
+            className="w-full rounded-xl bg-orange-500 py-4 text-base font-black text-white shadow-md hover:bg-orange-600 disabled:opacity-50 transition">
+            {loading ? "Submitting…" : "Submit Collection →"}
+          </button>
+          <p className="text-center text-xs text-slate-400">Cash collection will be sent for admin approval.</p>
+        </>}
       </form>
     </div>
   );
