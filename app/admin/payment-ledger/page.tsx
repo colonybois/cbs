@@ -122,26 +122,36 @@ export default function PaymentLedgerPage() {
   const triggerEmail = async (d: Donation) => {
     if (!d.donorEmail || !uid || !adminName) return;
     setEmailingId(d.id);
-    await updateDoc(doc(db, "donations", d.id), { emailStatus: "queued" });
-    const result = await sendDonationEmail({
-      type: "receipt",
-      to: d.donorEmail,
-      donorName: d.residentName ?? "Donor",
-      amount: d.amount ?? 0,
-      paymentMethod: (d.paymentMode ?? "cash").toUpperCase(),
-      date: emailDate(d.approvedAt ?? d.createdAt),
-      referenceId: d.receiptNo ?? d.id.slice(0, 10).toUpperCase(),
-      collectorName: d.collectorName,
-      targetCollection: "donations",
-      targetId: d.id,
-      triggeredBy: uid,
-      triggeredByName: adminName,
-    });
-    await updateDoc(doc(db, "donations", d.id), { emailStatus: result.ok ? "sent" : "failed" });
-    if (result.ok) {
-      await recordAudit({ actorId: uid, actorName: adminName, action: "Donation email sent", module: "Payment Ledger", targetId: d.id, newValue: { recipient: d.donorEmail, type: "receipt", status: "sent" } });
+    try {
+      await updateDoc(doc(db, "donations", d.id), { emailStatus: "queued" });
+      const result = await sendDonationEmail({
+        type: "receipt",
+        to: d.donorEmail,
+        donorName: d.residentName ?? "Donor",
+        amount: d.amount ?? 0,
+        paymentMethod: (d.paymentMode ?? "cash").toUpperCase(),
+        date: emailDate(d.approvedAt ?? d.createdAt),
+        referenceId: d.receiptNo ?? d.id.slice(0, 10).toUpperCase(),
+        collectorName: d.collectorName,
+        targetCollection: "donations",
+        targetId: d.id,
+        triggeredBy: uid,
+        triggeredByName: adminName,
+      });
+      await updateDoc(doc(db, "donations", d.id), { emailStatus: result.ok ? "sent" : "failed" });
+      if (result.ok) {
+        await recordAudit({ actorId: uid, actorName: adminName, action: "Donation email sent", module: "Payment Ledger", targetId: d.id, newValue: { recipient: d.donorEmail, type: "receipt", status: "sent" } });
+      } else {
+        setError(`Collection approved, but the receipt email could not be sent${result.error ? `: ${result.error}` : "."}`);
+      }
+    } catch (err) {
+      // The collection approval has already committed. Keep the email retryable
+      // and do not report the approval itself as failed.
+      await updateDoc(doc(db, "donations", d.id), { emailStatus: "failed" }).catch(() => undefined);
+      setError(`Collection approved, but the receipt email could not be sent: ${err instanceof Error ? err.message : "Unknown email error"}`);
+    } finally {
+      setEmailingId(null);
     }
-    setEmailingId(null);
   };
 
   // ── Approve ────────────────────────────────────────────────────────────────
@@ -154,17 +164,27 @@ export default function PaymentLedgerPage() {
         const ref = doc(db, "donations", d.id);
         const snap = await tx.get(ref);
         if (snap.data()?.status !== "pending_approval") throw new Error("Already processed.");
-        const userRef = doc(db, "users", d.collectorId!);
+        const collectorId = snap.data()?.collectorId;
+        if (typeof collectorId !== "string" || !collectorId) throw new Error("This collection has no valid collector.");
+        const userRef = doc(db, "users", collectorId);
+        // Firestore transactions require every read before the first write.
+        // Reading both documents first also prevents a stale total overwrite.
+        const userSnap = await tx.get(userRef);
+        if (!userSnap.exists()) throw new Error("Collector profile was not found.");
+        const amount = Number(snap.data()?.amount ?? 0);
+        if (!Number.isFinite(amount) || amount <= 0) throw new Error("This collection has an invalid amount.");
+        const paymentMode = snap.data()?.paymentMode;
+        if (paymentMode !== "cash" && paymentMode !== "upi") throw new Error("This collection has an invalid payment method.");
+        const userData = userSnap.data();
         tx.update(ref, { status: "approved", approvedBy: uid, approvedByName: adminName, approvedAt: new Date().toISOString() });
-        const inc = d.paymentMode === "cash"
-          ? { cashTotal: snap.data()?.amount ?? 0, pendingHandover: snap.data()?.amount ?? 0 }
-          : { upiTotal: snap.data()?.amount ?? 0 };
-        const userData = (await tx.get(userRef)).data() ?? {};
+        const inc = paymentMode === "cash"
+          ? { cashTotal: amount, pendingHandover: amount }
+          : { upiTotal: amount };
         tx.update(userRef, Object.fromEntries(Object.entries(inc).map(([k, v]) => [k, (Number(userData[k] ?? 0) + Number(v))])));
       });
       await recordAudit({ actorId: uid, actorName: adminName, action: "Collection Approved", module: "Payment Ledger", targetId: d.id, newValue: { volunteer: d.collectorName, donor: d.residentName, amount: `₹${d.amount}`, method: d.paymentMode, approvedBy: adminName } });
       // Auto-send receipt email on approval if donor email available
-      if (d.donorEmail) await triggerEmail({ ...d, status: "approved" });
+      if (d.donorEmail) await triggerEmail({ ...d, status: "approved", approvedAt: new Date().toISOString() });
     } catch (err) { setError(err instanceof Error ? err.message : "Approval failed."); }
     finally { setProcessing(null); }
   };

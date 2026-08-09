@@ -13,6 +13,7 @@ interface Member { id: string; name: string; phone: string; upiTotal: number; ca
 interface Donation {
   id: string; receiptNo?: string; residentName?: string; houseNo?: string;
   amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
+  collectorId?: string;
   status?: "pending_approval" | "approved" | "rejected" | "flagged"; createdAt?: TsLike;
   paymentTransactionId?: string;
   approvedByName?: string;
@@ -37,6 +38,7 @@ const STATUS_STYLE: Record<string, string> = {
 export default function MembersManagementPage() {
   const { uid, name: adminName } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
+  const [allDonations, setAllDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Member | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -61,6 +63,21 @@ export default function MembersManagementPage() {
     },
     () => { setMembers([]); setLoading(false); }
   ), []);
+
+  // Keep the summary table accurate even for collections approved before the
+  // per-member aggregate fields were introduced or repaired.
+  useEffect(() => onSnapshot(
+    collection(db, "donations"),
+    snap => setAllDonations(snap.docs.map(d => ({ id: d.id, ...d.data() } as Donation))),
+    () => setAllDonations([]),
+  ), []);
+
+  const memberRows = members.map(member => {
+    const approved = allDonations.filter(d => d.collectorId === member.id && d.status === "approved");
+    const cashTotal = approved.filter(d => d.paymentMode === "cash").reduce((sum, d) => sum + Number(d.amount || 0), 0);
+    const upiTotal = approved.filter(d => d.paymentMode === "upi").reduce((sum, d) => sum + Number(d.amount || 0), 0);
+    return { ...member, cashTotal, upiTotal };
+  });
 
   useEffect(() => {
     if (!selected) { setDonations([]); setHistoryError(""); return; }
@@ -127,7 +144,7 @@ export default function MembersManagementPage() {
 
   const total = (m: Member) => m.upiTotal + m.cashTotal;
   const exportHeaders = ["Collector", "Phone", "UPI / QR", "Cash", "Total", "Pending Cash"];
-  const exportRows = members.map(m => [m.name, m.phone, `₹${m.upiTotal.toLocaleString()}`, `₹${m.cashTotal.toLocaleString()}`, `₹${total(m).toLocaleString()}`, `₹${m.pendingHandover.toLocaleString()}`]);
+  const exportRows = memberRows.map(m => [m.name, m.phone, `₹${m.upiTotal.toLocaleString()}`, `₹${m.cashTotal.toLocaleString()}`, `₹${total(m).toLocaleString()}`, `₹${m.pendingHandover.toLocaleString()}`]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -150,9 +167,9 @@ export default function MembersManagementPage() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">Loading…</td></tr>
-              ) : members.length === 0 ? (
+              ) : memberRows.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">No registered collectors.</td></tr>
-              ) : members.map(m => (
+              ) : memberRows.map(m => (
                 <tr key={m.id} onClick={() => setSelected(m)}
                   className="cursor-pointer hover:bg-orange-50/60 transition">
                   <td className="px-6 py-4 font-bold text-slate-900">{m.name}<span className="block text-xs font-normal text-slate-500">{m.phone}</span></td>
