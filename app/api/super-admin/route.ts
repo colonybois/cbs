@@ -3,8 +3,6 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 export const runtime = "nodejs";
-
-type Profile = { name?: string; role?: string; status?: string };
 const roles = ["member", "admin", "super_admin"] as const;
 const statuses = ["active", "suspended"] as const;
 
@@ -12,41 +10,44 @@ async function actor(request: NextRequest) {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) throw new Error("Unauthenticated");
   const decoded = await adminAuth().verifyIdToken(token);
-  const profile = (await adminDb().collection("users").doc(decoded.uid).get()).data() as Profile | undefined;
+  const profile = (await adminDb().collection("users").doc(decoded.uid).get()).data();
   if (profile?.role !== "super_admin" || profile.status !== "active") throw new Error("Forbidden");
   return { uid: decoded.uid, name: profile.name || "Super Admin" };
 }
-function fail(error: unknown) {
+const responseError = (error: unknown) => {
   const message = error instanceof Error ? error.message : "Request failed";
-  const status = message === "Unauthenticated" ? 401 : message === "Forbidden" ? 403 : message.startsWith("Invalid") || message.includes("required") ? 400 : 500;
-  return NextResponse.json({ error: message }, { status });
-}
-const audit = (data: Record<string, unknown>) => adminDb().collection("admin_audit_logs").add({ ...data, actorRole: "super_admin", createdAt: FieldValue.serverTimestamp() });
-const sum = (docs: FirebaseFirestore.QueryDocumentSnapshot[], status: string) => docs.filter(item => item.data().status === status).reduce((total, item) => total + Number(item.data().amount || 0), 0);
+  return NextResponse.json({ error: message }, { status: message === "Unauthenticated" ? 401 : message === "Forbidden" ? 403 : 400 });
+};
+const total = (docs: FirebaseFirestore.QueryDocumentSnapshot[], status: string) => docs.filter(doc => doc.data().status === status).reduce((sum, doc) => sum + Number(doc.data().amount || 0), 0);
 
 export async function GET(request: NextRequest) {
   try {
-    await actor(request);
-    const db = adminDb();
-    const [users, donations, online, events, gallery, comity, supporters] = await Promise.all(["users", "donations", "online_donations", "events", "flashback", "comity_members", "public_supporters"].map(name => db.collection(name).get()));
-    const cash = donations.docs.filter(item => item.data().status === "approved" && item.data().paymentMode === "cash").reduce((total, item) => total + Number(item.data().amount || 0), 0);
-    const upi = donations.docs.filter(item => item.data().status === "approved" && item.data().paymentMode === "upi").reduce((total, item) => total + Number(item.data().amount || 0), 0) + sum(online.docs, "approved");
-    return NextResponse.json({ users: users.docs.map(item => ({ id: item.id, ...item.data() })), counts: { events: events.size, gallery: gallery.size, comity: comity.size, supporters: supporters.size }, finance: { approved: cash + upi, pending: sum(donations.docs, "pending_approval") + sum(online.docs, "pending"), cash, upi, rejected: sum(donations.docs, "rejected") + sum(online.docs, "rejected"), voided: sum(donations.docs, "void") + sum(online.docs, "void") } });
-  } catch (error) { return fail(error); }
+    await actor(request); const db = adminDb();
+    const [users, donations, online] = await Promise.all([db.collection("users").get(), db.collection("donations").get(), db.collection("online_donations").get()]);
+    const cash = donations.docs.filter(doc => doc.data().status === "approved" && doc.data().paymentMode === "cash").reduce((sum, doc) => sum + Number(doc.data().amount || 0), 0);
+    const upi = donations.docs.filter(doc => doc.data().status === "approved" && doc.data().paymentMode === "upi").reduce((sum, doc) => sum + Number(doc.data().amount || 0), 0) + total(online.docs, "approved");
+    return NextResponse.json({ users: users.docs.map(doc => ({ id: doc.id, ...doc.data() })), finance: { approved: cash + upi, cash, upi, pending: total(donations.docs, "pending_approval") + total(online.docs, "pending") } });
+  } catch (error) { return responseError(error); }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const who = await actor(request); const body = await request.json() as Record<string, unknown>; const db = adminDb();
-    if (body.action === "user_update") {
-      const targetId = String(body.targetId || ""); const role = body.role; const status = body.status;
-      if (!targetId || targetId === who.uid) throw new Error("You cannot change your own Super Admin access.");
-      if (role !== undefined && !roles.includes(role as typeof roles[number])) throw new Error("Invalid role.");
-      if (status !== undefined && !statuses.includes(status as typeof statuses[number])) throw new Error("Invalid status.");
-      await db.runTransaction(async tx => { const ref = db.collection("users").doc(targetId); const snap = await tx.get(ref); if (!snap.exists) throw new Error("User not found."); const before = snap.data() as Profile; const removesFinal = before.role === "super_admin" && before.status === "active" && (role !== "super_admin" || status === "suspended"); if (removesFinal) { const supers = await tx.get(db.collection("users").where("role", "==", "super_admin").where("status", "==", "active")); if (supers.size <= 1) throw new Error("The final active Super Admin cannot be changed."); } tx.update(ref, { ...(role ? { role } : {}), ...(status ? { status } : {}), updatedAt: FieldValue.serverTimestamp() }); tx.set(db.collection("admin_audit_logs").doc(), { actorId: who.uid, actorName: who.name, actorRole: "super_admin", action: "ROLE_OR_STATUS_CHANGED", module: "Users & Roles", targetId, previousValue: { role: before.role, status: before.status }, newValue: { role: role ?? before.role, status: status ?? before.status }, createdAt: FieldValue.serverTimestamp() }); });
-      return NextResponse.json({ ok: true });
+    const who = await actor(request); const body = await request.json() as Record<string, unknown>;
+    if (body.action !== "user_update") throw new Error("Invalid action");
+    const targetId = String(body.targetId || ""); const role = body.role; const status = body.status;
+    if (!targetId || targetId === who.uid) throw new Error("You cannot change your own Super Admin access.");
+    if (role !== undefined && !roles.includes(role as typeof roles[number])) throw new Error("Invalid role.");
+    if (status !== undefined && !statuses.includes(status as typeof statuses[number])) throw new Error("Invalid status.");
+    const db = adminDb(); const target = db.collection("users").doc(targetId); const before = await target.get();
+    if (!before.exists) throw new Error("User not found.");
+    const prior = before.data();
+    const removesFinalSuperAdmin = prior?.role === "super_admin" && prior.status === "active" && (role !== "super_admin" || status === "suspended");
+    if (removesFinalSuperAdmin) {
+      const superAdmins = await db.collection("users").where("role", "==", "super_admin").where("status", "==", "active").get();
+      if (superAdmins.size <= 1) throw new Error("The final active Super Admin cannot be changed.");
     }
-    if (body.action === "treasury_adjustment") { const amount = Number(body.amount); const reason = String(body.reason || "").trim(); const reference = String(body.reference || "").trim(); if (!Number.isFinite(amount) || amount === 0 || !reason || !reference) throw new Error("Amount, reason, and reference are required."); const ref = await db.collection("treasury_adjustments").add({ amount, reason, reference, createdBy: who.uid, createdByName: who.name, createdAt: FieldValue.serverTimestamp() }); await audit({ actorId: who.uid, actorName: who.name, action: "TREASURY_ADJUSTMENT", module: "Treasury", targetId: ref.id, newValue: { amount, reason, reference } }); return NextResponse.json({ ok: true }); }
-    throw new Error("Invalid action.");
-  } catch (error) { return fail(error); }
+    await target.update({ ...(role ? { role } : {}), ...(status ? { status } : {}), updatedAt: FieldValue.serverTimestamp() });
+    await db.collection("admin_audit_logs").add({ actorId: who.uid, actorName: who.name, actorRole: "super_admin", action: "ROLE_OR_STATUS_CHANGED", module: "Users & Roles", targetId, previousValue: before.data(), newValue: { role, status }, createdAt: FieldValue.serverTimestamp() });
+    return NextResponse.json({ ok: true });
+  } catch (error) { return responseError(error); }
 }
