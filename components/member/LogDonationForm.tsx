@@ -65,7 +65,6 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         ...(isUpi ? { approvedByName: "System (UPI)", approvedAt: serverTimestamp() } : {}),
         createdAt: serverTimestamp(),
       });
-      if (isUpi) batch.set(doc(db, "public_highest_donors", donationRef.id), { donorName: residentName.trim(), amount: value, category: "member" });
       await batch.commit();
       setLastReceipt({ receiptNo, residentName: residentName.trim(), phone, amount: value, paymentMode });
       setResidentName(""); setPhone(""); setAmount(""); setNote("");

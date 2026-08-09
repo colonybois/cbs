@@ -81,24 +81,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Public leaderboard projection: deliberately contains only a display name,
-    // amount, and category—never contact or payment information.
-    match /public_highest_donors/{donorId} {
-      allow read: if true;
-      allow write: if isAdmin();
-      // Member UPI entries are approved immediately. The public projection can
-      // only be created atomically with its matching approved donation record.
-      allow create: if isActive()
-        && request.resource.data.category == 'member'
-        && request.resource.data.donorName is string
-        && request.resource.data.amount is number
-        && existsAfter(/databases/$(database)/documents/donations/$(donorId))
-        && getAfter(/databases/$(database)/documents/donations/$(donorId)).data.collectorId == request.auth.uid
-        && getAfter(/databases/$(database)/documents/donations/$(donorId)).data.status == 'approved'
-        && getAfter(/databases/$(database)/documents/donations/$(donorId)).data.residentName == request.resource.data.donorName
-        && getAfter(/databases/$(database)/documents/donations/$(donorId)).data.amount == request.resource.data.amount;
-    }
-
     // Audit entries are append-only. Administrators may inspect them but cannot
     // alter or remove historical records from the client.
     match /admin_audit_logs/{logId} {
