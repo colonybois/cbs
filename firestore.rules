@@ -87,6 +87,18 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Anonymous page-view events are write-only to visitors; analytics data is
+    // visible only to operational admins.
+    match /site_visits/{visitId} {
+      allow create: if request.resource.data.sessionId is string
+        && request.resource.data.sessionId.size() > 0
+        && request.resource.data.path is string
+        && request.resource.data.path.size() > 0
+        && request.resource.data.createdAt == request.time;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
     match /chanda_collections/{collectionId} {
       allow create: if isActive()
         && request.resource.data.collectedByUid == request.auth.uid;
