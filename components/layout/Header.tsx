@@ -20,7 +20,7 @@ export default function Header() {
   const inPortal = pathname.startsWith("/admin") || pathname.startsWith("/member");
   const portalLinks = role === "admin" ? adminLinks : memberLinks;
   const closeMenu = () => setIsMobileMenuOpen(false);
-  const handleSignOut = async () => { closeMenu(); await signOut(); router.push("/"); };
+  const handleSignOut = async () => { closeMenu(); try { await signOut(); } finally { router.replace("/"); } };
   const scrollToSection = (id: string) => { closeMenu(); const element = document.getElementById(id); if (element) element.scrollIntoView({ behavior: "smooth", block: "start" }); else window.location.assign(`/#${id}`); };
   const instagramIcon = (
     <a href={COLONY_BOIS_CONTACT.instagram.url} target="_blank" rel="noreferrer" aria-label="Colony Bois on Instagram"

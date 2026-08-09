@@ -2,21 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  collection, doc, onSnapshot, orderBy, query, runTransaction, updateDoc,
+  collection, doc, onSnapshot, orderBy, query, runTransaction,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { recordAudit } from "@/lib/audit";
 import { useAuth } from "@/lib/auth-context";
 import Card from "@/components/ui/Card";
 import WelcomeBanner from "@/components/layout/WelcomeBanner";
-import { sendDonationEmail, emailDate } from "@/lib/email";
 import TableExportButtons from "@/components/ui/TableExportButtons";
 
 type TsLike = { toDate?: () => Date } | string | null;
 type Donation = {
-  id: string; receiptNo?: string; residentName?: string; donorEmail?: string | null;
+  id: string; receiptNo?: string; residentName?: string; phone?: string;
   houseNo?: string; amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
-  collectorId?: string; collectorName?: string; emailStatus?: string;
+  collectorId?: string; collectorName?: string;
   status?: "pending_approval" | "approved" | "rejected";
   rejectionReason?: string | null;
   approvedByName?: string; approvedAt?: TsLike;
@@ -34,12 +33,6 @@ const STATUS_STYLE: Record<string, string> = {
   approved:         "bg-emerald-100 text-emerald-700",
   rejected:         "bg-rose-100 text-rose-700",
 };
-const EMAIL_BADGE: Record<string, string> = {
-  sent:     "bg-emerald-100 text-emerald-700",
-  failed:   "bg-rose-100 text-rose-700",
-  not_sent: "bg-slate-100 text-slate-500",
-  queued:   "bg-amber-100 text-amber-700",
-};
 
 type FilterStatus = "all" | "pending_approval" | "approved" | "rejected";
 type FilterMethod = "all" | "cash" | "upi";
@@ -50,7 +43,6 @@ export default function PaymentLedgerPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
-  const [emailingId, setEmailingId] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Donation | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [receiptTarget, setReceiptTarget] = useState<Donation | null>(null);
@@ -118,42 +110,6 @@ export default function PaymentLedgerPage() {
   const exportHeaders = ["Volunteer", "Donor", "House", "Amount", "Method", "Date", "Reference", "Status", "Approved By", "Note"];
   const exportRows = filtered.map(d => [d.collectorName || "", d.residentName || "", d.houseNo || "", `₹${Number(d.amount || 0).toLocaleString()}`, d.paymentMode?.toUpperCase() || "", dateFmt(d.createdAt), d.receiptNo || d.id.slice(0, 10), d.status === "pending_approval" ? "Pending" : d.status === "approved" ? "Approved" : "Rejected", d.approvedByName || "", d.note || ""]);
 
-  // ── Email trigger ──────────────────────────────────────────────────────────
-  const triggerEmail = async (d: Donation) => {
-    if (!d.donorEmail || !uid || !adminName) return;
-    setEmailingId(d.id);
-    try {
-      await updateDoc(doc(db, "donations", d.id), { emailStatus: "queued" });
-      const result = await sendDonationEmail({
-        type: "receipt",
-        to: d.donorEmail,
-        donorName: d.residentName ?? "Donor",
-        amount: d.amount ?? 0,
-        paymentMethod: (d.paymentMode ?? "cash").toUpperCase(),
-        date: emailDate(d.approvedAt ?? d.createdAt),
-        referenceId: d.receiptNo ?? d.id.slice(0, 10).toUpperCase(),
-        collectorName: d.collectorName,
-        targetCollection: "donations",
-        targetId: d.id,
-        triggeredBy: uid,
-        triggeredByName: adminName,
-      });
-      await updateDoc(doc(db, "donations", d.id), { emailStatus: result.ok ? "sent" : "failed" });
-      if (result.ok) {
-        await recordAudit({ actorId: uid, actorName: adminName, action: "Donation email sent", module: "Payment Ledger", targetId: d.id, newValue: { recipient: d.donorEmail, type: "receipt", status: "sent" } });
-      } else {
-        setError(`Collection approved, but the receipt email could not be sent${result.error ? `: ${result.error}` : "."}`);
-      }
-    } catch (err) {
-      // The collection approval has already committed. Keep the email retryable
-      // and do not report the approval itself as failed.
-      await updateDoc(doc(db, "donations", d.id), { emailStatus: "failed" }).catch(() => undefined);
-      setError(`Collection approved, but the receipt email could not be sent: ${err instanceof Error ? err.message : "Unknown email error"}`);
-    } finally {
-      setEmailingId(null);
-    }
-  };
-
   // ── Approve ────────────────────────────────────────────────────────────────
   const approve = async (d: Donation) => {
     if (!uid || !adminName || d.collectorId === uid) { setError("You cannot approve your own collection."); return; }
@@ -183,8 +139,6 @@ export default function PaymentLedgerPage() {
         tx.update(userRef, Object.fromEntries(Object.entries(inc).map(([k, v]) => [k, (Number(userData[k] ?? 0) + Number(v))])));
       });
       await recordAudit({ actorId: uid, actorName: adminName, action: "Collection Approved", module: "Payment Ledger", targetId: d.id, newValue: { volunteer: d.collectorName, donor: d.residentName, amount: `₹${d.amount}`, method: d.paymentMode, approvedBy: adminName } });
-      // Auto-send receipt email on approval if donor email available
-      if (d.donorEmail) await triggerEmail({ ...d, status: "approved", approvedAt: new Date().toISOString() });
     } catch (err) { setError(err instanceof Error ? err.message : "Approval failed."); }
     finally { setProcessing(null); }
   };
@@ -256,7 +210,7 @@ export default function PaymentLedgerPage() {
           <div className="overflow-x-auto">
             <table className="min-w-[1000px] w-full text-sm">
               <thead className="border-b border-orange-100 bg-orange-50/60">
-                <tr>{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Email", "Actions"].map(h => (
+                <tr>{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Actions"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}</tr>
               </thead>
@@ -267,6 +221,7 @@ export default function PaymentLedgerPage() {
                     <td className="px-4 py-3">
                       <p className="font-semibold text-slate-800">{d.residentName || "—"}</p>
                       {d.houseNo && <p className="text-xs text-slate-400">{d.houseNo}</p>}
+                      {d.phone && <p className="text-xs text-slate-400">{d.phone}</p>}
                     </td>
                     <td className="px-4 py-3 font-black text-orange-600">₹{Number(d.amount || 0).toLocaleString()}</td>
                     <td className="px-4 py-3">
@@ -283,22 +238,6 @@ export default function PaymentLedgerPage() {
                       </span>
                       {d.status === "approved" && d.approvedByName && <p className="mt-0.5 text-xs text-slate-400">by {d.approvedByName}</p>}
                       {d.status === "rejected" && d.rejectionReason && <p className="mt-0.5 text-xs text-rose-400">{d.rejectionReason}</p>}
-                    </td>
-                    {/* Email */}
-                    <td className="px-4 py-3">
-                      {d.donorEmail ? (
-                        <div className="space-y-1">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${EMAIL_BADGE[d.emailStatus ?? "not_sent"] ?? EMAIL_BADGE.not_sent}`}>
-                            {d.emailStatus === "sent" ? "✓ Sent" : d.emailStatus === "failed" ? "✕ Failed" : d.emailStatus === "queued" ? "… Queued" : "Not sent"}
-                          </span>
-                          {(d.emailStatus === "failed" || d.emailStatus === "not_sent") && d.status === "approved" && (
-                            <button disabled={emailingId === d.id} onClick={() => void triggerEmail(d)}
-                              className="block rounded-lg border border-orange-300 bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700 hover:bg-orange-100 disabled:opacity-50">
-                              {emailingId === d.id ? "Sending…" : "Retry Email"}
-                            </button>
-                          )}
-                        </div>
-                      ) : <span className="text-xs text-slate-400">No email</span>}
                     </td>
                     {/* Actions */}
                     <td className="px-4 py-3">
@@ -349,6 +288,7 @@ export default function PaymentLedgerPage() {
             <div className="space-y-2 text-sm text-slate-700">
               {([
                 ["Donor", receiptTarget.residentName],
+                receiptTarget.phone ? ["Phone", receiptTarget.phone] : null,
                 receiptTarget.houseNo ? ["House", receiptTarget.houseNo] : null,
                 ["Amount", `₹${Number(receiptTarget.amount || 0).toLocaleString()}`],
                 ["Method", (receiptTarget.paymentMode ?? "").toUpperCase()],
@@ -359,7 +299,6 @@ export default function PaymentLedgerPage() {
                 receiptTarget.rejectionReason ? ["Reason", receiptTarget.rejectionReason] : null,
                 receiptTarget.note ? ["Note", receiptTarget.note] : null,
                 ["Reference", receiptTarget.receiptNo ?? receiptTarget.id.slice(0, 10)],
-                ["Email", receiptTarget.donorEmail ? `${receiptTarget.emailStatus ?? "not sent"} → ${receiptTarget.donorEmail}` : "No email provided"],
               ] as ([string, string | undefined] | null)[]).filter((r): r is [string, string] => r !== null).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-2">
                   <span className="font-semibold flex-none">{k}</span>

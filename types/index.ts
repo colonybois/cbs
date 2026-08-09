@@ -30,7 +30,7 @@ export interface ComityMember {
 
 export interface UserProfile { uid: string; name: string; phone: string; role: UserRole; status: UserStatus; createdAt: string; }
 export interface ChandaCollection { id: string; collectedByUid: string; collectedByName: string; residentName: string; houseOrFlatNo: string; phone: string; amount: number; paymentMode: PaymentMode; status: ChandaStatus; settledByAdmin?: string; settledAt?: string; createdAt: string; }
-export interface OnlineChandaSubmission { id: string; residentName: string; phone: string; amount: number; transactionId: string; screenshotUrl: string; status: OnlinePaymentStatus; verifiedBy?: string; verifiedAt?: string; createdAt: string; }
+export interface OnlineChandaSubmission { id: string; residentName: string; phone: string; amount: number; screenshotUrl: string; status: OnlinePaymentStatus; verifiedBy?: string; verifiedAt?: string; createdAt: string; }
 export type EventCategory = "Pooja & Harathi" | "Cultural Activities & Competitions" | "Major Ceremonies";
 export interface PandalEvent { id: string; title: string; description: string; eventDate: string; timeSlot?: string; startTime?: string; endTime?: string; venue: string; category?: EventCategory; imageUrl?: string; prasadam?: string; coordinator?: string; sponsor?: string; coHost?: string; announcements?: string; featured?: boolean; published?: boolean; status?: "upcoming" | "completed"; createdAt: string; }
 export interface GalleryItem { id: string; title: string; caption: string; imageUrl: string; year: number; relatedEvent?: string; credit?: string; featured?: boolean; slideOrderIndex: number; status: "published" | "hidden"; uploadedBy: string; createdAt: string; }

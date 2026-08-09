@@ -13,7 +13,6 @@ export default function DonateSection() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
-  const [transactionId, setTransactionId] = useState("");
   const [message, setMessage] = useState("");
   const [showPublicName, setShowPublicName] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
@@ -24,6 +23,11 @@ export default function DonateSection() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const screenshotUploadRef = useRef<HTMLButtonElement>(null);
 
   const enteredAmount = Number(amount);
   const hasValidAmount = Number.isFinite(enteredAmount) && enteredAmount > 0;
@@ -54,22 +58,26 @@ export default function DonateSection() {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (name.trim().length === 0) { setError("Please enter your name."); return; }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Please enter a valid email address."); return; }
-    if (phone.length !== 10) { setError("Enter a valid 10-digit mobile number."); return; }
-    if (Number(amount) <= 0) { setError("Enter a valid amount."); return; }
+    const warnAndFocus = (message: string, input: HTMLElement | null) => {
+      setError(message);
+      input?.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => input?.focus(), 250);
+    };
+    if (name.trim().length === 0) { warnAndFocus("Please enter your name before submitting your Chanda.", nameInputRef.current); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { warnAndFocus("Please enter a valid email address, or clear this optional field.", emailInputRef.current); return; }
+    if (phone.length !== 10) { warnAndFocus("Please enter your valid 10-digit mobile number before submitting your Chanda.", phoneInputRef.current); return; }
+    if (Number(amount) <= 0) { warnAndFocus("Please enter the Chanda amount before submitting.", amountInputRef.current); return; }
+    if (!screenshot) { warnAndFocus("Please upload your payment screenshot before submitting your Chanda.", screenshotUploadRef.current); return; }
 
     setLoading(true); setError("");
     try {
-      let screenshotUrl: string | null = null;
-      if (screenshot) screenshotUrl = await uploadImageToStorage(screenshot, "payment-proofs");
+      const screenshotUrl = await uploadImageToStorage(screenshot, "payment-proofs");
 
       const ref = await addDoc(collection(db, "online_donations"), {
         residentName: name.trim(),
         donorEmail: email.trim() || null,
         phone,
         amount: Number(amount),
-        transactionId: transactionId.trim() || null,
         message: message.trim() || null,
         paymentMethod: "upi",
         screenshotUrl,
@@ -96,7 +104,7 @@ export default function DonateSection() {
       }
 
       setSuccess(true);
-      setName(""); setEmail(""); setPhone(""); setAmount(""); setTransactionId(""); setMessage("");
+      setName(""); setEmail(""); setPhone(""); setAmount(""); setMessage("");
       setShowPublicName(false); setScreenshot(null); setScreenshotPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (reason) {
@@ -128,20 +136,20 @@ export default function DonateSection() {
           <p className="mt-2 text-slate-500">Scan the QR, pay, then fill in your details below.</p>
         </div>
 
-        <form onSubmit={submit} className="rounded-2xl border border-orange-100 bg-orange-50/40 p-6 shadow-sm md:p-8 space-y-5">
+        <form noValidate onSubmit={submit} className="rounded-2xl border border-orange-100 bg-orange-50/40 p-6 shadow-sm md:p-8 space-y-5">
           <p className="text-sm font-semibold text-slate-600">After paying, fill in your details:</p>
 
           {/* Name + Phone */}
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-semibold text-slate-700">
               Your Name *
-              <input required value={name} onChange={e => setName(e.target.value)} placeholder="Full name"
+              <input ref={nameInputRef} value={name} onChange={e => { setName(e.target.value); setError(""); }} placeholder="Full name"
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
             </label>
             <label className="block text-sm font-semibold text-slate-700">
               Mobile Number *
-              <input required maxLength={10} inputMode="numeric" value={phone}
-                onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} placeholder="10-digit number"
+              <input ref={phoneInputRef} maxLength={10} inputMode="numeric" value={phone}
+                onChange={e => { setPhone(e.target.value.replace(/\D/g, "")); setError(""); }} placeholder="10-digit number"
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
             </label>
           </div>
@@ -149,7 +157,7 @@ export default function DonateSection() {
           {/* Email */}
           <label className="block text-sm font-semibold text-slate-700">
             Email Address <span className="font-normal text-slate-400">(for thank-you email — optional)</span>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            <input ref={emailInputRef} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }}
               placeholder="yourname@example.com"
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </label>
@@ -157,7 +165,7 @@ export default function DonateSection() {
           {/* Amount */}
           <label className="block text-sm font-semibold text-slate-700">
             Amount Paid (₹) *
-            <input required type="number" min="1" value={amount}
+            <input ref={amountInputRef} type="number" min="1" value={amount}
               onChange={e => { setAmount(e.target.value); setError(""); }} placeholder="e.g. 501"
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </label>
@@ -185,13 +193,6 @@ export default function DonateSection() {
           </div>
 
           <label className="block text-sm font-semibold text-slate-700">
-            UPI Reference / Transaction Number <span className="font-normal text-slate-400">(if available)</span>
-            <input value={transactionId} onChange={e => setTransactionId(e.target.value)}
-              placeholder="Enter the UPI reference after payment"
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          </label>
-
-          <label className="block text-sm font-semibold text-slate-700">
             Message or payment details <span className="font-normal text-slate-400">(optional)</span>
             <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3}
               placeholder="Any details you would like us to know"
@@ -200,7 +201,7 @@ export default function DonateSection() {
 
           {/* Screenshot upload */}
           <div>
-            <p className="text-sm font-semibold text-slate-700">Payment Screenshot <span className="font-normal text-slate-400">(optional but recommended)</span></p>
+            <p className="text-sm font-semibold text-slate-700">Payment Screenshot *</p>
             {screenshotPreview ? (
               <div className="mt-2 relative inline-block">
                 <img src={screenshotPreview} alt="Payment screenshot preview" className="h-48 rounded-xl border border-orange-200 object-contain bg-white" />
@@ -208,12 +209,12 @@ export default function DonateSection() {
                   className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600">✕</button>
               </div>
             ) : (
-              <button type="button" onClick={() => fileInputRef.current?.click()}
+              <button ref={screenshotUploadRef} type="button" onClick={() => fileInputRef.current?.click()}
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-white py-5 text-sm font-semibold text-orange-600 hover:border-orange-400 hover:bg-orange-50 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4 4 4"/>
                 </svg>
-                Upload payment screenshot
+                Upload payment screenshot *
               </button>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScreenshotChange} />

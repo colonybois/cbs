@@ -47,7 +47,13 @@ export async function sendDonationEmail(
 
   // Map to the template variables in the existing EmailJS template
   const templateParams = {
+    // EmailJS only uses the variable configured in the template's “To Email”
+    // field. Keep the common aliases while existing templates are migrated.
     to_email:       opts.to,
+    to:             opts.to,
+    email:          opts.to,
+    recipient_email: opts.to,
+    recipient:      opts.to,
     donor_name:     opts.donorName     || "Donor",
     amount:         opts.amount != null ? `₹${Number(opts.amount).toLocaleString("en-IN")}` : "—",
     payment_method: opts.paymentMethod || "UPI",

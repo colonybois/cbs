@@ -8,7 +8,7 @@ import LogDonationForm from "@/components/member/LogDonationForm";
 
 type TsLike = { toDate?: () => Date } | string | null;
 type Donation = {
-  id: string; receiptNo?: string; residentName?: string; houseNo?: string;
+  id: string; receiptNo?: string; residentName?: string; phone?: string; houseNo?: string;
   amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
   paymentVerificationStatus?: "verified" | "pending" | "failed" | "not_applicable";
   paymentTransactionId?: string;
@@ -67,6 +67,7 @@ function ReceiptModal({ d, name, onClose }: { d: Donation; name: string; onClose
         <div className="space-y-2 text-sm text-slate-700">
           {[
             ["Donor", d.residentName],
+            d.phone ? ["Phone", d.phone] : null,
             d.houseNo ? ["House", d.houseNo] : null,
             ["Amount", `₹${Number(d.amount || 0).toLocaleString()}`],
             ["Method", (d.paymentMode ?? "").toUpperCase()],

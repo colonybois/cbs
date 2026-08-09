@@ -41,6 +41,8 @@ service cloud.firestore {
         && request.resource.data.phone is string
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
+        && request.resource.data.screenshotUrl is string
+        && request.resource.data.screenshotUrl.size() > 0
         && request.resource.data.status == 'pending';
       // Allow public read of approved donations where donor consented to public display (for Supporters section)
       allow get: if isAdmin() || (resource.data.status == 'approved' && resource.data.showPublicName == true);

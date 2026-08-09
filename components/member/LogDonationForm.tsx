@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import { db } from "@/lib/firebase";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 
 type Props = { collectorId: string; collectorName: string };
-type Receipt = { receiptNo: string; residentName: string; donorEmail: string; amount: number; paymentMode: "cash" | "upi"; houseNo: string };
+type Receipt = { receiptNo: string; residentName: string; phone: string; amount: number; paymentMode: "cash" | "upi"; houseNo: string };
 
 const genRef = () => `COL-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
 
 export default function LogDonationForm({ collectorId, collectorName }: Props) {
   const [residentName, setResidentName] = useState("");
-  const [donorEmail, setDonorEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [houseNo, setHouseNo] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "upi">("cash");
   const [amount, setAmount] = useState("");
@@ -21,14 +21,22 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
   const [loading, setLoading] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<Receipt | null>(null);
   const [error, setError] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   const upiValue = `upi://pay?pa=${COLONY_BOIS_CONTACT.upiId}&pn=${encodeURIComponent("Colony Bois Rampuram")}&am=${amount || "0"}&cu=INR&tn=${encodeURIComponent(`Chanda from ${residentName || "Donor"} | ref:${collectorId.slice(-6)}`)}`;
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!residentName.trim()) { setError("Enter donor name."); return; }
-    if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) { setError("Enter a valid email address."); return; }
-    if (!amount || Number(amount) <= 0) { setError("Enter a valid amount."); return; }
+    const warnAndFocus = (message: string, input: RefObject<HTMLInputElement | null>) => {
+      setError(message);
+      input.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => input.current?.focus(), 250);
+    };
+    if (!residentName.trim()) { warnAndFocus("Please enter the donor or resident name before submitting.", nameInputRef); return; }
+    if (phone.length !== 10) { warnAndFocus("Please enter a valid 10-digit donor phone number before submitting.", phoneInputRef); return; }
+    if (!amount || Number(amount) <= 0) { warnAndFocus("Please enter the Chanda amount before submitting.", amountInputRef); return; }
     setLoading(true); setError("");
     try {
       const value = Number(amount);
@@ -36,7 +44,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
       await addDoc(collection(db, "donations"), {
         receiptNo,
         residentName: residentName.trim(),
-        donorEmail: donorEmail.trim() || null,
+        phone,
         houseNo: houseNo.trim(),
         paymentMode,
         amount: value,
@@ -44,12 +52,11 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         collectorId,
         collectorName,
         status: "pending_approval",
-        emailStatus: "not_sent",
         paymentVerificationStatus: paymentMode === "cash" ? "not_applicable" : "pending",
         createdAt: serverTimestamp(),
       });
-      setLastReceipt({ receiptNo, residentName: residentName.trim(), donorEmail: donorEmail.trim(), amount: value, paymentMode, houseNo: houseNo.trim() });
-      setResidentName(""); setDonorEmail(""); setHouseNo(""); setAmount(""); setNote("");
+      setLastReceipt({ receiptNo, residentName: residentName.trim(), phone, amount: value, paymentMode, houseNo: houseNo.trim() });
+      setResidentName(""); setPhone(""); setHouseNo(""); setAmount(""); setNote("");
     } catch (err) {
       setError(err instanceof Error ? `Failed: ${err.message}` : "Failed to log collection. Try again.");
     } finally { setLoading(false); }
@@ -65,13 +72,13 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           <p className="text-xs font-black uppercase tracking-widest text-orange-600 mb-2">Collection Receipt</p>
           <div className="space-y-1 text-slate-700">
             <p><span className="font-semibold">Donor:</span> {lastReceipt.residentName}</p>
+            <p><span className="font-semibold">Phone:</span> {lastReceipt.phone}</p>
             {lastReceipt.houseNo && <p><span className="font-semibold">House:</span> {lastReceipt.houseNo}</p>}
             <p><span className="font-semibold">Amount:</span> <strong className="text-orange-600">₹{lastReceipt.amount.toLocaleString()}</strong></p>
             <p><span className="font-semibold">Method:</span> {lastReceipt.paymentMode.toUpperCase()}</p>
             <p><span className="font-semibold">Collected by:</span> {collectorName}</p>
             <p><span className="font-semibold">Status:</span> <span className="text-amber-600 font-bold">Pending Approval</span></p>
             <p><span className="font-semibold">Reference:</span> <span className="font-mono text-xs">{lastReceipt.receiptNo}</span></p>
-            {lastReceipt.donorEmail && <p className="text-xs text-slate-500">Receipt email will be sent after admin approval.</p>}
           </div>
         </div>
         <button onClick={() => setLastReceipt(null)}
@@ -85,19 +92,19 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
   return (
     <div className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm">
       <h2 className="mb-4 text-lg font-black text-slate-900">📋 Record Chanda Collection</h2>
-      <form onSubmit={submit} className="space-y-4">
+      <form noValidate onSubmit={submit} className="space-y-4">
 
         {/* Donor name */}
         <label className="block text-sm font-semibold text-slate-700">
           Donor / Resident Name *
-          <input required value={residentName} onChange={e => setResidentName(e.target.value)} placeholder="e.g. Ramesh Kumar"
+          <input ref={nameInputRef} value={residentName} onChange={e => { setResidentName(e.target.value); setError(""); }} placeholder="e.g. Ramesh Kumar"
             className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </label>
 
-        {/* Email */}
+        {/* Phone */}
         <label className="block text-sm font-semibold text-slate-700">
-          Donor Email Address <span className="font-normal text-slate-400">(for receipt email — optional)</span>
-          <input type="email" value={donorEmail} onChange={e => setDonorEmail(e.target.value)} placeholder="donor@example.com"
+          Donor / Resident Phone Number *
+          <input ref={phoneInputRef} required type="tel" inputMode="numeric" maxLength={10} value={phone} onChange={e => { setPhone(e.target.value.replace(/\D/g, "")); setError(""); }} placeholder="10-digit mobile number"
             className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </label>
 
@@ -110,7 +117,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </label>
           <label className="block text-sm font-semibold text-slate-700">
             Amount (₹) *
-            <input required min="1" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 501"
+            <input ref={amountInputRef} min="1" type="number" value={amount} onChange={e => { setAmount(e.target.value); setError(""); }} placeholder="e.g. 501"
               className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </label>
         </div>
@@ -173,7 +180,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         </button>
         <p className="text-center text-xs text-slate-400">
           {paymentMode === "cash" ? "Cash collection will be sent for admin approval." : "UPI payment will remain pending until an administrator verifies it."}
-          {donorEmail ? " Confirmation email will be sent after approval." : ""}
+          No email is sent for member-recorded collections.
         </p>
       </form>
     </div>

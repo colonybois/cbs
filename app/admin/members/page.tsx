@@ -11,7 +11,7 @@ import TableExportButtons from "@/components/ui/TableExportButtons";
 type TsLike = { toDate?: () => Date } | string | null;
 interface Member { id: string; name: string; phone: string; upiTotal: number; cashTotal: number; pendingHandover: number; }
 interface Donation {
-  id: string; receiptNo?: string; residentName?: string; houseNo?: string;
+  id: string; receiptNo?: string; residentName?: string; phone?: string; houseNo?: string;
   amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
   collectorId?: string;
   status?: "pending_approval" | "approved" | "rejected" | "flagged"; createdAt?: TsLike;
@@ -251,6 +251,7 @@ export default function MembersManagementPage() {
                   <div key={d.id} className="flex items-start justify-between gap-2 rounded-xl border border-slate-100 bg-white p-3 text-sm">
                     <div>
                       <p className="font-bold text-slate-900">{d.residentName || "Donor"}</p>
+                      {d.phone && <p className="text-xs text-slate-400">{d.phone}</p>}
                       {d.houseNo && <p className="text-xs text-slate-400">{d.houseNo}</p>}
                       <p className="text-xs text-slate-400">{dateFmt(d.createdAt)}</p>
                       <p className="text-xs font-mono text-slate-400">Ref: {d.paymentTransactionId ?? d.receiptNo ?? d.id.slice(0, 10)}</p>
