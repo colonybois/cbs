@@ -84,8 +84,10 @@ export default function ChandaTransactionsPage() {
       const publicRef = doc(db, "public_supporters", transaction.id);
       if (status === "approved" && transaction.showPublicName === true) {
         batch.set(publicRef, { displayName: transaction.residentName || "Anonymous supporter", message: transaction.message || null, approvalStatus: "approved", publicDisplay: true, updatedAt: new Date().toISOString() });
+        batch.set(doc(db, "public_highest_donors", transaction.id), { donorName: transaction.residentName || "Anonymous donor", amount: Number(transaction.amount || 0), category: "self" });
       } else {
         batch.delete(publicRef);
+        batch.delete(doc(db, "public_highest_donors", transaction.id));
       }
       await batch.commit();
       await recordAudit({ actorId: uid, actorName: name, action: status === "approved" ? "Approved Chanda transaction" : "Rejected Chanda transaction", module: "Chanda Transactions", targetId: transaction.id, previousValue: { status: transaction.status || "pending" }, newValue: { status }, approvalStatus: status });

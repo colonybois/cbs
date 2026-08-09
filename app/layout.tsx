@@ -5,9 +5,10 @@ import Footer from "@/components/layout/Footer";
 import NetworkBanner from "@/components/NetworkBanner";
 import { AuthProvider } from "@/lib/auth-context";
 import SiteVisitTracker from "@/components/SiteVisitTracker";
+import HighestDonorPlaque from "@/components/HighestDonorPlaque";
 export const metadata: Metadata = {
   title: "Colony Bois | Vinayaka Chavathi",
   description: "Pandal events and transparent Chanda collection.",
   icons: { icon: "/assets/logo.png" },
 };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en"><body><AuthProvider><SiteVisitTracker/><NetworkBanner/><Header/><main className="mx-auto min-h-[calc(100vh-136px)] max-w-7xl px-5 py-8">{children}</main><Footer/></AuthProvider></body></html>; }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en"><body><AuthProvider><SiteVisitTracker/><NetworkBanner/><Header/><main className="mx-auto min-h-[calc(100vh-136px)] max-w-7xl px-5 py-8">{children}</main><HighestDonorPlaque/><Footer/></AuthProvider></body></html>; }

@@ -136,6 +136,7 @@ export default function PaymentLedgerPage() {
         if (paymentMode !== "cash" && paymentMode !== "upi") throw new Error("This collection has an invalid payment method.");
         const userData = userSnap.data();
         tx.update(ref, { status: "approved", approvedBy: uid, approvedByName: adminName, approvedAt: new Date().toISOString() });
+        tx.set(doc(db, "public_highest_donors", d.id), { donorName: snap.data()?.residentName || "Anonymous donor", amount, category: "member" });
         const inc = paymentMode === "cash"
           ? { cashTotal: amount, pendingHandover: amount }
           : { upiTotal: amount };

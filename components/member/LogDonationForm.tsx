@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent, type RefObject } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { collection, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import { db } from "@/lib/firebase";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
@@ -45,9 +45,13 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
       const value = Number(amount);
       const receiptNo = genRef();
       const isUpi = paymentMode === "upi";
-      await addDoc(collection(db, "donations"), {
+      const donationRef = doc(collection(db, "donations"));
+      const batch = writeBatch(db);
+      batch.set(donationRef, {
         receiptNo,
         residentName: residentName.trim(),
+        donorName: residentName.trim(),
+        collectionSource: "volunteer_assisted",
         phone,
         paymentMode,
         amount: value,
@@ -61,6 +65,8 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         ...(isUpi ? { approvedByName: "System (UPI)", approvedAt: serverTimestamp() } : {}),
         createdAt: serverTimestamp(),
       });
+      if (isUpi) batch.set(doc(db, "public_highest_donors", donationRef.id), { donorName: residentName.trim(), amount: value, category: "member" });
+      await batch.commit();
       setLastReceipt({ receiptNo, residentName: residentName.trim(), phone, amount: value, paymentMode });
       setResidentName(""); setPhone(""); setAmount(""); setNote("");
     } catch (err) {

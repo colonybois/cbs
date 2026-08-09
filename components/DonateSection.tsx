@@ -82,6 +82,8 @@ export default function DonateSection() {
 
       await addDoc(collection(db, "online_donations"), {
         residentName: name.trim(),
+        donorName: name.trim(),
+        collectionSource: "direct_self",
         donorEmail: email.trim() || null,
         phone,
         amount: Number(amount),
