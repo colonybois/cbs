@@ -26,7 +26,6 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (paymentMode !== "cash") return;
     if (!residentName.trim()) { setError("Enter donor name."); return; }
     if (!amount || Number(amount) <= 0) { setError("Enter a valid amount."); return; }
     setLoading(true); setError("");
@@ -43,7 +42,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         collectorId,
         collectorName,
         status: "pending_approval",
-        paymentVerificationStatus: "not_applicable",
+        paymentVerificationStatus: paymentMode === "cash" ? "not_applicable" : "pending",
         createdAt: serverTimestamp(),
       });
       setLastReceipt({ receiptNo, residentName: residentName.trim(), amount: value, paymentMode, houseNo: houseNo.trim() });
@@ -126,9 +125,8 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </div>
         </div>
 
-        {/* A QR code alone cannot prove payment. A provider webhook must create
-            UPI records after verification, so this path intentionally has no
-            submit or "I've paid" action. */}
+        {/* A QR code alone cannot prove payment. UPI submissions are kept
+            pending until an administrator verifies the payment. */}
         {paymentMode === "upi" && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-center space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Scan QR / pay via UPI</p>
@@ -148,7 +146,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
                 </a>
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-800">
                   <p className="font-bold">🟡 Waiting for payment</p>
-                  <p className="mt-1">This payment will be submitted only after the connected payment provider verifies it. No collection record has been created yet.</p>
+                  <p className="mt-1">After payment, submit the collection for administrator verification. A submitted record is not treated as a successful payment.</p>
                 </div>
               </>
             ) : (
@@ -167,13 +165,13 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
 
         {error && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
 
-        {paymentMode === "cash" && <>
+        <>
           <button type="submit" disabled={loading}
-            className="w-full rounded-xl bg-orange-500 py-4 text-base font-black text-white shadow-md hover:bg-orange-600 disabled:opacity-50 transition">
-            {loading ? "Submitting…" : "Submit Collection →"}
+            className={`w-full rounded-xl py-4 text-base font-black text-white shadow-md disabled:opacity-50 transition ${paymentMode === "cash" ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+            {loading ? "Submitting…" : paymentMode === "cash" ? "Submit Collection →" : "Submit UPI Payment for Verification →"}
           </button>
-          <p className="text-center text-xs text-slate-400">Cash collection will be sent for admin approval.</p>
-        </>}
+          <p className="text-center text-xs text-slate-400">{paymentMode === "cash" ? "Cash collection will be sent for admin approval." : "UPI payment will remain pending until an administrator verifies it."}</p>
+        </>
       </form>
     </div>
   );
