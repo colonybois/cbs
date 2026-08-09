@@ -8,7 +8,7 @@ import { COLONY_BOIS_ASSETS } from "@/lib/assets";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 
 const publicSections = [["Home", "hero"], ["Events", "events"], ["Gallery & Flashback", "gallery"], ["Chanda / Contribution", "donate"], ["About Us", "about"], ["Committee Management Rosters", "comity"], ["Contact", "contact"]] as const;
-const adminLinks = [["Dashboard", "/admin/dashboard"], ["Chanda Transactions", "/admin/chanda-transactions"], ["Payment Ledger", "/admin/payment-ledger"], ["Members", "/admin/members"], ["Events", "/admin/events"], ["Gallery", "/admin/gallery"], ["Festival Days", "/admin/festival-days"], ["Comity Members", "/admin/comity-members"], ["Approvals", "/admin/approvals"], ["Admin Audit Log", "/admin/audit-log"]] as const;
+const adminLinks = [["Dashboard", "/admin/dashboard"], ["Chanda Transactions", "/admin/chanda-transactions"], ["Payment Ledger", "/admin/payment-ledger"], ["Members", "/admin/members"], ["Events", "/admin/events"], ["Gallery", "/admin/gallery"], ["Festival Days", "/admin/festival-days"], ["Comity Members", "/admin/comity-members"], ["Approvals", "/admin/approvals"], ["Email Settings", "/admin/email-settings"], ["Admin Audit Log", "/admin/audit-log"]] as const;
 const memberLinks = [["My Dashboard", "/member/dashboard"]] as const;
 
 export default function Header() {

@@ -115,6 +115,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /site_settings/email {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
     match /festival_days/{dayId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -123,6 +128,14 @@ service cloud.firestore {
     match /comity_members/{memberId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Email logs — admin read-only, written server-side via API route
+    // (the API route uses the Firebase client SDK with the admin's auth token)
+    match /email_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isActive();
+      allow update, delete: if false;
     }
 
     match /{document=**} {

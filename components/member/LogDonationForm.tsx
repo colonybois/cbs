@@ -7,12 +7,13 @@ import { db } from "@/lib/firebase";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 
 type Props = { collectorId: string; collectorName: string };
-type Receipt = { receiptNo: string; residentName: string; amount: number; paymentMode: "cash" | "upi"; houseNo: string; paymentVerified?: boolean };
+type Receipt = { receiptNo: string; residentName: string; donorEmail: string; amount: number; paymentMode: "cash" | "upi"; houseNo: string };
 
 const genRef = () => `COL-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
 
 export default function LogDonationForm({ collectorId, collectorName }: Props) {
   const [residentName, setResidentName] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
   const [houseNo, setHouseNo] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "upi">("cash");
   const [amount, setAmount] = useState("");
@@ -20,13 +21,13 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
   const [loading, setLoading] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<Receipt | null>(null);
   const [error, setError] = useState("");
-  const [showQr, setShowQr] = useState(false);
 
   const upiValue = `upi://pay?pa=${COLONY_BOIS_CONTACT.upiId}&pn=${encodeURIComponent("Colony Bois Rampuram")}&am=${amount || "0"}&cu=INR&tn=${encodeURIComponent(`Chanda from ${residentName || "Donor"} | ref:${collectorId.slice(-6)}`)}`;
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!residentName.trim()) { setError("Enter donor name."); return; }
+    if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) { setError("Enter a valid email address."); return; }
     if (!amount || Number(amount) <= 0) { setError("Enter a valid amount."); return; }
     setLoading(true); setError("");
     try {
@@ -35,6 +36,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
       await addDoc(collection(db, "donations"), {
         receiptNo,
         residentName: residentName.trim(),
+        donorEmail: donorEmail.trim() || null,
         houseNo: houseNo.trim(),
         paymentMode,
         amount: value,
@@ -42,11 +44,12 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         collectorId,
         collectorName,
         status: "pending_approval",
+        emailStatus: "not_sent",
         paymentVerificationStatus: paymentMode === "cash" ? "not_applicable" : "pending",
         createdAt: serverTimestamp(),
       });
-      setLastReceipt({ receiptNo, residentName: residentName.trim(), amount: value, paymentMode, houseNo: houseNo.trim() });
-      setResidentName(""); setHouseNo(""); setAmount(""); setNote(""); setShowQr(false);
+      setLastReceipt({ receiptNo, residentName: residentName.trim(), donorEmail: donorEmail.trim(), amount: value, paymentMode, houseNo: houseNo.trim() });
+      setResidentName(""); setDonorEmail(""); setHouseNo(""); setAmount(""); setNote("");
     } catch (err) {
       setError(err instanceof Error ? `Failed: ${err.message}` : "Failed to log collection. Try again.");
     } finally { setLoading(false); }
@@ -58,8 +61,6 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         <span className="text-4xl">✅</span>
         <h3 className="text-lg font-black text-slate-900">Collection Submitted!</h3>
         <p className="text-sm text-orange-700 font-semibold">Waiting for Admin Approval</p>
-
-        {/* Digital receipt */}
         <div className="mx-auto mt-3 max-w-xs rounded-xl border border-orange-200 bg-white p-4 text-left text-sm">
           <p className="text-xs font-black uppercase tracking-widest text-orange-600 mb-2">Collection Receipt</p>
           <div className="space-y-1 text-slate-700">
@@ -70,9 +71,9 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
             <p><span className="font-semibold">Collected by:</span> {collectorName}</p>
             <p><span className="font-semibold">Status:</span> <span className="text-amber-600 font-bold">Pending Approval</span></p>
             <p><span className="font-semibold">Reference:</span> <span className="font-mono text-xs">{lastReceipt.receiptNo}</span></p>
+            {lastReceipt.donorEmail && <p className="text-xs text-slate-500">Receipt email will be sent after admin approval.</p>}
           </div>
         </div>
-
         <button onClick={() => setLastReceipt(null)}
           className="mt-2 w-full rounded-xl bg-orange-500 py-3 font-bold text-white hover:bg-orange-600 text-sm">
           Log Another Collection
@@ -84,13 +85,19 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
   return (
     <div className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm">
       <h2 className="mb-4 text-lg font-black text-slate-900">📋 Record Chanda Collection</h2>
-
       <form onSubmit={submit} className="space-y-4">
+
         {/* Donor name */}
         <label className="block text-sm font-semibold text-slate-700">
           Donor / Resident Name *
-          <input required value={residentName} onChange={e => setResidentName(e.target.value)}
-            placeholder="e.g. Ramesh Kumar"
+          <input required value={residentName} onChange={e => setResidentName(e.target.value)} placeholder="e.g. Ramesh Kumar"
+            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </label>
+
+        {/* Email */}
+        <label className="block text-sm font-semibold text-slate-700">
+          Donor Email Address <span className="font-normal text-slate-400">(for receipt email — optional)</span>
+          <input type="email" value={donorEmail} onChange={e => setDonorEmail(e.target.value)} placeholder="donor@example.com"
             className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </label>
 
@@ -103,9 +110,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </label>
           <label className="block text-sm font-semibold text-slate-700">
             Amount (₹) *
-            <input required min="1" type="number" value={amount}
-              onChange={e => { setAmount(e.target.value); setShowQr(false); }}
-              placeholder="e.g. 501"
+            <input required min="1" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 501"
               className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </label>
         </div>
@@ -114,7 +119,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         <div>
           <p className="text-sm font-semibold text-slate-700 mb-2">Payment Method *</p>
           <div className="grid grid-cols-2 gap-3">
-            <button type="button" onClick={() => { setPaymentMode("cash"); setShowQr(false); }}
+            <button type="button" onClick={() => setPaymentMode("cash")}
               className={`rounded-xl border-2 py-3 text-base font-bold transition ${paymentMode === "cash" ? "border-orange-500 bg-orange-500 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
               💵 Cash
             </button>
@@ -125,8 +130,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </div>
         </div>
 
-        {/* A QR code alone cannot prove payment. UPI submissions are kept
-            pending until an administrator verifies the payment. */}
+        {/* UPI QR panel */}
         {paymentMode === "upi" && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-center space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Scan QR / pay via UPI</p>
@@ -140,13 +144,10 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
                   <p className="text-xs text-slate-500">For {residentName || "Donor"}</p>
                   <p className="mt-1 text-xs text-slate-400">UPI: <span className="font-semibold">{COLONY_BOIS_CONTACT.upiId}</span></p>
                 </div>
-                <a href={upiValue}
-                  className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">
-                  Open UPI App →
-                </a>
+                <a href={upiValue} className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">Open UPI App →</a>
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-800">
                   <p className="font-bold">🟡 Waiting for payment</p>
-                  <p className="mt-1">After payment, submit the collection for administrator verification. A submitted record is not treated as a successful payment.</p>
+                  <p className="mt-1">After payment, submit the collection for administrator verification.</p>
                 </div>
               </>
             ) : (
@@ -155,6 +156,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </div>
         )}
 
+        {/* Note (cash only) */}
         {paymentMode === "cash" && (
           <label className="block text-sm font-semibold text-slate-700">
             Receipt / Collection Note <span className="font-normal text-slate-400">(optional)</span>
@@ -165,13 +167,14 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
 
         {error && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
 
-        <>
-          <button type="submit" disabled={loading}
-            className={`w-full rounded-xl py-4 text-base font-black text-white shadow-md disabled:opacity-50 transition ${paymentMode === "cash" ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-700"}`}>
-            {loading ? "Submitting…" : paymentMode === "cash" ? "Submit Collection →" : "Submit UPI Payment for Verification →"}
-          </button>
-          <p className="text-center text-xs text-slate-400">{paymentMode === "cash" ? "Cash collection will be sent for admin approval." : "UPI payment will remain pending until an administrator verifies it."}</p>
-        </>
+        <button type="submit" disabled={loading}
+          className={`w-full rounded-xl py-4 text-base font-black text-white shadow-md disabled:opacity-50 transition ${paymentMode === "cash" ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+          {loading ? "Submitting…" : paymentMode === "cash" ? "Submit Collection →" : "Submit UPI Payment for Verification →"}
+        </button>
+        <p className="text-center text-xs text-slate-400">
+          {paymentMode === "cash" ? "Cash collection will be sent for admin approval." : "UPI payment will remain pending until an administrator verifies it."}
+          {donorEmail ? " Confirmation email will be sent after approval." : ""}
+        </p>
       </form>
     </div>
   );

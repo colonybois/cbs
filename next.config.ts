@@ -1,3 +1,7 @@
 import type { NextConfig } from "next";
-const nextConfig: NextConfig = {};
+
+const nextConfig: NextConfig = {
+  serverExternalPackages: ["resend"],
+};
+
 export default nextConfig;

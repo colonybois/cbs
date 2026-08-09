@@ -2,19 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  collection, doc, onSnapshot, orderBy, query, runTransaction, serverTimestamp,
+  collection, doc, onSnapshot, orderBy, query, runTransaction, updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { recordAudit } from "@/lib/audit";
 import { useAuth } from "@/lib/auth-context";
 import Card from "@/components/ui/Card";
 import WelcomeBanner from "@/components/layout/WelcomeBanner";
+import { sendDonationEmail, emailDate } from "@/lib/email";
 
 type TsLike = { toDate?: () => Date } | string | null;
 type Donation = {
-  id: string; receiptNo?: string; residentName?: string; houseNo?: string;
-  amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
-  collectorId?: string; collectorName?: string;
+  id: string; receiptNo?: string; residentName?: string; donorEmail?: string | null;
+  houseNo?: string; amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
+  collectorId?: string; collectorName?: string; emailStatus?: string;
   status?: "pending_approval" | "approved" | "rejected";
   rejectionReason?: string | null;
   approvedByName?: string; approvedAt?: TsLike;
@@ -29,8 +30,14 @@ const dateFmt = (v: TsLike | undefined) => {
 
 const STATUS_STYLE: Record<string, string> = {
   pending_approval: "bg-amber-100 text-amber-700",
-  approved: "bg-emerald-100 text-emerald-700",
-  rejected: "bg-rose-100 text-rose-700",
+  approved:         "bg-emerald-100 text-emerald-700",
+  rejected:         "bg-rose-100 text-rose-700",
+};
+const EMAIL_BADGE: Record<string, string> = {
+  sent:     "bg-emerald-100 text-emerald-700",
+  failed:   "bg-rose-100 text-rose-700",
+  not_sent: "bg-slate-100 text-slate-500",
+  queued:   "bg-amber-100 text-amber-700",
 };
 
 type FilterStatus = "all" | "pending_approval" | "approved" | "rejected";
@@ -42,12 +49,12 @@ export default function PaymentLedgerPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [emailingId, setEmailingId] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Donation | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [receiptTarget, setReceiptTarget] = useState<Donation | null>(null);
   const [error, setError] = useState("");
 
-  // Filters
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [methodFilter, setMethodFilter] = useState<FilterMethod>("all");
@@ -94,21 +101,48 @@ export default function PaymentLedgerPage() {
     });
   }, [donations, statusFilter, methodFilter, collectorFilter, dateFilter, fromDate, toDate, search]);
 
-  // Summary
   const all = donations;
-  const approved = all.filter(d => d.status === "approved");
-  const pending = all.filter(d => d.status === "pending_approval");
-  const rejected = all.filter(d => d.status === "rejected");
+  const approvedD = all.filter(d => d.status === "approved");
+  const pendingD  = all.filter(d => d.status === "pending_approval");
+  const rejectedD = all.filter(d => d.status === "rejected");
   const sum = (arr: Donation[]) => arr.reduce((s, d) => s + Number(d.amount || 0), 0);
   const summary = [
-    [`₹${sum(approved).toLocaleString()}`, "Total Approved"],
-    [`₹${sum(pending).toLocaleString()}`, "Pending Approval"],
-    [`₹${sum(approved.filter(d => d.paymentMode === "cash")).toLocaleString()}`, "Approved Cash"],
-    [`₹${sum(approved.filter(d => d.paymentMode === "upi")).toLocaleString()}`, "Approved UPI"],
-    [`₹${sum(rejected).toLocaleString()}`, "Rejected Amount"],
+    [`₹${sum(approvedD).toLocaleString()}`, "Total Approved"],
+    [`₹${sum(pendingD).toLocaleString()}`, "Pending Approval"],
+    [`₹${sum(approvedD.filter(d => d.paymentMode === "cash")).toLocaleString()}`, "Approved Cash"],
+    [`₹${sum(approvedD.filter(d => d.paymentMode === "upi")).toLocaleString()}`, "Approved UPI"],
+    [`₹${sum(rejectedD).toLocaleString()}`, "Rejected Amount"],
     [String(new Set(all.map(d => d.collectorId)).size), "Collectors"],
   ];
 
+  // ── Email trigger ──────────────────────────────────────────────────────────
+  const triggerEmail = async (d: Donation) => {
+    if (!d.donorEmail || !uid || !adminName) return;
+    setEmailingId(d.id);
+    await updateDoc(doc(db, "donations", d.id), { emailStatus: "queued" });
+    const result = await sendDonationEmail({
+      type: "receipt",
+      to: d.donorEmail,
+      donorName: d.residentName ?? "Donor",
+      amount: d.amount ?? 0,
+      paymentMethod: (d.paymentMode ?? "cash").toUpperCase(),
+      date: emailDate(d.approvedAt ?? d.createdAt),
+      referenceId: d.receiptNo ?? d.id.slice(0, 10).toUpperCase(),
+      collectorName: d.collectorName,
+      verificationStatus: "Verified & Approved ✅",
+      targetCollection: "donations",
+      targetId: d.id,
+      triggeredBy: uid,
+      triggeredByName: adminName,
+    });
+    await updateDoc(doc(db, "donations", d.id), { emailStatus: result.ok ? "sent" : "failed" });
+    if (result.ok) {
+      await recordAudit({ actorId: uid, actorName: adminName, action: "Donation email sent", module: "Payment Ledger", targetId: d.id, newValue: { recipient: d.donorEmail, type: "receipt", status: "sent" } });
+    }
+    setEmailingId(null);
+  };
+
+  // ── Approve ────────────────────────────────────────────────────────────────
   const approve = async (d: Donation) => {
     if (!uid || !adminName || d.collectorId === uid) { setError("You cannot approve your own collection."); return; }
     if (d.status !== "pending_approval") return;
@@ -119,29 +153,21 @@ export default function PaymentLedgerPage() {
         const snap = await tx.get(ref);
         if (snap.data()?.status !== "pending_approval") throw new Error("Already processed.");
         const userRef = doc(db, "users", d.collectorId!);
-        tx.update(ref, {
-          status: "approved",
-          approvedBy: uid, approvedByName: adminName,
-          approvedAt: new Date().toISOString(),
-        });
-        // Increment totals only on approval
+        tx.update(ref, { status: "approved", approvedBy: uid, approvedByName: adminName, approvedAt: new Date().toISOString() });
         const inc = d.paymentMode === "cash"
-          ? { cashTotal: (snap.data()?.amount ?? 0), pendingHandover: (snap.data()?.amount ?? 0) }
-          : { upiTotal: (snap.data()?.amount ?? 0) };
+          ? { cashTotal: snap.data()?.amount ?? 0, pendingHandover: snap.data()?.amount ?? 0 }
+          : { upiTotal: snap.data()?.amount ?? 0 };
         const userData = (await tx.get(userRef)).data() ?? {};
-        tx.update(userRef, Object.fromEntries(
-          Object.entries(inc).map(([k, v]) => [k, (Number(userData[k] ?? 0) + Number(v))])
-        ));
+        tx.update(userRef, Object.fromEntries(Object.entries(inc).map(([k, v]) => [k, (Number(userData[k] ?? 0) + Number(v))])));
       });
-      await recordAudit({
-        actorId: uid, actorName: adminName, action: "Collection Approved",
-        module: "Payment Ledger", targetId: d.id,
-        newValue: { volunteer: d.collectorName, donor: d.residentName, amount: `₹${d.amount}`, method: d.paymentMode, approvedBy: adminName },
-      });
+      await recordAudit({ actorId: uid, actorName: adminName, action: "Collection Approved", module: "Payment Ledger", targetId: d.id, newValue: { volunteer: d.collectorName, donor: d.residentName, amount: `₹${d.amount}`, method: d.paymentMode, approvedBy: adminName } });
+      // Auto-send receipt email on approval if donor email available
+      if (d.donorEmail) await triggerEmail({ ...d, status: "approved" });
     } catch (err) { setError(err instanceof Error ? err.message : "Approval failed."); }
     finally { setProcessing(null); }
   };
 
+  // ── Reject ─────────────────────────────────────────────────────────────────
   const reject = async () => {
     if (!rejectTarget || !uid || !adminName) return;
     setProcessing(rejectTarget.id); setError("");
@@ -150,73 +176,39 @@ export default function PaymentLedgerPage() {
         const ref = doc(db, "donations", rejectTarget.id);
         const snap = await tx.get(ref);
         if (snap.data()?.status !== "pending_approval") throw new Error("Already processed.");
-        tx.update(ref, {
-          status: "rejected",
-          rejectionReason: rejectReason.trim() || null,
-          rejectedBy: uid, rejectedByName: adminName,
-          rejectedAt: new Date().toISOString(),
-        });
+        tx.update(ref, { status: "rejected", rejectionReason: rejectReason.trim() || null, rejectedBy: uid, rejectedByName: adminName, rejectedAt: new Date().toISOString() });
       });
-      await recordAudit({
-        actorId: uid, actorName: adminName, action: "Collection Rejected",
-        module: "Payment Ledger", targetId: rejectTarget.id,
-        newValue: { volunteer: rejectTarget.collectorName, donor: rejectTarget.residentName, amount: `₹${rejectTarget.amount}`, reason: rejectReason || "No reason given" },
-      });
+      await recordAudit({ actorId: uid, actorName: adminName, action: "Collection Rejected", module: "Payment Ledger", targetId: rejectTarget.id, newValue: { volunteer: rejectTarget.collectorName, donor: rejectTarget.residentName, amount: `₹${rejectTarget.amount}`, reason: rejectReason || "No reason given" } });
       setRejectTarget(null); setRejectReason("");
     } catch (err) { setError(err instanceof Error ? err.message : "Rejection failed."); }
     finally { setProcessing(null); }
   };
 
-  const clearFilters = () => {
-    setSearch(""); setStatusFilter("all"); setMethodFilter("all");
-    setCollectorFilter("all"); setDateFilter("all"); setFromDate(""); setToDate("");
-  };
+  const clearFilters = () => { setSearch(""); setStatusFilter("all"); setMethodFilter("all"); setCollectorFilter("all"); setDateFilter("all"); setFromDate(""); setToDate(""); };
 
   return (
     <div className="space-y-7">
       <WelcomeBanner title="Payment Ledger" text="Review and approve volunteer door-to-door collections. Only approved collections count toward the official total." />
 
-      {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        {summary.map(([v, l]) => (
-          <Card key={l} className="bg-white p-4">
-            <p className="text-xl font-black text-orange-600">{v}</p>
-            <p className="mt-1 text-xs text-slate-500">{l}</p>
-          </Card>
-        ))}
+        {summary.map(([v, l]) => <Card key={l} className="bg-white p-4"><p className="text-xl font-black text-orange-600">{v}</p><p className="mt-1 text-xs text-slate-500">{l}</p></Card>)}
       </div>
 
-      {/* Filters */}
       <Card className="p-5 space-y-3">
         <div className="flex flex-wrap gap-3">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search donor, volunteer, reference…"
-            className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as FilterStatus)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
-            <option value="all">All Status</option>
-            <option value="pending_approval">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search donor, volunteer, reference…" className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as FilterStatus)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+            <option value="all">All Status</option><option value="pending_approval">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option>
           </select>
-          <select value={methodFilter} onChange={e => setMethodFilter(e.target.value as FilterMethod)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
-            <option value="all">All Methods</option>
-            <option value="cash">Cash</option>
-            <option value="upi">UPI</option>
+          <select value={methodFilter} onChange={e => setMethodFilter(e.target.value as FilterMethod)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+            <option value="all">All Methods</option><option value="cash">Cash</option><option value="upi">UPI</option>
           </select>
-          <select value={collectorFilter} onChange={e => setCollectorFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+          <select value={collectorFilter} onChange={e => setCollectorFilter(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
             <option value="all">All Volunteers</option>
-            {collectors.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            {collectors.map(([id, cname]) => <option key={id} value={id}>{cname}</option>)}
           </select>
-          <select value={dateFilter} onChange={e => setDateFilter(e.target.value as FilterDate)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
-            <option value="all">All Dates</option>
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="custom">Custom range</option>
+          <select value={dateFilter} onChange={e => setDateFilter(e.target.value as FilterDate)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+            <option value="all">All Dates</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="custom">Custom range</option>
           </select>
           {(search || statusFilter !== "all" || methodFilter !== "all" || collectorFilter !== "all" || dateFilter !== "all") && (
             <button onClick={clearFilters} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Clear Filters</button>
@@ -232,7 +224,6 @@ export default function PaymentLedgerPage() {
 
       {error && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
 
-      {/* Table */}
       <Card className="overflow-hidden">
         {loading ? (
           <div className="space-y-2 p-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-orange-50" />)}</div>
@@ -240,9 +231,9 @@ export default function PaymentLedgerPage() {
           <p className="p-10 text-center text-slate-500">No collections match these filters.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[900px] w-full text-sm">
+            <table className="min-w-[1000px] w-full text-sm">
               <thead className="border-b border-orange-100 bg-orange-50/60">
-                <tr>{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Actions"].map(h => (
+                <tr>{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Email", "Actions"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}</tr>
               </thead>
@@ -262,6 +253,7 @@ export default function PaymentLedgerPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap text-xs">{dateFmt(d.createdAt)}</td>
                     <td className="px-4 py-3 text-slate-500 max-w-32 truncate">{d.note || "—"}</td>
+                    {/* Status */}
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_STYLE[d.status ?? "pending_approval"] ?? "bg-slate-100 text-slate-500"}`}>
                         {d.status === "pending_approval" ? "Pending" : d.status === "approved" ? "Approved" : "Rejected"}
@@ -269,20 +261,30 @@ export default function PaymentLedgerPage() {
                       {d.status === "approved" && d.approvedByName && <p className="mt-0.5 text-xs text-slate-400">by {d.approvedByName}</p>}
                       {d.status === "rejected" && d.rejectionReason && <p className="mt-0.5 text-xs text-rose-400">{d.rejectionReason}</p>}
                     </td>
+                    {/* Email */}
+                    <td className="px-4 py-3">
+                      {d.donorEmail ? (
+                        <div className="space-y-1">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${EMAIL_BADGE[d.emailStatus ?? "not_sent"] ?? EMAIL_BADGE.not_sent}`}>
+                            {d.emailStatus === "sent" ? "✓ Sent" : d.emailStatus === "failed" ? "✕ Failed" : d.emailStatus === "queued" ? "… Queued" : "Not sent"}
+                          </span>
+                          {(d.emailStatus === "failed" || d.emailStatus === "not_sent") && d.status === "approved" && (
+                            <button disabled={emailingId === d.id} onClick={() => void triggerEmail(d)}
+                              className="block rounded-lg border border-orange-300 bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700 hover:bg-orange-100 disabled:opacity-50">
+                              {emailingId === d.id ? "Sending…" : "Retry Email"}
+                            </button>
+                          )}
+                        </div>
+                      ) : <span className="text-xs text-slate-400">No email</span>}
+                    </td>
+                    {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setReceiptTarget(d)}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50">Receipt</button>
+                        <button onClick={() => setReceiptTarget(d)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50">Receipt</button>
                         {d.status === "pending_approval" && (
                           <>
-                            <button disabled={processing === d.id} onClick={() => void approve(d)}
-                              className="rounded-lg bg-emerald-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-600 disabled:opacity-50">
-                              {processing === d.id ? "…" : "Approve"}
-                            </button>
-                            <button disabled={processing === d.id} onClick={() => { setRejectTarget(d); setRejectReason(""); }}
-                              className="rounded-lg border border-rose-300 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50">
-                              Reject
-                            </button>
+                            <button disabled={processing === d.id} onClick={() => void approve(d)} className="rounded-lg bg-emerald-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-600 disabled:opacity-50">{processing === d.id ? "…" : "Approve"}</button>
+                            <button disabled={processing === d.id} onClick={() => { setRejectTarget(d); setRejectReason(""); }} className="rounded-lg border border-rose-300 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50">Reject</button>
                           </>
                         )}
                       </div>
@@ -300,21 +302,14 @@ export default function PaymentLedgerPage() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4" onClick={() => setRejectTarget(null)}>
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-slate-900">Reject this collection?</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              <strong>{rejectTarget.collectorName}</strong> · {rejectTarget.residentName} · <strong className="text-orange-600">₹{rejectTarget.amount?.toLocaleString()}</strong>
-            </p>
+            <p className="mt-1 text-sm text-slate-500"><strong>{rejectTarget.collectorName}</strong> · {rejectTarget.residentName} · <strong className="text-orange-600">₹{rejectTarget.amount?.toLocaleString()}</strong></p>
             <label className="mt-4 block text-sm font-semibold text-slate-700">
-              Reason for rejection <span className="font-normal text-slate-400">(optional)</span>
-              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3}
-                placeholder="e.g. incorrect amount, missing cash…"
-                className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+              Reason <span className="font-normal text-slate-400">(optional)</span>
+              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} placeholder="e.g. incorrect amount…" className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
             </label>
             <div className="mt-4 flex gap-3">
               <button onClick={() => setRejectTarget(null)} className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
-              <button onClick={() => void reject()} disabled={!!processing}
-                className="flex-1 rounded-xl bg-rose-500 py-2 text-sm font-bold text-white hover:bg-rose-600 disabled:opacity-50">
-                {processing ? "Rejecting…" : "Reject"}
-              </button>
+              <button onClick={() => void reject()} disabled={!!processing} className="flex-1 rounded-xl bg-rose-500 py-2 text-sm font-bold text-white hover:bg-rose-600 disabled:opacity-50">{processing ? "Rejecting…" : "Reject"}</button>
             </div>
           </div>
         </div>
@@ -329,24 +324,23 @@ export default function PaymentLedgerPage() {
               <button onClick={() => setReceiptTarget(null)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
             <div className="space-y-2 text-sm text-slate-700">
-              {(
-                [
-                  ["Donor", receiptTarget.residentName],
-                  receiptTarget.houseNo ? ["House", receiptTarget.houseNo] : null,
-                  ["Amount", `₹${Number(receiptTarget.amount || 0).toLocaleString()}`],
-                  ["Method", (receiptTarget.paymentMode ?? "").toUpperCase()],
-                  ["Collected by", receiptTarget.collectorName],
-                  ["Date", dateFmt(receiptTarget.createdAt)],
-                  ["Status", receiptTarget.status === "approved" ? "✅ Verified" : receiptTarget.status === "rejected" ? "❌ Rejected" : "⏳ Pending Approval"],
-                  receiptTarget.approvedByName ? ["Approved by", receiptTarget.approvedByName] : null,
-                  receiptTarget.rejectionReason ? ["Reason", receiptTarget.rejectionReason] : null,
-                  receiptTarget.note ? ["Note", receiptTarget.note] : null,
-                  ["Reference", receiptTarget.receiptNo ?? receiptTarget.id.slice(0, 10)],
-                ] as ([string, string | undefined] | null)[]
-              ).filter((row): row is [string, string] => row !== null).map(([k, v]) => (
+              {([
+                ["Donor", receiptTarget.residentName],
+                receiptTarget.houseNo ? ["House", receiptTarget.houseNo] : null,
+                ["Amount", `₹${Number(receiptTarget.amount || 0).toLocaleString()}`],
+                ["Method", (receiptTarget.paymentMode ?? "").toUpperCase()],
+                ["Collected by", receiptTarget.collectorName],
+                ["Date", dateFmt(receiptTarget.createdAt)],
+                ["Status", receiptTarget.status === "approved" ? "✅ Verified" : receiptTarget.status === "rejected" ? "❌ Rejected" : "⏳ Pending"],
+                receiptTarget.approvedByName ? ["Approved by", receiptTarget.approvedByName] : null,
+                receiptTarget.rejectionReason ? ["Reason", receiptTarget.rejectionReason] : null,
+                receiptTarget.note ? ["Note", receiptTarget.note] : null,
+                ["Reference", receiptTarget.receiptNo ?? receiptTarget.id.slice(0, 10)],
+                ["Email", receiptTarget.donorEmail ? `${receiptTarget.emailStatus ?? "not sent"} → ${receiptTarget.donorEmail}` : "No email provided"],
+              ] as ([string, string | undefined] | null)[]).filter((r): r is [string, string] => r !== null).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-2">
                   <span className="font-semibold flex-none">{k}</span>
-                  <span className="text-right">{v}</span>
+                  <span className="text-right text-slate-600">{v}</span>
                 </div>
               ))}
             </div>
