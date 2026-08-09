@@ -1,30 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-type Supporter = { id: string; residentName: string; showPublicName: boolean };
+type Supporter = { id: string; displayName: string; message?: string | null };
 
 export default function SupportersSection() {
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(
-      query(collection(db, "online_donations"), where("status", "==", "approved")),
+      collection(db, "public_supporters"),
       snap => {
         setSupporters(
           snap.docs
-            .map(d => ({ id: d.id, residentName: d.data().residentName as string, showPublicName: d.data().showPublicName as boolean }))
-            .filter(d => d.showPublicName === true)
+            .map(d => ({ id: d.id, displayName: d.data().displayName as string, message: d.data().message as string | null }))
+            .filter(d => d.displayName)
         );
-        setLoading(false);
+        setError(""); setLoading(false);
       },
-      () => setLoading(false)
+      () => { setError("Unable to load supporters right now."); setLoading(false); }
     );
     return unsub;
   }, []);
@@ -63,7 +64,7 @@ export default function SupportersSection() {
         </div>
       )}
 
-      {!loading && supporters.length === 0 && (
+      {!loading && !error && supporters.length === 0 && (
         <div className="mt-7 rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-8 text-center">
           <p className="text-2xl">🙏</p>
           <p className="mt-2 font-bold text-slate-900">Supporters will appear here</p>
@@ -73,7 +74,9 @@ export default function SupportersSection() {
         </div>
       )}
 
-      {!loading && supporters.length > 0 && (
+      {!loading && error && <p className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
+
+      {!loading && !error && supporters.length > 0 && (
         <div className="relative mt-7">
           {canLeft && (
             <button onClick={() => scroll("left")} aria-label="Scroll left"
@@ -99,7 +102,7 @@ export default function SupportersSection() {
                 className="flex flex-none items-center gap-2 rounded-2xl border border-orange-200 bg-white px-4 py-3 shadow-sm shadow-orange-100/50"
               >
                 <span className="text-lg">❤️</span>
-                <span className="whitespace-nowrap font-bold text-slate-900">{s.residentName}</span>
+                <span className="whitespace-nowrap font-bold text-slate-900">{s.displayName}</span>
               </div>
             ))}
           </div>

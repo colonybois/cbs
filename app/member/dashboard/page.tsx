@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import LogDonationForm from "@/components/member/LogDonationForm";
@@ -12,7 +12,7 @@ type Donation = {
   amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
   paymentVerificationStatus?: "verified" | "pending" | "failed" | "not_applicable";
   paymentTransactionId?: string;
-  status?: string; createdAt?: TsLike;
+  status?: "pending_approval" | "approved" | "rejected" | "flagged"; createdAt?: TsLike;
   approvedByName?: string; approvedAt?: TsLike;
 };
 
@@ -21,16 +21,22 @@ const dateFmt = (v: TsLike | undefined) => {
   const d = typeof v === "string" ? new Date(v) : v?.toDate?.();
   return d?.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) ?? "—";
 };
+const dateOf = (v: TsLike | undefined) => {
+  if (!v) return null;
+  return typeof v === "string" ? new Date(v) : v.toDate?.() ?? null;
+};
 
 const STATUS_STYLE: Record<string, string> = {
   pending_approval: "bg-amber-100 text-amber-700",
   approved:         "bg-emerald-100 text-emerald-700",
   rejected:         "bg-rose-100 text-rose-700",
+  flagged:          "bg-violet-100 text-violet-700",
 };
 const STATUS_LABEL: Record<string, string> = {
   pending_approval: "Pending Approval",
   approved:         "Approved ✅",
   rejected:         "Rejected ❌",
+  flagged:          "Flagged ⚠️",
 };
 
 function ReceiptModal({ d, name, onClose }: { d: Donation; name: string; onClose: () => void }) {
@@ -94,17 +100,23 @@ export default function MemberDashboard() {
   const { uid, name, loading: authLoading } = useAuth();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const [receipt, setReceipt] = useState<Donation | null>(null);
   // Real-time approval notification
   const [justApproved, setJustApproved] = useState<Donation | null>(null);
   const prevStatusRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
-    if (!uid) return;
+    if (!uid) { setDonations([]); setLoading(false); return; }
+    setLoading(true); setLoadError("");
     const unsub = onSnapshot(
-      query(collection(db, "donations"), where("collectorId", "==", uid), orderBy("createdAt", "desc")),
+      query(collection(db, "donations"), where("collectorId", "==", uid)),
       snap => {
-        const next = snap.docs.map(d => ({ id: d.id, ...d.data() } as Donation));
+        const next = snap.docs.map(d => ({ id: d.id, ...d.data() } as Donation)).sort((a, b) => {
+          const at = dateOf(a.createdAt); const bt = dateOf(b.createdAt);
+          return (bt?.getTime() ?? 0) - (at?.getTime() ?? 0);
+        });
 
         // Detect any donation that just flipped to 'approved'
         next.forEach(d => {
@@ -119,10 +131,10 @@ export default function MemberDashboard() {
         setDonations(next);
         setLoading(false);
       },
-      () => setLoading(false)
+      () => { setLoadError("Unable to load your collection records. Please try again."); setLoading(false); }
     );
     return unsub;
-  }, [uid]);
+  }, [uid, reloadKey]);
 
   if (authLoading) return <p className="text-slate-600">Loading…</p>;
   if (!uid) return <p className="text-slate-600">Please sign in to access your dashboard.</p>;
@@ -201,14 +213,20 @@ export default function MemberDashboard() {
           {loading && (
             <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-orange-50" />)}</div>
           )}
-          {!loading && donations.length === 0 && (
+          {!loading && loadError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
+              <p className="font-bold text-rose-700">{loadError}</p>
+              <button onClick={() => setReloadKey(value => value + 1)} className="mt-3 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white">Reload records</button>
+            </div>
+          )}
+          {!loading && !loadError && donations.length === 0 && (
             <div className="rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-8 text-center">
               <p className="text-2xl">📋</p>
-              <p className="mt-2 font-bold text-slate-900">No collections yet</p>
+              <p className="mt-2 font-bold text-slate-900">No collection records yet</p>
               <p className="mt-1 text-sm text-slate-500">Your logged collections will appear here.</p>
             </div>
           )}
-          {!loading && donations.length > 0 && (
+          {!loading && !loadError && donations.length > 0 && (
             <div className="space-y-2">
               {donations.map(d => (
                 <div key={d.id}
@@ -217,6 +235,7 @@ export default function MemberDashboard() {
                   <div className="min-w-0">
                     <p className="font-bold text-slate-900 truncate">{d.residentName || "Donor"}</p>
                     <p className="text-xs text-slate-400">{dateFmt(d.createdAt)}</p>
+                    <p className="text-xs font-semibold text-slate-500">{(d.paymentMode ?? "cash").toUpperCase()} · Ref: {d.paymentTransactionId ?? d.receiptNo ?? d.id.slice(0, 10)}</p>
                     {d.paymentMode === "upi" && <p className={`text-xs font-semibold ${d.paymentVerificationStatus === "verified" ? "text-emerald-700" : "text-amber-700"}`}>{d.paymentVerificationStatus === "verified" ? "UPI · Payment Verified" : "UPI · Payment Verification Pending"}</p>}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-none">

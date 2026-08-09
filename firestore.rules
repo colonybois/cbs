@@ -48,6 +48,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // This is a deliberately minimal public projection of approved donations.
+    // Full online_donations records remain private because they contain contact
+    // and payment information that must never be exposed to visitors.
+    match /public_supporters/{supporterId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Audit entries are append-only. Administrators may inspect them but cannot
     // alter or remove historical records from the client.
     match /admin_audit_logs/{logId} {
@@ -77,8 +85,10 @@ service cloud.firestore {
       // get: member reads their own; admin reads any
       allow get: if isActive()
         && (resource.data.collectorId == request.auth.uid || isAdmin());
-      // list: member queries filtered by their own collectorId; admin queries all
-      allow list: if isActive();
+      // Firestore evaluates this for every possible result, so member queries
+      // must constrain collectorId to their authenticated UID. Admins can list all.
+      allow list: if isActive()
+        && (resource.data.collectorId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
     }
 

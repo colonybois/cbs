@@ -14,8 +14,7 @@ export default function HomePage() {
       <section id="gallery" className="scroll-mt-24"><FlashbackSection /></section>
       <section id="events" className="scroll-mt-24"><EventsSection /></section>
       <section id="festival" className="scroll-mt-24"><FestivalJourney /></section>
-      <section id="supporters" className="scroll-mt-24"><SupportersSection /></section>
-      <section id="comity" className="scroll-mt-24"><ComityMembersSection /></section>
+      <section id="donate" className="scroll-mt-24"><DonateSection /></section>
       <section id="about" className="scroll-mt-24">
         <div className="mx-auto max-w-4xl rounded-3xl border border-orange-200 bg-orange-50/50 p-6 shadow-md shadow-orange-100/50 sm:p-10">
           <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Our story</p>
@@ -27,13 +26,11 @@ export default function HomePage() {
             <p>For us, Ganesh Chaturthi is more than just a festival. It is about <strong className="font-bold text-slate-900">friendship, unity, devotion, creativity, and bringing our entire colony together</strong> to create memories that we can cherish for years to come.</p>
             <p>From a small group of friends in 2020 to a celebration supported by an entire community, <strong className="font-bold text-slate-900">Colony Bois continues to grow with the blessings of Lord Ganesha and the love of our colony.</strong></p>
           </div>
-          <div className="mt-7 rounded-2xl border border-orange-200 bg-white px-5 py-4 text-center text-base font-bold leading-7 text-slate-900 sm:text-lg">
-            <p>🙏 Ganpati Bappa Morya!</p>
-            <p className="text-orange-700">❤️ One Colony. One Family. One Celebration.</p>
-          </div>
+          <div className="mt-7 rounded-2xl border border-orange-200 bg-white px-5 py-4 text-center text-base font-bold leading-7 text-slate-900 sm:text-lg"><p>🙏 Ganpati Bappa Morya!</p><p className="text-orange-700">❤️ One Colony. One Family. One Celebration.</p></div>
         </div>
       </section>
-      <section id="donate" className="scroll-mt-24"><DonateSection /></section>
+      <section id="supporters" className="scroll-mt-24"><SupportersSection /></section>
+      <section id="comity" className="scroll-mt-24"><ComityMembersSection /></section>
       <section id="contact" className="scroll-mt-24">
         <p className="text-sm font-bold uppercase tracking-widest text-orange-600">We&apos;re here to help</p>
         <h2 className="mt-2 text-3xl font-black text-slate-900">Contact Colony Bois</h2>
