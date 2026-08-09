@@ -15,7 +15,7 @@ type AuthState = {
   signedIn: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<UserRole>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
 };
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return role;
   };
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, role: UserRole) => {
     creatingProfileFor.current = "creating";
     try {
       const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -72,8 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: displayName,
         email: email.trim(),
         phone: "",
-        role: "member",
-        status: "pending",
+        role,
+        status: role === "super_admin" ? "active" : "pending",
         createdAt: new Date().toISOString(),
       });
     } catch (error) {

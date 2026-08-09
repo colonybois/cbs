@@ -12,7 +12,7 @@ export default function Login() {
   const { signIn, register, signOut } = useAuth(); const router = useRouter();
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [registrationsOpen, setRegistrationsOpen] = useState<boolean | null>(null);
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [role, setRole] = useState<UserRole>("member"); const [bootstrapCode, setBootstrapCode] = useState("");
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [role, setRole] = useState<UserRole>("member");
   const [error, setError] = useState(""); const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -32,14 +32,8 @@ export default function Login() {
       // read here: when Firestore is reconnecting that read can leave the form
       // stuck in its submitting state. The create rule still enforces this server-side.
       if (registrationsOpen === false) throw new Error("REGISTRATION_CLOSED");
-      if (role === "super_admin") {
-        const response = await fetch("/api/bootstrap-super-admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password, bootstrapCode }) });
-        const result = await response.json() as { error?: string };
-        if (!response.ok) throw new Error(result.error || "Unable to create the Super Admin account.");
-        routeFor(await signIn(email, password));
-        return;
-      }
-      await register(name, email, password);
+      await register(name, email, password, role);
+      if (role === "super_admin") { routeFor(await signIn(email, password)); return; }
       // New accounts must be approved before signing in; sign out only after the
       // profile write is complete so Firestore receives an authenticated request.
       await signOut();
@@ -64,7 +58,7 @@ export default function Login() {
       setError(msg);
     } finally { setSubmitting(false); }
   };
-  const changeMode = (next: "signin" | "register") => { setMode(next); setError(""); setBootstrapCode(""); };
+  const changeMode = (next: "signin" | "register") => { setMode(next); setError(""); };
 
   const regClosed = registrationsOpen === false;
 
@@ -88,7 +82,10 @@ export default function Login() {
         {mode === "register" && <input required value={name} onChange={event => setName(event.target.value)} placeholder="Full name" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>}
         <input required value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
         <input required minLength={6} value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password (at least 6 characters)" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
-        {mode === "register" && <><select value={role} onChange={event => setRole(event.target.value as UserRole)} className="w-full rounded-xl border border-orange-200 bg-white p-3"><option value="member">Volunteer / Member</option><option value="super_admin">Super Admin (bootstrap only)</option></select>{role === "super_admin" && <><input required value={bootstrapCode} onChange={event => setBootstrapCode(event.target.value)} type="password" placeholder="Super Admin bootstrap code" className="w-full rounded-xl border border-orange-200 bg-white p-3"/><p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-800">This creates an active Super Admin account. Remove the bootstrap environment variable after setup.</p></>}</>}
+        {mode === "register" && <>
+          <select value={role} onChange={event => setRole(event.target.value as UserRole)} className="w-full rounded-xl border border-orange-200 bg-white p-3"><option value="member">Volunteer / Member</option><option value="super_admin">Super Admin</option></select>
+          {role === "super_admin" && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-800">This creates an active Super Admin account immediately. Remove this registration option after setup.</p>}
+        </>}
         {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
         <Button disabled={submitting} type="submit" className="w-full">{submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</Button>
       </form>
