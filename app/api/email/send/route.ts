@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { thankYouEmail, receiptEmail, greetingEmail, type EmailType } from "@/lib/email-templates";
 
-// RESEND_API_KEY is a server-side env var — never exposed to the browser
+// RESEND_API_KEY — server-side env var, never exposed to the browser
+// Set in Vercel: Settings → Environment Variables → RESEND_API_KEY
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = "Colony Bois <notifications@colonybois.in>";
+
+// FROM address — use onboarding@resend.dev for testing until your domain is
+// verified in Resend. Once colonybois.in is verified, add RESEND_FROM_EMAIL
+// env var set to: "Colony Bois <notifications@colonybois.in>"
+const FROM = process.env.RESEND_FROM_EMAIL ?? "Colony Bois <onboarding@resend.dev>";
 
 export type SendEmailRequest = {
   type: EmailType;
