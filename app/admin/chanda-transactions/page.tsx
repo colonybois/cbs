@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase";
 import { recordAudit } from "@/lib/audit";
 import { useAuth } from "@/lib/auth-context";
 import { sendDonationEmail, emailDate } from "@/lib/email";
+import TableExportButtons from "@/components/ui/TableExportButtons";
 
 type TimestampLike = { toDate?: () => Date } | string | null;
 type Transaction = {
@@ -58,6 +59,8 @@ export default function ChandaTransactionsPage() {
   }), [transactions, filter, from, to]);
 
   const approved = transactions.filter(t => t.status === "approved");
+  const exportHeaders = ["Donor", "Phone", "Email", "Amount", "UPI Reference", "Date & Time", "Method", "Status", "Reviewed By", "Message"];
+  const exportRows = filtered.map(t => [t.residentName || "Unknown donor", t.phone || "", t.donorEmail || "", `₹${Number(t.amount || 0).toLocaleString()}`, t.transactionId || "", displayDate(t.createdAt), t.paymentMethod?.toUpperCase() || "UPI", statusLabel(t.status), t.verifiedByName || t.verifiedBy || "", t.message || ""]);
   const summary = [
     [`₹${approved.reduce((s, t) => s + Number(t.amount || 0), 0).toLocaleString()}`, "Total Chanda Collected"],
     [String(transactions.length), "Transactions"],
@@ -153,6 +156,7 @@ export default function ChandaTransactionsPage() {
           <label className="text-sm text-slate-600">From <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="ml-1 rounded-lg border border-slate-300 px-2 py-2" /></label>
           <label className="text-sm text-slate-600">To <input type="date" value={to} onChange={e => setTo(e.target.value)} className="ml-1 rounded-lg border border-slate-300 px-2 py-2" /></label>
           <button disabled={syncingSupporters} onClick={() => void syncExistingSupporters()} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 disabled:opacity-50">{syncingSupporters ? "Syncing…" : "Sync approved supporters"}</button>
+          <TableExportButtons title="Chanda Transactions" headers={exportHeaders} rows={exportRows} />
         </div>
         <p className="mt-3 text-xs text-slate-500">One-time backfill for approved donors who opted into public display.</p>
       </Card>

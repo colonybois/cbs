@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { recordAudit } from "@/lib/audit";
 import { useAuth } from "@/lib/auth-context";
 import Modal from "@/components/ui/Modal";
+import TableExportButtons from "@/components/ui/TableExportButtons";
 
 type TsLike = { toDate?: () => Date } | string | null;
 interface Member { id: string; name: string; phone: string; upiTotal: number; cashTotal: number; pendingHandover: number; }
@@ -125,12 +126,15 @@ export default function MembersManagementPage() {
   const outstanding = selected ? (selected.pendingHandover) : 0;
 
   const total = (m: Member) => m.upiTotal + m.cashTotal;
+  const exportHeaders = ["Collector", "Phone", "UPI / QR", "Cash", "Total", "Pending Cash"];
+  const exportRows = members.map(m => [m.name, m.phone, `₹${m.upiTotal.toLocaleString()}`, `₹${m.cashTotal.toLocaleString()}`, `₹${total(m).toLocaleString()}`, `₹${m.pendingHandover.toLocaleString()}`]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
         <h1 className="text-3xl font-black text-slate-900">Members Management</h1>
         <p className="mt-1 text-sm text-slate-500">Click a collector to view their ledger, transaction history, and manage cash handovers.</p>
+        <TableExportButtons className="mt-3" title="Member Management" headers={exportHeaders} rows={exportRows} />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

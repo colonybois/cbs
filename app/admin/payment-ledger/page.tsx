@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import Card from "@/components/ui/Card";
 import WelcomeBanner from "@/components/layout/WelcomeBanner";
 import { sendDonationEmail, emailDate } from "@/lib/email";
+import TableExportButtons from "@/components/ui/TableExportButtons";
 
 type TsLike = { toDate?: () => Date } | string | null;
 type Donation = {
@@ -114,6 +115,8 @@ export default function PaymentLedgerPage() {
     [`₹${sum(rejectedD).toLocaleString()}`, "Rejected Amount"],
     [String(new Set(all.map(d => d.collectorId)).size), "Collectors"],
   ];
+  const exportHeaders = ["Volunteer", "Donor", "House", "Amount", "Method", "Date", "Reference", "Status", "Approved By", "Note"];
+  const exportRows = filtered.map(d => [d.collectorName || "", d.residentName || "", d.houseNo || "", `₹${Number(d.amount || 0).toLocaleString()}`, d.paymentMode?.toUpperCase() || "", dateFmt(d.createdAt), d.receiptNo || d.id.slice(0, 10), d.status === "pending_approval" ? "Pending" : d.status === "approved" ? "Approved" : "Rejected", d.approvedByName || "", d.note || ""]);
 
   // ── Email trigger ──────────────────────────────────────────────────────────
   const triggerEmail = async (d: Donation) => {
@@ -220,6 +223,7 @@ export default function PaymentLedgerPage() {
             <label className="text-sm text-slate-600">To <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="ml-1 rounded-lg border border-slate-300 px-2 py-2 text-sm" /></label>
           </div>
         )}
+        <TableExportButtons title="Payment Ledger" headers={exportHeaders} rows={exportRows} />
       </Card>
 
       {error && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
