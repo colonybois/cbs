@@ -41,6 +41,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
     try {
       const value = Number(amount);
       const receiptNo = genRef();
+      const isUpi = paymentMode === "upi";
       await addDoc(collection(db, "donations"), {
         receiptNo,
         residentName: residentName.trim(),
@@ -51,8 +52,11 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         note: note.trim() || null,
         collectorId,
         collectorName,
-        status: "pending_approval",
-        paymentVerificationStatus: paymentMode === "cash" ? "not_applicable" : "pending",
+        // UPI collections are accepted immediately; cash stays in the admin
+        // queue until the physical handover is reviewed.
+        status: isUpi ? "approved" : "pending_approval",
+        paymentVerificationStatus: isUpi ? "verified" : "not_applicable",
+        ...(isUpi ? { approvedByName: "System (UPI)", approvedAt: serverTimestamp() } : {}),
         createdAt: serverTimestamp(),
       });
       setLastReceipt({ receiptNo, residentName: residentName.trim(), phone, amount: value, paymentMode, houseNo: houseNo.trim() });
@@ -67,7 +71,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
       <div className="rounded-2xl border-2 border-orange-400 bg-orange-50 p-6 text-center space-y-3">
         <span className="text-4xl">✅</span>
         <h3 className="text-lg font-black text-slate-900">Collection Submitted!</h3>
-        <p className="text-sm text-orange-700 font-semibold">Waiting for Admin Approval</p>
+        <p className={`text-sm font-semibold ${lastReceipt.paymentMode === "upi" ? "text-emerald-700" : "text-orange-700"}`}>{lastReceipt.paymentMode === "upi" ? "UPI Collection Approved" : "Waiting for Admin Approval"}</p>
         <div className="mx-auto mt-3 max-w-xs rounded-xl border border-orange-200 bg-white p-4 text-left text-sm">
           <p className="text-xs font-black uppercase tracking-widest text-orange-600 mb-2">Collection Receipt</p>
           <div className="space-y-1 text-slate-700">
@@ -77,7 +81,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
             <p><span className="font-semibold">Amount:</span> <strong className="text-orange-600">₹{lastReceipt.amount.toLocaleString()}</strong></p>
             <p><span className="font-semibold">Method:</span> {lastReceipt.paymentMode.toUpperCase()}</p>
             <p><span className="font-semibold">Collected by:</span> {collectorName}</p>
-            <p><span className="font-semibold">Status:</span> <span className="text-amber-600 font-bold">Pending Approval</span></p>
+            <p><span className="font-semibold">Status:</span> <span className={`font-bold ${lastReceipt.paymentMode === "upi" ? "text-emerald-600" : "text-amber-600"}`}>{lastReceipt.paymentMode === "upi" ? "Approved" : "Pending Approval"}</span></p>
             <p><span className="font-semibold">Reference:</span> <span className="font-mono text-xs">{lastReceipt.receiptNo}</span></p>
           </div>
         </div>
@@ -154,7 +158,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
                 <a href={upiValue} className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">Open UPI App →</a>
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-800">
                   <p className="font-bold">🟡 Waiting for payment</p>
-                  <p className="mt-1">After payment, submit the collection for administrator verification.</p>
+                  <p className="mt-1">After payment, submit the collection. UPI collections are approved immediately.</p>
                 </div>
               </>
             ) : (
@@ -179,7 +183,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           {loading ? "Submitting…" : paymentMode === "cash" ? "Submit Collection →" : "Submit UPI Payment for Verification →"}
         </button>
         <p className="text-center text-xs text-slate-400">
-          {paymentMode === "cash" ? "Cash collection will be sent for admin approval." : "UPI payment will remain pending until an administrator verifies it."}
+          {paymentMode === "cash" ? "Cash collection will be sent for admin approval." : "UPI collections are approved immediately."}
           No email is sent for member-recorded collections.
         </p>
       </form>

@@ -75,14 +75,19 @@ service cloud.firestore {
     }
 
     match /donations/{donationId} {
-      // Volunteer-submitted collections, including UPI proof, are always
-      // pending admin approval. A submitted UPI record is not proof of payment.
+      // Cash collections need an admin review. Member UPI collections are
+      // accepted immediately and therefore cannot be created as pending.
       allow create: if isActive()
         && request.resource.data.collectorId == request.auth.uid
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
-        && (request.resource.data.paymentMode == 'cash' || request.resource.data.paymentMode == 'upi')
-        && request.resource.data.status == 'pending_approval';
+        && (
+          (request.resource.data.paymentMode == 'cash'
+            && request.resource.data.status == 'pending_approval')
+          ||
+          (request.resource.data.paymentMode == 'upi'
+            && request.resource.data.status == 'approved')
+        );
       // get: member reads their own; admin reads any
       allow get: if isActive()
         && (resource.data.collectorId == request.auth.uid || isAdmin());
