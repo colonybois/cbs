@@ -84,7 +84,7 @@ export default function ComityMembersSection() {
   return (
     <div>
       <p className="text-sm font-bold uppercase tracking-widest text-orange-600">The team behind the celebration</p>
-      <h2 className="mt-2 text-3xl font-black text-slate-900">Comity Members</h2>
+      <h2 className="mt-2 text-3xl font-black text-slate-900">Committee Management Rosters</h2>
       <p className="mt-3 text-slate-600">Meet the dedicated committee that organizes Colony Bois Ganesh Chaturthi every year.</p>
 
       {/* Skeletons */}
