@@ -174,7 +174,7 @@ export default function AdminFestivalDays() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (role !== "admin" || !uid) { showToast("Admin access required.", "error"); return; }
+    if ((role !== "admin" && role !== "super_admin") || !uid) { showToast("Admin access required.", "error"); return; }
     if (!form.heading.trim()) { showToast("Please enter a heading.", "error"); return; }
     if (!editTarget && !coverFile) { showToast("Please upload a cover image.", "error"); return; }
     setSaving(true); setProgress(10);

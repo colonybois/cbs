@@ -28,7 +28,7 @@ export default function UploadHeroBgModal({ open, onClose }: { open: boolean; on
   };
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (role !== "admin") { setError("Only verified admins can change the hero background."); return; }
+    if (role !== "admin" && role !== "super_admin") { setError("Only verified admins can change the hero background."); return; }
     if (!file) { setError("Choose a background image first."); return; }
     setUploading(true); setError("");
     try {

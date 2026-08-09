@@ -118,7 +118,7 @@ export default function AdminComityMembers() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (role !== "admin" || !uid) { showToast("Admin access required.", "error"); return; }
+    if ((role !== "admin" && role !== "super_admin") || !uid) { showToast("Admin access required.", "error"); return; }
     if (!form.fullName.trim()) { showToast("Full name is required.", "error"); return; }
     setSaving(true);
     try {

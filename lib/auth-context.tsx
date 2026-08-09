@@ -15,7 +15,7 @@ type AuthState = {
   signedIn: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<UserRole>;
-  register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -38,9 +38,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return;
         }
-        const status: UserStatus = data?.status === "active" || data?.status === "pending" || data?.status === "rejected" || data?.status === "blocked" ? data.status : "pending";
+        const status: UserStatus = data?.status === "active" || data?.status === "pending" || data?.status === "rejected" || data?.status === "blocked" || data?.status === "suspended" ? data.status : "pending";
         if (status !== "active") { await firebaseSignOut(auth); setProfile(null); return; }
-        setProfile({ uid: user.uid, name: data?.name || user.displayName || user.email?.split("@")[0] || "Colony Bois Member", phone: data?.phone || "", role: data?.role === "admin" ? "admin" : "member", status, createdAt: data?.createdAt || "" });
+        setProfile({ uid: user.uid, name: data?.name || user.displayName || user.email?.split("@")[0] || "Colony Bois Member", phone: data?.phone || "", role: data?.role === "super_admin" ? "super_admin" : data?.role === "admin" ? "admin" : "member", status, createdAt: data?.createdAt || "" });
       } catch { await firebaseSignOut(auth); setProfile(null); }
       setLoading(false);
     });
@@ -54,13 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseSignOut(auth);
       throw new Error(data?.status === "pending" ? "PENDING_APPROVAL" : "ACCOUNT_NOT_ACTIVE");
     }
-    const role = data?.role === "admin" ? "admin" : "member";
-    if (role === "admin") {
+    const role = data?.role === "super_admin" ? "super_admin" : data?.role === "admin" ? "admin" : "member";
+    if (role === "admin" || role === "super_admin") {
       void recordAudit({ actorId: credential.user.uid, actorName: data?.name || credential.user.displayName || credential.user.email || "Admin", action: "Admin login", module: "Authentication" });
     }
     return role;
   };
-  const register = async (name: string, email: string, password: string, role: UserRole) => {
+  const register = async (name: string, email: string, password: string) => {
     creatingProfileFor.current = "creating";
     try {
       const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: displayName,
         email: email.trim(),
         phone: "",
-        role,
+        role: "member",
         status: "pending",
         createdAt: new Date().toISOString(),
       });
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
   const signOut = async () => {
-    if (profile?.role === "admin") {
+    if (profile?.role === "admin" || profile?.role === "super_admin") {
       try { await recordAudit({ actorId: profile.uid, actorName: profile.name, action: "Admin logout", module: "Authentication" }); } catch { /* Logging must not prevent sign-out. */ }
     }
     await firebaseSignOut(auth);

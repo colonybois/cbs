@@ -12,7 +12,7 @@ export default function Login() {
   const { signIn, register, signOut } = useAuth(); const router = useRouter();
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [registrationsOpen, setRegistrationsOpen] = useState<boolean | null>(null);
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [role, setRole] = useState<UserRole>("member");
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState("");
   const [error, setError] = useState(""); const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function Login() {
     return unsub;
   }, []);
 
-  const routeFor = (userRole: UserRole) => router.push(userRole === "admin" ? "/admin/dashboard" : "/member/dashboard");
+  const routeFor = (userRole: UserRole) => router.push(userRole === "super_admin" ? "/admin/super-dashboard" : userRole === "admin" ? "/admin/dashboard" : "/member/dashboard");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setError(""); setSubmitting(true);
@@ -32,7 +32,7 @@ export default function Login() {
       // read here: when Firestore is reconnecting that read can leave the form
       // stuck in its submitting state. The create rule still enforces this server-side.
       if (registrationsOpen === false) throw new Error("REGISTRATION_CLOSED");
-      await register(name, email, password, role);
+      await register(name, email, password);
       // New accounts must be approved before signing in; sign out only after the
       // profile write is complete so Firestore receives an authenticated request.
       await signOut();
@@ -75,13 +75,12 @@ export default function Login() {
     )}
     <p className="mt-6 text-sm font-bold uppercase tracking-widest text-orange-600">Colony Bois secure access</p>
     <h1 className="mt-2 text-3xl font-black text-slate-900">{mode === "signin" ? "Welcome back" : "Create an account"}</h1>
-    <p className="mt-2 text-sm text-slate-600">{mode === "signin" ? "Sign in with your organizer or volunteer account." : "Choose your access role and start using Colony Bois."}</p>
+    <p className="mt-2 text-sm text-slate-600">{mode === "signin" ? "Sign in with your organizer or volunteer account." : "New accounts start as members and require approval."}</p>
     {!(regClosed && mode === "register") && (
       <form onSubmit={submit} className="mt-6 space-y-3">
         {mode === "register" && <input required value={name} onChange={event => setName(event.target.value)} placeholder="Full name" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>}
         <input required value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
         <input required minLength={6} value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password (at least 6 characters)" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
-        {mode === "register" && <select value={role} onChange={event => setRole(event.target.value as UserRole)} className="w-full rounded-xl border border-orange-200 bg-white p-3"><option value="member">Volunteer / Member</option><option value="admin">Admin</option></select>}
         {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
         <Button disabled={submitting} type="submit" className="w-full">{submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</Button>
       </form>

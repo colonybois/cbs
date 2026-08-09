@@ -1,5 +1,5 @@
-export type UserRole = "admin" | "member";
-export type UserStatus = "pending" | "active" | "rejected" | "blocked";
+export type UserRole = "super_admin" | "admin" | "member";
+export type UserStatus = "pending" | "active" | "rejected" | "blocked" | "suspended";
 export type ChandaStatus = "pending_handover" | "settled";
 export type OnlinePaymentStatus = "pending" | "approved" | "rejected";
 export type PaymentMode = "cash" | "upi";

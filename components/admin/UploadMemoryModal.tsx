@@ -66,7 +66,7 @@ export default function UploadMemoryModal({
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (role !== "admin" || !uid) {
+    if ((role !== "admin" && role !== "super_admin") || !uid) {
       setError("Only verified admins can upload memories.");
       return;
     }
