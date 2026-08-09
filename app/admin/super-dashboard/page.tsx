@@ -16,7 +16,23 @@ export default function SuperDashboard() {
   const { uid, role, status, loading } = useAuth(); const router = useRouter();
   const [data, setData] = useState<Data | null>(null); const [error, setError] = useState(""); const [busy, setBusy] = useState("");
   const [search, setSearch] = useState(""); const [adjustment, setAdjustment] = useState(""); const [reason, setReason] = useState(""); const [reference, setReference] = useState("");
-  const call = useCallback(async (method: "GET" | "POST", body?: Record<string, unknown>) => { const token = await auth.currentUser?.getIdToken(); const res = await fetch("/api/super-admin", { method, headers: { Authorization: `Bearer ${token || ""}`, ...(body ? { "Content-Type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) }); const json = await res.json() as Data & { error?: string }; if (!res.ok) throw new Error(json.error || "Request failed."); return json; }, []);
+  const call = useCallback(async (method: "GET" | "POST", body?: Record<string, unknown>) => {
+    const token = await auth.currentUser?.getIdToken();
+    const res = await fetch("/api/super-admin", {
+      method,
+      headers: { Authorization: `Bearer ${token || ""}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    const responseText = await res.text();
+    const isJson = res.headers.get("content-type")?.includes("application/json");
+    const json = isJson && responseText ? JSON.parse(responseText) as Data & { error?: string } : null;
+
+    if (!res.ok) {
+      throw new Error(json?.error || `The server returned an unexpected response (HTTP ${res.status}). Check the deployment logs and Firebase Admin configuration.`);
+    }
+    if (!json) throw new Error("The server returned an invalid response. Please try again.");
+    return json;
+  }, []);
   const load = useCallback(async () => { try { setError(""); setData(await call("GET")); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load the protected dashboard."); } }, [call]);
   useEffect(() => { if (!loading && (role !== "super_admin" || status !== "active")) router.replace("/login"); }, [loading, role, status, router]);
   useEffect(() => { if (uid && role === "super_admin" && status === "active") void load(); }, [uid, role, status, load]);

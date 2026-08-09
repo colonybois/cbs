@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
+// Firebase Admin uses Node.js APIs and must never be deployed to an Edge runtime.
+export const runtime = "nodejs";
+
 type Profile = { name?: string; role?: string; status?: string };
 const roles = ["member", "admin", "super_admin"] as const;
 const statuses = ["active", "suspended"] as const;
