@@ -132,7 +132,6 @@ export default function PaymentLedgerPage() {
       date: emailDate(d.approvedAt ?? d.createdAt),
       referenceId: d.receiptNo ?? d.id.slice(0, 10).toUpperCase(),
       collectorName: d.collectorName,
-      verificationStatus: "Verified & Approved ✅",
       targetCollection: "donations",
       targetId: d.id,
       triggeredBy: uid,

@@ -1,15 +1,23 @@
 "use client";
-// Client-side helper — calls the /api/email/send route (never touches RESEND_API_KEY)
+// Email notifications via EmailJS — runs entirely client-side, no server required.
+// Uses the existing Colony Bois service + template already configured in EmailJS.
 
+import emailjs from "@emailjs/browser";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { SendEmailRequest } from "@/app/api/email/send/route";
-import type { EmailType } from "@/lib/email-templates";
 
-export type EmailStatus = "not_sent" | "queued" | "sent" | "failed";
+// ── EmailJS config (public credentials — safe in client code) ─────────────────
+const EMAILJS_SERVICE_ID  = "service_2h9hlku";
+const EMAILJS_TEMPLATE_ID = "template_m8w6xcf";
+const EMAILJS_PUBLIC_KEY  = "Os5Fnn5CND6oBTr5y";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+export type EmailType = "thank_you" | "receipt" | "greeting";
+export type EmailStatus = "not_sent" | "sending" | "sent" | "failed";
 
 export interface SendEmailOptions {
   type: EmailType;
+  /** Donor's email address — always sent TO the donor, never to admin */
   to: string;
   donorName: string;
   amount?: number;
@@ -17,77 +25,95 @@ export interface SendEmailOptions {
   date?: string;
   referenceId?: string;
   collectorName?: string;
-  verificationStatus?: string;
   targetCollection: "online_donations" | "donations";
   targetId: string;
-  /** UID of the admin/system triggering the send */
   triggeredBy?: string;
   triggeredByName?: string;
 }
 
 /**
- * Calls the server-side API route, then logs the result to Firestore email_logs.
- * Never throws — returns success/failure so callers can show status without breaking the donation flow.
+ * Send a donation email via EmailJS using the existing Colony Bois template.
+ * Template variables: donor_name, amount, payment_method, date, reference_id
+ *
+ * Never throws — returns ok/error so callers can show status without
+ * breaking the donation/collection flow on failure.
  */
-export async function sendDonationEmail(opts: SendEmailOptions): Promise<{ ok: boolean; messageId?: string; error?: string }> {
-  const payload: SendEmailRequest = {
-    type: opts.type,
-    to: opts.to,
-    donorName: opts.donorName,
-    amount: opts.amount,
-    paymentMethod: opts.paymentMethod,
-    date: opts.date,
-    referenceId: opts.referenceId,
-    collectorName: opts.collectorName,
-    verificationStatus: opts.verificationStatus,
-    targetCollection: opts.targetCollection,
-    targetId: opts.targetId,
+export async function sendDonationEmail(
+  opts: SendEmailOptions,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!opts.to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(opts.to)) {
+    return { ok: false, error: "Invalid email address." };
+  }
+
+  // Map to the template variables in the existing EmailJS template
+  const templateParams = {
+    to_email:       opts.to,
+    donor_name:     opts.donorName     || "Donor",
+    amount:         opts.amount != null ? `₹${Number(opts.amount).toLocaleString("en-IN")}` : "—",
+    payment_method: opts.paymentMethod || "UPI",
+    date:           opts.date          || emailDate(),
+    reference_id:   opts.referenceId   || opts.targetId.slice(0, 10).toUpperCase(),
+    // Extra context fields — kept in case the template uses them
+    collector_name: opts.collectorName || "",
   };
 
   let ok = false;
-  let messageId: string | undefined;
   let error: string | undefined;
 
   try {
-    const res = await fetch("/api/email/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json() as { ok: boolean; messageId?: string; error?: string };
-    ok = data.ok;
-    messageId = data.messageId;
-    error = data.error;
+    await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      templateParams,
+      EMAILJS_PUBLIC_KEY,
+    );
+    ok = true;
   } catch (err) {
     ok = false;
-    error = err instanceof Error ? err.message : "Network error";
+    error = err instanceof Error
+      ? err.message
+      : typeof err === "object" && err !== null && "text" in err
+      ? String((err as { text: unknown }).text)
+      : "EmailJS send failed";
+    console.error("[sendDonationEmail] EmailJS error:", err);
   }
 
-  // Log to Firestore email_logs — fire-and-forget, never block the caller
+  // Log to Firestore — fire-and-forget, never blocks the caller
   try {
     await addDoc(collection(db, "email_logs"), {
       targetCollection: opts.targetCollection,
-      targetId: opts.targetId,
-      type: opts.type,
-      recipientEmail: opts.to,
-      recipientName: opts.donorName,
-      status: ok ? "sent" : "failed",
-      messageId: messageId ?? null,
-      error: error ?? null,
-      triggeredBy: opts.triggeredBy ?? "system",
-      triggeredByName: opts.triggeredByName ?? "System",
-      sentAt: serverTimestamp(),
+      targetId:         opts.targetId,
+      type:             opts.type,
+      recipientEmail:   opts.to,
+      recipientName:    opts.donorName,
+      status:           ok ? "sent" : "failed",
+      error:            error ?? null,
+      triggeredBy:      opts.triggeredBy     ?? "system",
+      triggeredByName:  opts.triggeredByName ?? "System",
+      sentAt:           serverTimestamp(),
     });
   } catch {
     // Log failure must never affect the donation flow
   }
 
-  return { ok, messageId, error };
+  return { ok, error };
 }
 
-/** Formats a date for email display */
-export function emailDate(v?: string | { toDate?: () => Date } | null): string {
-  if (!v) return new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+/** Format a timestamp for inclusion in email template */
+export function emailDate(
+  v?: string | { toDate?: () => Date } | null,
+): string {
+  if (!v) {
+    return new Date().toLocaleString("en-IN", {
+      day: "2-digit", month: "long", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  }
   const d = typeof v === "string" ? new Date(v) : v?.toDate?.();
-  return d?.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) ?? "";
+  return (
+    d?.toLocaleString("en-IN", {
+      day: "2-digit", month: "long", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    }) ?? emailDate()
+  );
 }

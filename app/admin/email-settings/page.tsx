@@ -10,6 +10,8 @@ import { useAuth } from "@/lib/auth-context";
 import Card from "@/components/ui/Card";
 import WelcomeBanner from "@/components/layout/WelcomeBanner";
 
+const EMAILJS_SERVICE_ID_DISPLAY = "service_2h9hlku";
+
 // ── types ─────────────────────────────────────────────────────────────────────
 type EmailSettings = {
   thankYouEnabled: boolean;
@@ -177,7 +179,7 @@ export default function EmailSettingsPage() {
         <div>
           <p className="font-bold text-slate-900">Email Service</p>
           <p className="mt-0.5 text-sm text-slate-500">
-            Powered by Resend. API key configured securely via environment variable.
+            Powered by EmailJS · Service ID: {EMAILJS_SERVICE_ID_DISPLAY}
           </p>
         </div>
         <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
