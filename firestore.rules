@@ -30,10 +30,16 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.uid == userId
-        && request.resource.data.role == 'member'
         && request.resource.data.status == 'pending'
-        && (!exists(/databases/$(database)/documents/site_settings/registration)
-          || get(/databases/$(database)/documents/site_settings/registration).data.registrationsOpen != false);
+        && (
+          (!exists(/databases/$(database)/documents/site_settings/registration_config)
+            && request.resource.data.role == 'member')
+          || (
+            exists(/databases/$(database)/documents/site_settings/registration_config)
+            && get(/databases/$(database)/documents/site_settings/registration_config).data.isRegistrationOpen != false
+            && request.resource.data.role in get(/databases/$(database)/documents/site_settings/registration_config).data.allowedRoles
+          )
+        );
       // An active user may update their own profile without altering access state.
       allow update: if isActive()
         && request.auth.uid == userId
@@ -130,7 +136,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /site_settings/registration {
+    match /site_settings/registration_config {
       allow read: if true;
       allow write: if isAdmin();
     }

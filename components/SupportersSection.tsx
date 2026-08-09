@@ -93,13 +93,13 @@ export default function SupportersSection() {
 
           <div
             ref={scrollRef}
-            className="flex gap-3 overflow-x-auto pb-2"
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {supporters.map(s => (
               <div
                 key={s.id}
-                className="flex flex-none items-center gap-2 rounded-2xl border border-orange-200 bg-white px-4 py-3 shadow-sm shadow-orange-100/50"
+                className="flex flex-none snap-start items-center gap-2 rounded-2xl border border-orange-200 bg-white px-4 py-3 shadow-sm shadow-orange-100/50"
               >
                 <span className="text-lg">❤️</span>
                 <span className="whitespace-nowrap font-bold text-slate-900">{s.displayName}</span>

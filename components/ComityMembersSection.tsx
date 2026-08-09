@@ -9,37 +9,30 @@ function MemberCard({ member }: { member: ComityMember }) {
   const [imgErr, setImgErr] = useState(false);
 
   return (
-    <article className={`group relative flex w-56 flex-none flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-lg hover:shadow-orange-100/60 ${member.featured ? "border-amber-400 ring-2 ring-amber-300/30" : "border-orange-100"}`}>
+    <article className="group relative w-56 flex-none text-center">
       {member.featured && (
-        <span className="absolute left-3 top-3 z-10 rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-black text-white shadow">★ Featured</span>
+        <span className="absolute left-1/2 top-1 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-black text-white shadow">★ Featured</span>
       )}
 
-      {/* Photo */}
-      <div className="relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 p-5">
+      <div className="relative mx-auto flex h-44 w-44 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-orange-100 via-amber-50 to-orange-200 p-1 transition duration-500 group-hover:scale-105">
         {member.photoUrl && !imgErr ? (
           <img
             src={member.photoUrl}
             alt={member.fullName}
             loading="lazy"
             onError={() => setImgErr(true)}
-            className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-lg transition duration-500 group-hover:scale-105"
+            className={`h-full w-full rounded-full border-4 border-white object-cover shadow-lg ${member.featured ? "ring-4 ring-amber-300/70" : ""}`}
           />
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-4xl font-black text-white shadow-lg">
-              {member.fullName.charAt(0).toUpperCase()}
-            </div>
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-5xl font-black text-white shadow-lg">
+            {member.fullName.charAt(0).toUpperCase()}
           </div>
         )}
-        {/* Designation ribbon */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 to-transparent px-3 pb-3 pt-8">
-          <p className="text-xs font-black uppercase tracking-wider text-orange-300">{member.designation}</p>
-        </div>
       </div>
 
-      {/* Info */}
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-black text-slate-900 leading-snug">{member.fullName}</h3>
+      <div className="pt-4">
+        <p className="text-xs font-black uppercase tracking-wider text-orange-600">{member.designation}</p>
+        <h3 className="mt-1 font-black leading-snug text-slate-900">{member.fullName}</h3>
         {member.memberSince && (
           <p className="mt-1 text-xs text-slate-400">Member since {member.memberSince}</p>
         )}
@@ -47,7 +40,7 @@ function MemberCard({ member }: { member: ComityMember }) {
           <p className="mt-2 text-xs leading-relaxed text-slate-500 line-clamp-3">{member.bio}</p>
         )}
         {member.showContact && member.publicContact && (
-          <p className="mt-3 text-xs font-semibold text-orange-600 truncate">📞 {member.publicContact}</p>
+          <p className="mt-3 text-xs font-semibold text-orange-600">📞 {member.publicContact}</p>
         )}
       </div>
     </article>
