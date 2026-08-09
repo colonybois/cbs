@@ -1,0 +1,14 @@
+# Query: rosters
+# ContextLines: 1
+
+2 results - 2 files
+
+components/ComityMembersSection.tsx:
+  86        <p className="text-sm font-bold uppercase tracking-widest text-orange-600">The team behind the celebration</p>
+  87:       <h2 className="mt-2 text-3xl font-black text-slate-900">Committee Management</h2>
+  88        <p className="mt-3 text-slate-600">Meet the dedicated committee that organizes Colony Bois Ganesh Chaturthi every year.</p>
+
+components/layout/Header.tsx:
+   9  
+  10: const publicSections = [["Home", "hero"], ["Events", "events"], ["Gallery & Flashback", "gallery"], ["Chanda / Contribution", "donate"], ["About Us", "about"], ["Committee Management", "comity"], ["Contact", "contact"]] as const;
+  11  const adminLinks = [["Dashboard", "/admin/dashboard"], ["Chanda Transactions", "/admin/chanda-transactions"], ["Payment Ledger", "/admin/payment-ledger"], ["Members", "/admin/members"], ["Events", "/admin/events"], ["Gallery", "/admin/gallery"], ["Festival Days", "/admin/festival-days"], ["Comity Members", "/admin/comity-members"], ["Approvals", "/admin/approvals"], ["Email Settings", "/admin/email-settings"], ["Admin Audit Log", "/admin/audit-log"]] as const;

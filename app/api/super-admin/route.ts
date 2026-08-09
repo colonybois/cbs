@@ -14,7 +14,11 @@ async function actor(request: NextRequest) {
   if (profile?.role !== "super_admin" || profile.status !== "active") throw new Error("Forbidden");
   return { uid: decoded.uid, name: profile.name || "Super Admin" };
 }
-function fail(error: unknown) { const message = error instanceof Error ? error.message : "Request failed"; return NextResponse.json({ error: message }, { status: message === "Unauthenticated" ? 401 : message === "Forbidden" ? 403 : 400 }); }
+function fail(error: unknown) {
+  const message = error instanceof Error ? error.message : "Request failed";
+  const status = message === "Unauthenticated" ? 401 : message === "Forbidden" ? 403 : message.startsWith("Invalid ") || message.includes("required") || message === "Unsupported action." ? 400 : 500;
+  return NextResponse.json({ error: message }, { status });
+}
 async function audit(data: Record<string, unknown>) { await adminDb().collection("admin_audit_logs").add({ ...data, actorRole: "super_admin", createdAt: FieldValue.serverTimestamp() }); }
 
 export async function GET(request: NextRequest) {

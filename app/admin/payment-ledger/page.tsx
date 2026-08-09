@@ -47,6 +47,8 @@ export default function PaymentLedgerPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [receiptTarget, setReceiptTarget] = useState<Donation | null>(null);
   const [error, setError] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
@@ -160,6 +162,52 @@ export default function PaymentLedgerPage() {
     finally { setProcessing(null); }
   };
 
+  const toggleSelected = (id: string) => setSelectedIds(ids => ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id]);
+  const toggleAllFiltered = () => setSelectedIds(ids => {
+    const filteredIds = filtered.map(item => item.id);
+    return filteredIds.every(id => ids.includes(id)) ? ids.filter(id => !filteredIds.includes(id)) : [...new Set([...ids, ...filteredIds])];
+  });
+  const deleteSelected = async () => {
+    const targets = donations.filter(item => selectedIds.includes(item.id));
+    if (!uid || !adminName || targets.length === 0) return;
+    if (targets.length > 100) { setError("Delete up to 100 ledger entries at a time."); return; }
+    if (!window.confirm(`Permanently delete ${targets.length} selected ledger entr${targets.length === 1 ? "y" : "ies"}? Approved totals will be reversed. This cannot be undone.`)) return;
+    setDeleting(true); setError("");
+    try {
+      await runTransaction(db, async tx => {
+        const donationRefs = targets.map(item => doc(db, "donations", item.id));
+        const donationSnapshots = await Promise.all(donationRefs.map(ref => tx.get(ref)));
+        const adjustments = new Map<string, { cash: number; upi: number; pending: number }>();
+        donationSnapshots.forEach(snapshot => {
+          const data = snapshot.data();
+          if (!data || data.status !== "approved" || typeof data.collectorId !== "string") return;
+          const amount = Number(data.amount || 0);
+          if (!Number.isFinite(amount) || amount <= 0) return;
+          const current = adjustments.get(data.collectorId) || { cash: 0, upi: 0, pending: 0 };
+          if (data.paymentMode === "cash") { current.cash += amount; current.pending += amount; }
+          if (data.paymentMode === "upi") current.upi += amount;
+          adjustments.set(data.collectorId, current);
+        });
+        const userRefs = [...adjustments.keys()].map(id => doc(db, "users", id));
+        const userSnapshots = await Promise.all(userRefs.map(ref => tx.get(ref)));
+        userSnapshots.forEach((snapshot, index) => {
+          if (!snapshot.exists()) return;
+          const adjustment = adjustments.get(userRefs[index].id)!;
+          const data = snapshot.data();
+          tx.update(snapshot.ref, {
+            cashTotal: Math.max(0, Number(data.cashTotal || 0) - adjustment.cash),
+            upiTotal: Math.max(0, Number(data.upiTotal || 0) - adjustment.upi),
+            pendingHandover: Math.max(0, Number(data.pendingHandover || 0) - adjustment.pending),
+          });
+        });
+        donationRefs.forEach(ref => tx.delete(ref));
+      });
+      await recordAudit({ actorId: uid, actorName: adminName, action: "Deleted payment ledger entries", module: "Payment Ledger", newValue: { count: targets.length, donationIds: targets.map(item => item.id) }, approvalStatus: "approved" });
+      setSelectedIds([]);
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not delete the selected ledger entries."); }
+    finally { setDeleting(false); }
+  };
+
   const clearFilters = () => { setSearch(""); setStatusFilter("all"); setMethodFilter("all"); setCollectorFilter("all"); setDateFilter("all"); setFromDate(""); setToDate(""); };
 
   return (
@@ -189,6 +237,7 @@ export default function PaymentLedgerPage() {
           {(search || statusFilter !== "all" || methodFilter !== "all" || collectorFilter !== "all" || dateFilter !== "all") && (
             <button onClick={clearFilters} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Clear Filters</button>
           )}
+          <button disabled={deleting || selectedIds.length === 0} onClick={() => void deleteSelected()} className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50">{deleting ? "Deleting…" : `Delete selected${selectedIds.length ? ` (${selectedIds.length})` : ""}`}</button>
         </div>
         {dateFilter === "custom" && (
           <div className="flex flex-wrap gap-3">
@@ -210,13 +259,14 @@ export default function PaymentLedgerPage() {
           <div className="overflow-x-auto">
             <table className="min-w-[1000px] w-full text-sm">
               <thead className="border-b border-orange-100 bg-orange-50/60">
-                <tr>{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Actions"].map(h => (
+                <tr><th className="px-4 py-3"><input aria-label="Select all visible ledger entries" type="checkbox" checked={filtered.length > 0 && filtered.every(item => selectedIds.includes(item.id))} onChange={toggleAllFiltered}/></th>{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Actions"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}</tr>
               </thead>
               <tbody className="divide-y divide-orange-50">
                 {filtered.map(d => (
                   <tr key={d.id} className="hover:bg-orange-50/30 transition">
+                    <td className="px-4 py-3"><input aria-label={`Select ${d.residentName || "ledger entry"}`} type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => toggleSelected(d.id)}/></td>
                     <td className="px-4 py-3 font-semibold text-slate-900">{d.collectorName || "—"}</td>
                     <td className="px-4 py-3">
                       <p className="font-semibold text-slate-800">{d.residentName || "—"}</p>
