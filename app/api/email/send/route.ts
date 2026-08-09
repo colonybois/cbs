@@ -28,7 +28,8 @@ export type SendEmailResponse =
 export async function POST(req: NextRequest): Promise<NextResponse<SendEmailResponse>> {
   // Guard: must have API key configured
   if (!process.env.RESEND_API_KEY) {
-    return NextResponse.json({ ok: false, error: "Email service not configured." }, { status: 503 });
+    console.error("[email/send] RESEND_API_KEY is not configured.");
+    return NextResponse.json({ ok: false, error: "Email service not configured. Set RESEND_API_KEY in Vercel environment variables." });
   }
 
   let body: SendEmailRequest;
@@ -65,11 +66,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<SendEmailResp
   try {
     const result = await resend.emails.send({ from: FROM, to, subject, html });
     if (result.error) {
-      return NextResponse.json({ ok: false, error: result.error.message }, { status: 502 });
+      console.error("[email/send] Resend error:", result.error);
+      return NextResponse.json({ ok: false, error: result.error.message });
     }
     return NextResponse.json({ ok: true, messageId: result.data?.id ?? "" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown Resend error.";
-    return NextResponse.json({ ok: false, error: msg }, { status: 502 });
+    console.error("[email/send] caught:", msg);
+    return NextResponse.json({ ok: false, error: msg });
   }
 }
