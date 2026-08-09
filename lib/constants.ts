@@ -16,6 +16,7 @@ export const COLONY_BOIS_CONTACT = {
     { label: " ", number: "+919121429608", display: "+91 91214 29608" },
     { label: " ", number: "+918106565698", display: "+91 81065 65698" },
     { label: " ", number: "+917997752156", display: "+91 79977 52156" },
+    { label: " ", number: "+919949294749", display: "+91 99492 94749" },
   ],
   pandalLocation: {
     title: "Colony Bois Vinayaka Pandal",

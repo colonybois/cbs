@@ -55,11 +55,14 @@ service cloud.firestore {
 
     match /online_donations/{donationId} {
       allow create: if request.resource.data.residentName is string
+        && request.resource.data.donorEmail is string
+        && request.resource.data.donorEmail.size() > 0
         && request.resource.data.phone is string
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.screenshotUrl is string
         && request.resource.data.screenshotUrl.size() > 0
+        && request.resource.data.showPublicName == true
         && request.resource.data.status == 'pending';
       // Allow public read of approved donations where donor consented to public display (for Supporters section)
       allow get: if isAdmin() || (resource.data.status == 'approved' && resource.data.showPublicName == true);

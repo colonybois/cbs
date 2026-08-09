@@ -50,6 +50,7 @@ function MemberCard({ member }: { member: ComityMember }) {
 export default function ComityMembersSection() {
   const [members, setMembers] = useState<ComityMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -73,6 +74,7 @@ export default function ComityMembersSection() {
   const featured = members.filter(m => m.featured);
   const rest = members.filter(m => !m.featured);
   const ordered = [...featured, ...rest];
+  const visibleMembers = showAll ? ordered : ordered.slice(0, 5);
 
   return (
     <div>
@@ -95,8 +97,13 @@ export default function ComityMembersSection() {
           className="mt-8 flex gap-5 overflow-x-auto pb-3"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {ordered.map(m => <MemberCard key={m.id} member={m} />)}
+          {visibleMembers.map(m => <MemberCard key={m.id} member={m} />)}
         </div>
+      )}
+      {!loading && ordered.length > 5 && (
+        <button type="button" onClick={() => setShowAll(value => !value)} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-orange-700 transition hover:text-orange-600">
+          {showAll ? "Show fewer committee members" : `Show all ${ordered.length} committee members`} <span aria-hidden="true">{showAll ? "↑" : "→"}</span>
+        </button>
       )}
     </div>
   );

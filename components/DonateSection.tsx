@@ -17,6 +17,7 @@ export default function DonateSection() {
   const [message, setMessage] = useState("");
   const [showPublicName, setShowPublicName] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
+  const [copiedUpiId, setCopiedUpiId] = useState(false);
 
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
@@ -40,11 +41,12 @@ export default function DonateSection() {
     ...(hasValidAmount ? { am: enteredAmount.toFixed(2) } : {}),
   }).toString()}`;
 
-  const payChanda = () => {
-    if (!isOnline) { setError("Offline — reconnect to open your UPI app."); return; }
-    if (!hasValidAmount) { setError("Enter a Chanda amount before opening your UPI app."); return; }
-    setError("");
-    window.location.assign(upiPaymentLink);
+  const copyUpiId = async () => {
+    try {
+      await navigator.clipboard.writeText(COLONY_BOIS_CONTACT.upiId);
+      setCopiedUpiId(true);
+      window.setTimeout(() => setCopiedUpiId(false), 1800);
+    } catch { setError("Unable to copy the UPI ID. Please select and copy it manually."); }
   };
 
   const handleScreenshotChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -67,10 +69,11 @@ export default function DonateSection() {
       window.setTimeout(() => input?.focus(), 250);
     };
     if (name.trim().length === 0) { warnAndFocus("Please enter your name before submitting your Chanda.", nameInputRef.current); return; }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { warnAndFocus("Please enter a valid email address, or clear this optional field.", emailInputRef.current); return; }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { warnAndFocus("Please enter a valid email address before submitting your Chanda.", emailInputRef.current); return; }
     if (phone.length !== 10) { warnAndFocus("Please enter your valid 10-digit mobile number before submitting your Chanda.", phoneInputRef.current); return; }
     if (Number(amount) <= 0) { warnAndFocus("Please enter the Chanda amount before submitting.", amountInputRef.current); return; }
     if (!screenshot) { warnAndFocus("Please upload your payment screenshot before submitting your Chanda.", screenshotUploadRef.current); return; }
+    if (!showPublicName) { setError("Please confirm that your name may be displayed in the Supporters section."); return; }
     if (!window.confirm(`Submit your Chanda contribution of ₹${Number(amount).toLocaleString("en-IN")} for admin verification?`)) return;
 
     setLoading(true); setError("");
@@ -108,7 +111,7 @@ export default function DonateSection() {
         <span className="text-5xl">🚩</span>
         <h3 className="mt-3 text-xl font-bold text-slate-900">Jai Dev Ganesha!</h3>
         <p className="mt-2 text-slate-700">Your contribution has been logged for verification. Thank you!</p>
-        <p className="mt-2 text-sm text-slate-500">If you provided an email address, your official receipt will be sent after admin approval.</p>
+        <p className="mt-2 text-sm text-slate-500">Your official receipt will be sent to your email after admin approval.</p>
         <button onClick={reset} className="mt-6 rounded-lg bg-orange-500 px-6 py-2.5 font-bold text-white hover:bg-orange-600">
           Submit Another Contribution
         </button>
@@ -144,8 +147,8 @@ export default function DonateSection() {
 
           {/* Email */}
           <label className="block text-sm font-semibold text-slate-700">
-            Email Address <span className="font-normal text-slate-400">(for receipt after approval — optional)</span>
-            <input ref={emailInputRef} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }}
+            Email Address * <span className="font-normal text-slate-400">(for receipt after approval)</span>
+            <input required ref={emailInputRef} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }}
               placeholder="yourname@example.com"
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </label>
@@ -160,14 +163,10 @@ export default function DonateSection() {
 
           <div className="rounded-xl border border-orange-200 bg-white p-4">
             <p className="text-sm font-bold text-slate-900">Pay directly with UPI</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">Enter your amount above, then open Google Pay, PhonePe, Paytm, BHIM, or another available UPI app to complete the payment.</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button disabled={!isOnline} type="button" onClick={() => { setShowQrCode(false); payChanda(); }}
-                className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50">Pay Chanda via UPI →</button>
-              <button disabled={!isOnline} type="button" onClick={() => { if (!hasValidAmount) { setError("Enter a Chanda amount before showing the payment QR code."); return; } setError(""); setShowQrCode(true); }}
-                className="w-full rounded-lg border-2 border-orange-300 bg-orange-50 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50">Pay using QR Code</button>
-            </div>
-            <p className="mt-3 text-xs leading-5 text-slate-500">You will be redirected to your UPI app. After payment, return here and submit your contribution details below for verification.</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">Pay from any UPI app using the ID below, then submit your payment details for verification.</p>
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3"><div><p className="text-xs font-bold uppercase tracking-wide text-orange-600">UPI ID</p><p className="mt-1 select-all font-mono font-bold text-slate-900">{COLONY_BOIS_CONTACT.upiId}</p></div><button type="button" onClick={() => void copyUpiId()} aria-label="Copy UPI ID" className="inline-flex items-center gap-2 rounded-lg border border-orange-300 bg-white px-3 py-2 text-sm font-bold text-orange-700 hover:bg-orange-100"><svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>{copiedUpiId ? "Copied" : "Copy"}</button></div>
+            <button disabled={!isOnline} type="button" onClick={() => { if (!hasValidAmount) { setError("Enter a Chanda amount before showing the payment QR code."); return; } setError(""); setShowQrCode(true); }}
+              className="mt-3 w-full rounded-lg border-2 border-orange-300 bg-orange-50 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50">Pay using QR Code</button>
             {showQrCode && (
               <div className="mt-5 border-t border-orange-100 pt-5 text-center">
                 <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-600">Scan &amp; Pay via any UPI app</p>
@@ -214,10 +213,10 @@ export default function DonateSection() {
 
           {/* Public name consent */}
           <label className="flex items-start gap-3 cursor-pointer rounded-xl border border-orange-200 bg-white p-4">
-            <input type="checkbox" checked={showPublicName} onChange={e => setShowPublicName(e.target.checked)}
+            <input required type="checkbox" checked={showPublicName} onChange={e => { setShowPublicName(e.target.checked); setError(""); }}
               className="mt-0.5 h-4 w-4 flex-none accent-orange-500" />
             <span className="text-sm text-slate-700">
-              <span className="font-semibold">Display my name on the Colony Bois website</span>
+              <span className="font-semibold">Display my name on the Colony Bois website *</span>
               <span className="block mt-0.5 text-slate-500 font-normal">After admin approval, your name will appear in the public Supporters section. Your phone number and payment details will never be shown.</span>
             </span>
           </label>

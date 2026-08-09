@@ -11,6 +11,7 @@ export default function SupportersSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
 
@@ -45,6 +46,24 @@ export default function SupportersSection() {
     const ro = new ResizeObserver(updateArrows);
     ro.observe(el);
     return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
+  }, [supporters]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || supporters.length === 0 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    let previous = performance.now();
+    const move = (now: number) => {
+      const elapsed = now - previous;
+      previous = now;
+      if (!pausedRef.current && !document.hidden && el.scrollWidth > el.clientWidth) {
+        const next = el.scrollLeft + elapsed * 0.035;
+        el.scrollLeft = next >= el.scrollWidth - el.clientWidth - 1 ? 0 : next;
+      }
+      frame = requestAnimationFrame(move);
+    };
+    frame = requestAnimationFrame(move);
+    return () => cancelAnimationFrame(frame);
   }, [supporters]);
 
   const scroll = (dir: "left" | "right") =>
@@ -95,6 +114,12 @@ export default function SupportersSection() {
             ref={scrollRef}
             className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            onMouseEnter={() => { pausedRef.current = true; }}
+            onMouseLeave={() => { pausedRef.current = false; }}
+            onFocus={() => { pausedRef.current = true; }}
+            onBlur={() => { pausedRef.current = false; }}
+            onTouchStart={() => { pausedRef.current = true; }}
+            onTouchEnd={() => { pausedRef.current = false; }}
           >
             {supporters.map(s => (
               <div
