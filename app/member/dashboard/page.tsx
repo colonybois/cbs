@@ -8,7 +8,7 @@ import LogDonationForm from "@/components/member/LogDonationForm";
 
 type TsLike = { toDate?: () => Date } | string | null;
 type Donation = {
-  id: string; receiptNo?: string; residentName?: string; phone?: string; houseNo?: string;
+  id: string; receiptNo?: string; residentName?: string; phone?: string;
   amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
   paymentVerificationStatus?: "verified" | "pending" | "failed" | "not_applicable";
   paymentTransactionId?: string;
@@ -43,7 +43,6 @@ function ReceiptModal({ d, name, onClose }: { d: Donation; name: string; onClose
   const receiptText = [
     `🚩 Colony Bois — Ganesh Chaturthi Chanda Receipt`,
     `Donor: ${d.residentName ?? "—"}`,
-    d.houseNo ? `House: ${d.houseNo}` : null,
     `Amount: ₹${Number(d.amount || 0).toLocaleString()}`,
     `Method: ${(d.paymentMode ?? "").toUpperCase()}`,
     d.paymentMode === "upi" ? `Payment: ${d.paymentVerificationStatus === "verified" ? "Verified" : "Verification pending"}` : null,
@@ -68,7 +67,6 @@ function ReceiptModal({ d, name, onClose }: { d: Donation; name: string; onClose
           {[
             ["Donor", d.residentName],
             d.phone ? ["Phone", d.phone] : null,
-            d.houseNo ? ["House", d.houseNo] : null,
             ["Amount", `₹${Number(d.amount || 0).toLocaleString()}`],
             ["Method", (d.paymentMode ?? "").toUpperCase()],
             d.paymentMode === "upi" ? ["Payment", d.paymentVerificationStatus === "verified" ? "Verified ✅" : "Verification Pending"] : null,
@@ -188,7 +186,7 @@ export default function MemberDashboard() {
       </div>
 
       {/* Summary cards */}
-      {!loading && donations.length > 0 && (
+      {!loading && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Approved Total",    value: `₹${approvedTotal.toLocaleString()}`, color: "text-emerald-600" },

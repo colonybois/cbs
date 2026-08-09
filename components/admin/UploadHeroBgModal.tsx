@@ -30,6 +30,7 @@ export default function UploadHeroBgModal({ open, onClose }: { open: boolean; on
     event.preventDefault();
     if (role !== "admin" && role !== "super_admin") { setError("Only verified admins can change the hero background."); return; }
     if (!file) { setError("Choose a background image first."); return; }
+    if (!window.confirm("Save this hero background image?")) return;
     setUploading(true); setError("");
     try {
       const heroBgUrl = await uploadImage(file, "site-assets");

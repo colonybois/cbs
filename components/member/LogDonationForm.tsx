@@ -5,16 +5,17 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import { db } from "@/lib/firebase";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 type Props = { collectorId: string; collectorName: string };
-type Receipt = { receiptNo: string; residentName: string; phone: string; amount: number; paymentMode: "cash" | "upi"; houseNo: string };
+type Receipt = { receiptNo: string; residentName: string; phone: string; amount: number; paymentMode: "cash" | "upi" };
 
 const genRef = () => `COL-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
 
 export default function LogDonationForm({ collectorId, collectorName }: Props) {
+  const isOnline = useNetworkStatus();
   const [residentName, setResidentName] = useState("");
   const [phone, setPhone] = useState("");
-  const [houseNo, setHouseNo] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "upi">("cash");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -29,6 +30,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!isOnline) { setError("Offline — reconnect to submit this collection."); return; }
     const warnAndFocus = (message: string, input: RefObject<HTMLInputElement | null>) => {
       setError(message);
       input.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -37,6 +39,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
     if (!residentName.trim()) { warnAndFocus("Please enter the donor or resident name before submitting.", nameInputRef); return; }
     if (phone.length !== 10) { warnAndFocus("Please enter a valid 10-digit donor phone number before submitting.", phoneInputRef); return; }
     if (!amount || Number(amount) <= 0) { warnAndFocus("Please enter the Chanda amount before submitting.", amountInputRef); return; }
+    if (!window.confirm(`Submit this ${paymentMode.toUpperCase()} collection of ₹${Number(amount).toLocaleString("en-IN")}?`)) return;
     setLoading(true); setError("");
     try {
       const value = Number(amount);
@@ -46,7 +49,6 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         receiptNo,
         residentName: residentName.trim(),
         phone,
-        houseNo: houseNo.trim(),
         paymentMode,
         amount: value,
         note: note.trim() || null,
@@ -59,8 +61,8 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         ...(isUpi ? { approvedByName: "System (UPI)", approvedAt: serverTimestamp() } : {}),
         createdAt: serverTimestamp(),
       });
-      setLastReceipt({ receiptNo, residentName: residentName.trim(), phone, amount: value, paymentMode, houseNo: houseNo.trim() });
-      setResidentName(""); setPhone(""); setHouseNo(""); setAmount(""); setNote("");
+      setLastReceipt({ receiptNo, residentName: residentName.trim(), phone, amount: value, paymentMode });
+      setResidentName(""); setPhone(""); setAmount(""); setNote("");
     } catch (err) {
       setError(err instanceof Error ? `Failed: ${err.message}` : "Failed to log collection. Try again.");
     } finally { setLoading(false); }
@@ -77,7 +79,6 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           <div className="space-y-1 text-slate-700">
             <p><span className="font-semibold">Donor:</span> {lastReceipt.residentName}</p>
             <p><span className="font-semibold">Phone:</span> {lastReceipt.phone}</p>
-            {lastReceipt.houseNo && <p><span className="font-semibold">House:</span> {lastReceipt.houseNo}</p>}
             <p><span className="font-semibold">Amount:</span> <strong className="text-orange-600">₹{lastReceipt.amount.toLocaleString()}</strong></p>
             <p><span className="font-semibold">Method:</span> {lastReceipt.paymentMode.toUpperCase()}</p>
             <p><span className="font-semibold">Collected by:</span> {collectorName}</p>
@@ -112,19 +113,11 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
             className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </label>
 
-        {/* House + Amount */}
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm font-semibold text-slate-700">
-            House / Flat No.
-            <input value={houseNo} onChange={e => setHouseNo(e.target.value)} placeholder="H.No 4-12"
-              className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          </label>
-          <label className="block text-sm font-semibold text-slate-700">
+        <label className="block text-sm font-semibold text-slate-700">
             Amount (₹) *
             <input ref={amountInputRef} min="1" type="number" value={amount} onChange={e => { setAmount(e.target.value); setError(""); }} placeholder="e.g. 501"
               className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          </label>
-        </div>
+        </label>
 
         {/* Payment method */}
         <div>
@@ -148,14 +141,12 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
             {Number(amount) > 0 ? (
               <>
                 <div className="flex flex-col items-center">
-                  <div className="inline-block rounded-xl border border-emerald-100 bg-white p-3 shadow-sm">
-                    <QRCodeSVG value={upiValue} size={180} bgColor="#ffffff" fgColor="#1e1b4b" level="H" includeMargin={false} />
-                  </div>
+                  {isOnline ? <div className="inline-block rounded-xl border border-emerald-100 bg-white p-3 shadow-sm"><QRCodeSVG value={upiValue} size={180} bgColor="#ffffff" fgColor="#1e1b4b" level="H" includeMargin={false} /></div> : <p className="rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">Offline — Reconnect to generate the UPI QR</p>}
                   <p className="mt-2 text-xl font-black text-slate-900">₹{Number(amount).toLocaleString()}</p>
                   <p className="text-xs text-slate-500">For {residentName || "Donor"}</p>
                   <p className="mt-1 text-xs text-slate-400">UPI: <span className="font-semibold">{COLONY_BOIS_CONTACT.upiId}</span></p>
                 </div>
-                <a href={upiValue} className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">Open UPI App →</a>
+                {isOnline ? <a href={upiValue} className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">Open UPI App →</a> : <span className="block w-full rounded-xl bg-emerald-600 py-3 text-center text-sm font-bold text-white opacity-50">Open UPI App →</span>}
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-800">
                   <p className="font-bold">🟡 Waiting for payment</p>
                   <p className="mt-1">After payment, submit the collection. UPI collections are approved immediately.</p>
@@ -177,8 +168,9 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         )}
 
         {error && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
+        {!isOnline && <p className="rounded-xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-800">Offline — Reconnect to submit</p>}
 
-        <button type="submit" disabled={loading}
+        <button type="submit" disabled={loading || !isOnline}
           className={`w-full rounded-xl py-4 text-base font-black text-white shadow-md disabled:opacity-50 transition ${paymentMode === "cash" ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-700"}`}>
           {loading ? "Submitting…" : paymentMode === "cash" ? "Submit Collection →" : "Submit UPI Payment for Verification →"}
         </button>

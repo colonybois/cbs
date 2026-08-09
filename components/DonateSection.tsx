@@ -6,9 +6,10 @@ import { QRCodeSVG } from "qrcode.react";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 import { db } from "@/lib/firebase";
 import { uploadImageToStorage } from "@/lib/storage";
-import { sendDonationEmail, emailDate } from "@/lib/email";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export default function DonateSection() {
+  const isOnline = useNetworkStatus();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -40,6 +41,7 @@ export default function DonateSection() {
   }).toString()}`;
 
   const payChanda = () => {
+    if (!isOnline) { setError("Offline — reconnect to open your UPI app."); return; }
     if (!hasValidAmount) { setError("Enter a Chanda amount before opening your UPI app."); return; }
     setError("");
     window.location.assign(upiPaymentLink);
@@ -58,6 +60,7 @@ export default function DonateSection() {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!isOnline) { setError("Offline — reconnect to submit your contribution."); return; }
     const warnAndFocus = (message: string, input: HTMLElement | null) => {
       setError(message);
       input?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -68,12 +71,13 @@ export default function DonateSection() {
     if (phone.length !== 10) { warnAndFocus("Please enter your valid 10-digit mobile number before submitting your Chanda.", phoneInputRef.current); return; }
     if (Number(amount) <= 0) { warnAndFocus("Please enter the Chanda amount before submitting.", amountInputRef.current); return; }
     if (!screenshot) { warnAndFocus("Please upload your payment screenshot before submitting your Chanda.", screenshotUploadRef.current); return; }
+    if (!window.confirm(`Submit your Chanda contribution of ₹${Number(amount).toLocaleString("en-IN")} for admin verification?`)) return;
 
     setLoading(true); setError("");
     try {
       const screenshotUrl = await uploadImageToStorage(screenshot, "payment-proofs");
 
-      const ref = await addDoc(collection(db, "online_donations"), {
+      await addDoc(collection(db, "online_donations"), {
         residentName: name.trim(),
         donorEmail: email.trim() || null,
         phone,
@@ -86,22 +90,6 @@ export default function DonateSection() {
         status: "pending",
         createdAt: serverTimestamp(),
       });
-
-      // Send thank-you email immediately on submission (not on approval,
-      // since this is an online self-submitted donation)
-      if (email.trim()) {
-        await sendDonationEmail({
-          type: "thank_you",
-          to: email.trim(),
-          donorName: name.trim(),
-          amount: Number(amount),
-          paymentMethod: "UPI",
-          date: emailDate(),
-          referenceId: ref.id.slice(0, 10).toUpperCase(),
-          targetCollection: "online_donations",
-          targetId: ref.id,
-        });
-      }
 
       setSuccess(true);
       setName(""); setEmail(""); setPhone(""); setAmount(""); setMessage("");
@@ -120,7 +108,7 @@ export default function DonateSection() {
         <span className="text-5xl">🚩</span>
         <h3 className="mt-3 text-xl font-bold text-slate-900">Jai Dev Ganesha!</h3>
         <p className="mt-2 text-slate-700">Your contribution has been logged for verification. Thank you!</p>
-        {email && <p className="mt-2 text-sm text-slate-500">A thank-you email has been sent to <strong>{email}</strong>.</p>}
+        <p className="mt-2 text-sm text-slate-500">If you provided an email address, your official receipt will be sent after admin approval.</p>
         <button onClick={reset} className="mt-6 rounded-lg bg-orange-500 px-6 py-2.5 font-bold text-white hover:bg-orange-600">
           Submit Another Contribution
         </button>
@@ -156,7 +144,7 @@ export default function DonateSection() {
 
           {/* Email */}
           <label className="block text-sm font-semibold text-slate-700">
-            Email Address <span className="font-normal text-slate-400">(for thank-you email — optional)</span>
+            Email Address <span className="font-normal text-slate-400">(for receipt after approval — optional)</span>
             <input ref={emailInputRef} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }}
               placeholder="yourname@example.com"
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500" />
@@ -174,10 +162,10 @@ export default function DonateSection() {
             <p className="text-sm font-bold text-slate-900">Pay directly with UPI</p>
             <p className="mt-1 text-sm leading-6 text-slate-600">Enter your amount above, then open Google Pay, PhonePe, Paytm, BHIM, or another available UPI app to complete the payment.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button type="button" onClick={() => { setShowQrCode(false); payChanda(); }}
-                className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600">Pay Chanda via UPI →</button>
-              <button type="button" onClick={() => { if (!hasValidAmount) { setError("Enter a Chanda amount before showing the payment QR code."); return; } setError(""); setShowQrCode(true); }}
-                className="w-full rounded-lg border-2 border-orange-300 bg-orange-50 py-3 font-bold text-orange-700 transition hover:bg-orange-100">Pay using QR Code</button>
+              <button disabled={!isOnline} type="button" onClick={() => { setShowQrCode(false); payChanda(); }}
+                className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50">Pay Chanda via UPI →</button>
+              <button disabled={!isOnline} type="button" onClick={() => { if (!hasValidAmount) { setError("Enter a Chanda amount before showing the payment QR code."); return; } setError(""); setShowQrCode(true); }}
+                className="w-full rounded-lg border-2 border-orange-300 bg-orange-50 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50">Pay using QR Code</button>
             </div>
             <p className="mt-3 text-xs leading-5 text-slate-500">You will be redirected to your UPI app. After payment, return here and submit your contribution details below for verification.</p>
             {showQrCode && (
@@ -191,6 +179,8 @@ export default function DonateSection() {
               </div>
             )}
           </div>
+
+          {!isOnline && <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">Offline — Reconnect to submit</p>}
 
           <label className="block text-sm font-semibold text-slate-700">
             Message or payment details <span className="font-normal text-slate-400">(optional)</span>
@@ -232,7 +222,7 @@ export default function DonateSection() {
             </span>
           </label>
 
-          <button type="submit" disabled={loading}
+          <button type="submit" disabled={loading || !isOnline}
             className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-50 transition">
             {loading ? "Submitting…" : "Submit Contribution Details"}
           </button>

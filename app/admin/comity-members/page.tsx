@@ -120,6 +120,7 @@ export default function AdminComityMembers() {
     e.preventDefault();
     if ((role !== "admin" && role !== "super_admin") || !uid) { showToast("Admin access required.", "error"); return; }
     if (!form.fullName.trim()) { showToast("Full name is required.", "error"); return; }
+    if (!window.confirm(`${editTarget ? "Update" : "Add"} this committee member?`)) return;
     setSaving(true);
     try {
       let photoUrl = editTarget?.photoUrl ?? "";
@@ -148,12 +149,12 @@ export default function AdminComityMembers() {
         if (editTarget.publicVisible !== form.publicVisible) changes["Visibility"] = `${editTarget.publicVisible ? "Public" : "Hidden"} → ${form.publicVisible ? "Public" : "Hidden"}`;
         if (editTarget.featured !== form.featured) changes["Featured"] = `${editTarget.featured ? "Yes" : "No"} → ${form.featured ? "Yes" : "No"}`;
         if (editTarget.active !== form.active) changes["Status"] = `${editTarget.active ? "Active" : "Inactive"} → ${form.active ? "Active" : "Inactive"}`;
-        await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Comity member updated", module: "Comity Members", targetId: editTarget.id, previousValue: { name: editTarget.fullName }, newValue: { name: form.fullName, changes } });
-        showToast("Comity member updated.", "success");
+        await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Committee member updated", module: "Committee Members", targetId: editTarget.id, previousValue: { name: editTarget.fullName }, newValue: { name: form.fullName, changes } });
+        showToast("Committee member updated.", "success");
       } else {
         const ref = await addDoc(collection(db, "comity_members"), { ...payload, createdBy: adminName || uid, createdAt: serverTimestamp() });
-        await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Comity member created", module: "Comity Members", targetId: ref.id, newValue: { name: form.fullName, designation: form.designation } });
-        showToast("Comity member added.", "success");
+        await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Committee member created", module: "Committee Members", targetId: ref.id, newValue: { name: form.fullName, designation: form.designation } });
+        showToast("Committee member added.", "success");
       }
       setModalOpen(false);
     } catch (err) {
@@ -167,7 +168,7 @@ export default function AdminComityMembers() {
     setDeleting(true);
     try {
       await deleteDoc(doc(db, "comity_members", deleteTarget.id));
-      await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Comity member deleted", module: "Comity Members", targetId: deleteTarget.id, previousValue: { name: deleteTarget.fullName, designation: deleteTarget.designation } });
+      await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Committee member deleted", module: "Committee Members", targetId: deleteTarget.id, previousValue: { name: deleteTarget.fullName, designation: deleteTarget.designation } });
       showToast("Member deleted.", "success");
     } catch { showToast("Delete failed.", "error"); }
     finally { setDeleting(false); setDeleteTarget(null); }
@@ -183,7 +184,7 @@ export default function AdminComityMembers() {
       updateDoc(doc(db, "comity_members", member.id), { displayOrder: swap.displayOrder }),
       updateDoc(doc(db, "comity_members", swap.id), { displayOrder: member.displayOrder }),
     ]);
-    if (uid) await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Comity member order changed", module: "Comity Members", targetId: member.id, newValue: { name: member.fullName, direction: dir } });
+    if (uid) await recordAudit({ actorId: uid, actorName: adminName || uid, action: "Committee member order changed", module: "Committee Members", targetId: member.id, newValue: { name: member.fullName, direction: dir } });
   };
 
   const filtered = members
@@ -214,10 +215,10 @@ export default function AdminComityMembers() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Administration</p>
-          <h1 className="mt-1 text-3xl font-black text-slate-900">Comity Members</h1>
+          <h1 className="mt-1 text-3xl font-black text-slate-900">Committee Members</h1>
           <p className="mt-1 text-slate-500">Manage the Colony Bois Ganesh Utsav committee members.</p>
         </div>
-        <Button onClick={openCreate}>+ Add Comity Member</Button>
+        <Button onClick={openCreate}>+ Add Committee Member</Button>
       </div>
 
       {/* Search + filters */}
@@ -250,8 +251,8 @@ export default function AdminComityMembers() {
           <div className="p-12 text-center">
             <p className="text-4xl">👥</p>
             <h3 className="mt-3 font-bold text-slate-900">No members found</h3>
-            <p className="mt-1 text-sm text-slate-500">Add the first Comity member to get started.</p>
-            <Button onClick={openCreate} className="mt-5">+ Add Comity Member</Button>
+            <p className="mt-1 text-sm text-slate-500">Add the first committee member to get started.</p>
+            <Button onClick={openCreate} className="mt-5">+ Add Committee Member</Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -306,7 +307,7 @@ export default function AdminComityMembers() {
       </Card>
 
       {/* Add/Edit Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editTarget ? "Edit Comity Member" : "Add Comity Member"}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editTarget ? "Edit Committee Member" : "Add Committee Member"}>
         <form onSubmit={submit} className="max-h-[72vh] overflow-y-auto pr-1 space-y-4">
           <fieldset disabled={saving} className="space-y-4 disabled:opacity-60">
 
@@ -387,7 +388,7 @@ export default function AdminComityMembers() {
       {deleteTarget && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4" onClick={() => setDeleteTarget(null)}>
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-slate-900">Remove this Comity member?</h3>
+            <h3 className="font-bold text-slate-900">Remove this committee member?</h3>
             <div className="mt-3 flex items-center gap-3">
               <Avatar src={deleteTarget.photoUrl} name={deleteTarget.fullName} size="sm" />
               <div>

@@ -7,8 +7,10 @@ import { useAuth } from "@/lib/auth-context";
 import { db } from "@/lib/firebase";
 import Button from "@/components/ui/Button";
 import type { UserRole } from "@/types";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export default function Login() {
+  const isOnline = useNetworkStatus();
   const { signIn, register, signOut } = useAuth(); const router = useRouter();
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [registrationsOpen, setRegistrationsOpen] = useState<boolean | null>(null);
@@ -25,7 +27,10 @@ export default function Login() {
   const routeFor = (userRole: UserRole) => router.push(userRole === "super_admin" ? "/admin/super-dashboard" : userRole === "admin" ? "/admin/dashboard" : "/member/dashboard");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setError(""); setSubmitting(true);
+    event.preventDefault(); setError("");
+    if (!isOnline) { setError("Offline — reconnect to sign in or register."); return; }
+    if (!window.confirm(mode === "signin" ? "Continue to sign in?" : "Submit this registration request?")) return;
+    setSubmitting(true);
     try {
       if (mode === "signin") { routeFor(await signIn(email, password)); return; }
       // The listener above supplies this UI state. Do not make a second Firestore
@@ -83,8 +88,9 @@ export default function Login() {
         {mode === "register" && <input required value={name} onChange={event => setName(event.target.value)} placeholder="Full name" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>}
         <input required value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
         <input required minLength={6} value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password (at least 6 characters)" className="w-full rounded-xl border border-orange-200 bg-white p-3"/>
+        {!isOnline && <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">Offline — Reconnect to submit</p>}
         {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
-        <Button disabled={submitting} type="submit" className="w-full">{submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</Button>
+        <Button disabled={submitting || !isOnline} type="submit" className="w-full">{submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</Button>
       </form>
     )}
   </div>;

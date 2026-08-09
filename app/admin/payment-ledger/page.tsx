@@ -14,7 +14,7 @@ import TableExportButtons from "@/components/ui/TableExportButtons";
 type TsLike = { toDate?: () => Date } | string | null;
 type Donation = {
   id: string; receiptNo?: string; residentName?: string; phone?: string;
-  houseNo?: string; amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
+  amount?: number; paymentMode?: "cash" | "upi"; note?: string | null;
   collectorId?: string; collectorName?: string;
   status?: "pending_approval" | "approved" | "rejected";
   rejectionReason?: string | null;
@@ -39,7 +39,8 @@ type FilterMethod = "all" | "cash" | "upi";
 type FilterDate = "all" | "today" | "yesterday" | "7d" | "30d" | "custom";
 
 export default function PaymentLedgerPage() {
-  const { uid, name: adminName } = useAuth();
+  const { uid, name: adminName, role } = useAuth();
+  const canDelete = role === "super_admin";
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -109,8 +110,8 @@ export default function PaymentLedgerPage() {
     [`₹${sum(rejectedD).toLocaleString()}`, "Rejected Amount"],
     [String(new Set(all.map(d => d.collectorId)).size), "Collectors"],
   ];
-  const exportHeaders = ["Volunteer", "Donor", "House", "Amount", "Method", "Date", "Reference", "Status", "Approved By", "Note"];
-  const exportRows = filtered.map(d => [d.collectorName || "", d.residentName || "", d.houseNo || "", `₹${Number(d.amount || 0).toLocaleString()}`, d.paymentMode?.toUpperCase() || "", dateFmt(d.createdAt), d.receiptNo || d.id.slice(0, 10), d.status === "pending_approval" ? "Pending" : d.status === "approved" ? "Approved" : "Rejected", d.approvedByName || "", d.note || ""]);
+  const exportHeaders = ["Volunteer", "Donor", "Amount", "Method", "Date", "Reference", "Status", "Approved By", "Note"];
+  const exportRows = filtered.map(d => [d.collectorName || "", d.residentName || "", `₹${Number(d.amount || 0).toLocaleString()}`, d.paymentMode?.toUpperCase() || "", dateFmt(d.createdAt), d.receiptNo || d.id.slice(0, 10), d.status === "pending_approval" ? "Pending" : d.status === "approved" ? "Approved" : "Rejected", d.approvedByName || "", d.note || ""]);
 
   // ── Approve ────────────────────────────────────────────────────────────────
   const approve = async (d: Donation) => {
@@ -237,7 +238,7 @@ export default function PaymentLedgerPage() {
           {(search || statusFilter !== "all" || methodFilter !== "all" || collectorFilter !== "all" || dateFilter !== "all") && (
             <button onClick={clearFilters} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Clear Filters</button>
           )}
-          <button disabled={deleting || selectedIds.length === 0} onClick={() => void deleteSelected()} className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50">{deleting ? "Deleting…" : `Delete selected${selectedIds.length ? ` (${selectedIds.length})` : ""}`}</button>
+          {canDelete && <button disabled={deleting || selectedIds.length === 0} onClick={() => void deleteSelected()} className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50">{deleting ? "Deleting…" : `Delete selected${selectedIds.length ? ` (${selectedIds.length})` : ""}`}</button>}
         </div>
         {dateFilter === "custom" && (
           <div className="flex flex-wrap gap-3">
@@ -259,18 +260,17 @@ export default function PaymentLedgerPage() {
           <div className="overflow-x-auto">
             <table className="min-w-[1000px] w-full text-sm">
               <thead className="border-b border-orange-100 bg-orange-50/60">
-                <tr><th className="px-4 py-3"><input aria-label="Select all visible ledger entries" type="checkbox" checked={filtered.length > 0 && filtered.every(item => selectedIds.includes(item.id))} onChange={toggleAllFiltered}/></th>{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Actions"].map(h => (
+                <tr>{canDelete && <th className="px-4 py-3"><input aria-label="Select all visible ledger entries" type="checkbox" checked={filtered.length > 0 && filtered.every(item => selectedIds.includes(item.id))} onChange={toggleAllFiltered}/></th>}{["Volunteer", "Donor", "Amount", "Method", "Date", "Note", "Status", "Actions"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}</tr>
               </thead>
               <tbody className="divide-y divide-orange-50">
                 {filtered.map(d => (
                   <tr key={d.id} className="hover:bg-orange-50/30 transition">
-                    <td className="px-4 py-3"><input aria-label={`Select ${d.residentName || "ledger entry"}`} type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => toggleSelected(d.id)}/></td>
+                    {canDelete && <td className="px-4 py-3"><input aria-label={`Select ${d.residentName || "ledger entry"}`} type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => toggleSelected(d.id)}/></td>}
                     <td className="px-4 py-3 font-semibold text-slate-900">{d.collectorName || "—"}</td>
                     <td className="px-4 py-3">
                       <p className="font-semibold text-slate-800">{d.residentName || "—"}</p>
-                      {d.houseNo && <p className="text-xs text-slate-400">{d.houseNo}</p>}
                       {d.phone && <p className="text-xs text-slate-400">{d.phone}</p>}
                     </td>
                     <td className="px-4 py-3 font-black text-orange-600">₹{Number(d.amount || 0).toLocaleString()}</td>
@@ -339,7 +339,6 @@ export default function PaymentLedgerPage() {
               {([
                 ["Donor", receiptTarget.residentName],
                 receiptTarget.phone ? ["Phone", receiptTarget.phone] : null,
-                receiptTarget.houseNo ? ["House", receiptTarget.houseNo] : null,
                 ["Amount", `₹${Number(receiptTarget.amount || 0).toLocaleString()}`],
                 ["Method", (receiptTarget.paymentMode ?? "").toUpperCase()],
                 ["Collected by", receiptTarget.collectorName],

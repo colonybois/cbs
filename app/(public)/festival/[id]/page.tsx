@@ -157,8 +157,6 @@ export default function FestivalDayDetail() {
         <span className="text-sm font-bold text-slate-600">Share:</span>
         <a href={`https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`} target="_blank" rel="noreferrer"
           className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-600">WhatsApp</a>
-        <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noreferrer"
-          className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-white hover:bg-slate-900">X / Twitter</a>
         <button onClick={() => navigator.clipboard.writeText(shareUrl)}
           className="rounded-xl border border-orange-300 px-4 py-2 text-sm font-bold text-orange-700 hover:bg-orange-50">Copy Link</button>
       </div>

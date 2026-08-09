@@ -78,6 +78,7 @@ export default function UploadMemoryModal({
       setError("Please enter a title.");
       return;
     }
+    if (!window.confirm(`Upload “${title.trim()}” to ${collectionName === "flashback" ? "the gallery" : "events"}?`)) return;
     setUploading(true);
     setError("");
     try {

@@ -33,7 +33,8 @@ const EMAIL_BADGE: Record<string, string> = {
 };
 
 export default function ChandaTransactionsPage() {
-  const { uid, name } = useAuth();
+  const { uid, name, role } = useAuth();
+  const canDelete = role === "super_admin";
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [from, setFrom] = useState("");
@@ -179,7 +180,7 @@ export default function ChandaTransactionsPage() {
           <label className="text-sm text-slate-600">From <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="ml-1 rounded-lg border border-slate-300 px-2 py-2" /></label>
           <label className="text-sm text-slate-600">To <input type="date" value={to} onChange={e => setTo(e.target.value)} className="ml-1 rounded-lg border border-slate-300 px-2 py-2" /></label>
           <button disabled={syncingSupporters} onClick={() => void syncExistingSupporters()} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 disabled:opacity-50">{syncingSupporters ? "Syncing…" : "Sync approved supporters"}</button>
-          <button disabled={deleting || selectedIds.length === 0} onClick={() => void deleteSelected()} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 disabled:opacity-50">{deleting ? "Deleting…" : `Delete selected${selectedIds.length ? ` (${selectedIds.length})` : ""}`}</button>
+          {canDelete && <button disabled={deleting || selectedIds.length === 0} onClick={() => void deleteSelected()} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 disabled:opacity-50">{deleting ? "Deleting…" : `Delete selected${selectedIds.length ? ` (${selectedIds.length})` : ""}`}</button>}
           <TableExportButtons title="Chanda Transactions" headers={exportHeaders} rows={exportRows} />
         </div>
         <p className="mt-3 text-xs text-slate-500">One-time backfill for approved donors who opted into public display.</p>
@@ -190,12 +191,12 @@ export default function ChandaTransactionsPage() {
       <Card className="overflow-x-auto">
         <table className="min-w-[1200px] w-full text-left text-sm">
           <thead className="border-b border-orange-100 bg-orange-50 text-slate-700">
-            <tr><th className="px-4 py-3"><input aria-label="Select all visible transactions" type="checkbox" checked={filtered.length > 0 && filtered.every(item => selectedIds.includes(item.id))} onChange={toggleAllFiltered}/></th>{["Screenshot", "Donor", "Amount", "UPI reference", "Date & time", "Method", "Status", "Email", "Details", "Review"].map(l => <th key={l} className="px-4 py-3 font-bold">{l}</th>)}</tr>
+            <tr>{canDelete && <th className="px-4 py-3"><input aria-label="Select all visible transactions" type="checkbox" checked={filtered.length > 0 && filtered.every(item => selectedIds.includes(item.id))} onChange={toggleAllFiltered}/></th>}{["Screenshot", "Donor", "Amount", "UPI reference", "Date & time", "Method", "Status", "Email", "Details", "Review"].map(l => <th key={l} className="px-4 py-3 font-bold">{l}</th>)}</tr>
           </thead>
           <tbody className="divide-y divide-orange-100">
             {filtered.map(item => (
               <tr key={item.id} className="align-top">
-                <td className="px-4 py-4"><input aria-label={`Select ${item.residentName || "transaction"}`} type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelected(item.id)}/></td>
+                {canDelete && <td className="px-4 py-4"><input aria-label={`Select ${item.residentName || "transaction"}`} type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelected(item.id)}/></td>}
                 {/* Screenshot */}
                 <td className="px-4 py-4">
                   {item.screenshotUrl
@@ -246,7 +247,7 @@ export default function ChandaTransactionsPage() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td className="px-4 py-8 text-center text-slate-500" colSpan={11}>No transactions match these filters.</td></tr>}
+            {filtered.length === 0 && <tr><td className="px-4 py-8 text-center text-slate-500" colSpan={canDelete ? 11 : 10}>No transactions match these filters.</td></tr>}
           </tbody>
         </table>
       </Card>

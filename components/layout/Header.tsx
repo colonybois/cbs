@@ -8,7 +8,7 @@ import { COLONY_BOIS_ASSETS } from "@/lib/assets";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 
 const publicSections = [["Home", "hero"], ["Events", "events"], ["Gallery & Flashback", "gallery"], ["Chanda / Contribution", "donate"], ["About Us", "about"], ["Committee Management Rosters", "comity"], ["Contact", "contact"]] as const;
-const adminLinks = [["Dashboard", "/admin/dashboard"], ["Chanda Transactions", "/admin/chanda-transactions"], ["Payment Ledger", "/admin/payment-ledger"], ["Members", "/admin/members"], ["Events", "/admin/events"], ["Gallery", "/admin/gallery"], ["Festival Days", "/admin/festival-days"], ["Comity Members", "/admin/comity-members"], ["Approvals", "/admin/approvals"], ["Email Settings", "/admin/email-settings"], ["Admin Audit Log", "/admin/audit-log"]] as const;
+const adminLinks = [["Dashboard", "/admin/dashboard"], ["Chanda Transactions", "/admin/chanda-transactions"], ["Payment Ledger", "/admin/payment-ledger"], ["Members", "/admin/members"], ["Events", "/admin/events"], ["Gallery", "/admin/gallery"], ["Festival Days", "/admin/festival-days"], ["Committee Members", "/admin/comity-members"], ["Approvals", "/admin/approvals"], ["Email Settings", "/admin/email-settings"], ["Admin Audit Log", "/admin/audit-log"]] as const;
 const superAdminLinks = [["Super Admin", "/admin/super-dashboard"], ...adminLinks] as const;
 const memberLinks = [["My Dashboard", "/member/dashboard"]] as const;
 
@@ -21,7 +21,7 @@ export default function Header() {
   const inPortal = pathname.startsWith("/admin") || pathname.startsWith("/member");
   const portalLinks = role === "super_admin" ? superAdminLinks : role === "admin" ? adminLinks : memberLinks;
   const closeMenu = () => setIsMobileMenuOpen(false);
-  const handleSignOut = async () => { closeMenu(); try { await signOut(); } finally { router.replace("/"); } };
+  const handleSignOut = async () => { if (!window.confirm("Are you sure you want to sign out?")) return; closeMenu(); try { await signOut(); } finally { router.replace("/"); } };
   const dashboardPath = role === "super_admin" ? "/admin/super-dashboard" : role === "admin" ? "/admin/dashboard" : "/member/dashboard";
   const scrollToSection = (id: string) => { closeMenu(); const element = document.getElementById(id); if (element) element.scrollIntoView({ behavior: "smooth", block: "start" }); else window.location.assign(`/#${id}`); };
   const instagramIcon = (

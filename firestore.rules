@@ -17,6 +17,11 @@ service cloud.firestore {
           || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin');
     }
 
+    function isSuperAdmin() {
+      return isActive()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
     match /users/{userId} {
       // A new user may read only their own pending profile to learn its status.
       allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
@@ -53,7 +58,8 @@ service cloud.firestore {
       // Allow public read of approved donations where donor consented to public display (for Supporters section)
       allow get: if isAdmin() || (resource.data.status == 'approved' && resource.data.showPublicName == true);
       allow list: if isAdmin();
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     // This is a deliberately minimal public projection of approved donations.
@@ -101,7 +107,8 @@ service cloud.firestore {
       // must constrain collectorId to their authenticated UID. Admins can list all.
       allow list: if isActive()
         && (resource.data.collectorId == request.auth.uid || isAdmin());
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     match /handovers/{handoverId} {

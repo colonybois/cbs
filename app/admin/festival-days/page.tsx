@@ -177,6 +177,7 @@ export default function AdminFestivalDays() {
     if ((role !== "admin" && role !== "super_admin") || !uid) { showToast("Admin access required.", "error"); return; }
     if (!form.heading.trim()) { showToast("Please enter a heading.", "error"); return; }
     if (!editTarget && !coverFile) { showToast("Please upload a cover image.", "error"); return; }
+    if (!window.confirm(`${editTarget ? "Update" : "Publish"} this festive journey entry?`)) return;
     setSaving(true); setProgress(10);
     try {
       // Upload cover

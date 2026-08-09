@@ -15,14 +15,14 @@ function MemberCard({ member }: { member: ComityMember }) {
       )}
 
       {/* Photo */}
-      <div className="relative h-52 overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
+      <div className="relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 p-5">
         {member.photoUrl && !imgErr ? (
           <img
             src={member.photoUrl}
             alt={member.fullName}
             loading="lazy"
             onError={() => setImgErr(true)}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-lg transition duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center">
