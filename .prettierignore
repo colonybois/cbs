@@ -1,0 +1,15 @@
+.next
+node_modules
+out
+dist
+coverage
+
+package-lock.json
+tsconfig.tsbuildinfo
+
+public/assets
+*.log
+*.rules
+*.code-search
+.DS_Store
+.env*

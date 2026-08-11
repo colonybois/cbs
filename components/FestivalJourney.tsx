@@ -24,8 +24,15 @@ export default function FestivalJourney() {
   useEffect(() => {
     const unsub = onSnapshot(
       query(collection(db, "festival_days"), orderBy("displayOrder", "asc")),
-      snap => { setDays(snap.docs.map(d => ({ id: d.id, ...d.data() } as FestivalDay)).filter(day => day.status === "published")); setLoading(false); },
-      () => setLoading(false)
+      (snap) => {
+        setDays(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }) as FestivalDay)
+            .filter((day) => day.status === "published"),
+        );
+        setLoading(false);
+      },
+      () => setLoading(false),
     );
     return unsub;
   }, []);
@@ -34,7 +41,9 @@ export default function FestivalJourney() {
     <div>
       <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Day by day</p>
       <h2 className="mt-2 text-3xl font-black text-slate-900">Festival Journey</h2>
-      <p className="mt-3 text-slate-600">Every celebration, every moment — beautifully documented.</p>
+      <p className="mt-3 text-slate-600">
+        Every celebration, every moment — beautifully documented.
+      </p>
 
       {/* Skeletons */}
       {loading && (
@@ -50,14 +59,16 @@ export default function FestivalJourney() {
         <div className="mt-8 rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-10 text-center">
           <p className="text-4xl">🎪</p>
           <h3 className="mt-3 font-bold text-slate-900">Festival journey coming soon</h3>
-          <p className="mt-2 text-sm text-slate-600">Daily updates will appear here during the celebrations.</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Daily updates will appear here during the celebrations.
+          </p>
         </div>
       )}
 
       {/* Timeline cards */}
       {!loading && days.length > 0 && (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {days.map(day => (
+          {days.map((day) => (
             <article
               key={day.id}
               className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-lg hover:shadow-orange-100 ${day.featured ? "border-amber-400 ring-2 ring-amber-300/40" : "border-orange-100"}`}
@@ -87,11 +98,18 @@ export default function FestivalJourney() {
               <div className="flex flex-1 flex-col p-5">
                 {day.eventDate && (
                   <p className="mb-2 text-xs font-semibold text-orange-500">
-                    {new Date(day.eventDate).toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                    {new Date(day.eventDate).toLocaleDateString("en-IN", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </p>
                 )}
                 <h3 className="font-black text-slate-900 leading-snug">{day.heading}</h3>
-                {day.shortDesc && <p className="mt-2 text-sm text-slate-500 line-clamp-2">{day.shortDesc}</p>}
+                {day.shortDesc && (
+                  <p className="mt-2 text-sm text-slate-500 line-clamp-2">{day.shortDesc}</p>
+                )}
                 <Link
                   href={`/festival/${day.id}`}
                   className="mt-4 inline-flex items-center gap-1 self-start rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 transition"

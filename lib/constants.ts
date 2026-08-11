@@ -1,6 +1,9 @@
 export const COLONY_BOIS_ASSETS = {
   logo: { src: "/assets/logo.png", alt: "Colony Bois Rampuram Ganesh Utsav Youth Logo" },
-  paymentQr: { src: "/assets/payment-qr.jpg", alt: "Colony Bois Direct PhonePe UPI Payment QR Code" },
+  paymentQr: {
+    src: "/assets/payment-qr.jpg",
+    alt: "Colony Bois Direct PhonePe UPI Payment QR Code",
+  },
 } as const;
 
 export const COLONY_BOIS_CONTACT = {

@@ -2,17 +2,68 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
+import { recordSiteAnalyticsEvent } from "@/lib/site-analytics";
 
-const sessionKey = "colony_bois_analytics_session";
+const trackedSections = {
+  hero: "Home",
+  events: "Events",
+  gallery: "Gallery & Flashback",
+  festival: "Festival Journey",
+  comity: "Committee Management Rosters",
+  supporters: "Supporters",
+  donate: "Chanda / Contribution",
+  about: "About Us",
+  contact: "Contact",
+} as const;
 
 export default function SiteVisitTracker() {
   const pathname = usePathname();
+  const { uid, name, role, signedIn, loading } = useAuth();
+
   useEffect(() => {
-    let sessionId = sessionStorage.getItem(sessionKey);
-    if (!sessionId) { sessionId = crypto.randomUUID(); sessionStorage.setItem(sessionKey, sessionId); }
-    void addDoc(collection(db, "site_visits"), { sessionId, path: pathname, createdAt: serverTimestamp() }).catch(() => undefined);
-  }, [pathname]);
+    if (loading) return;
+    void recordSiteAnalyticsEvent(
+      { eventType: "page_view", path: pathname, source: "route_change" },
+      { uid, name, role, signedIn },
+    );
+  }, [loading, name, pathname, role, signedIn, uid]);
+
+  useEffect(() => {
+    if (loading || typeof IntersectionObserver === "undefined") return;
+    const elements = Object.keys(trackedSections)
+      .map((id) => document.getElementById(id))
+      .filter((element): element is HTMLElement => Boolean(element));
+    if (elements.length === 0) return;
+
+    const seen = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.45) return;
+          const sectionId = entry.target.id as keyof typeof trackedSections;
+          const key = `${pathname}:${sectionId}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          void recordSiteAnalyticsEvent(
+            {
+              eventType: "section_view",
+              path: pathname,
+              sectionId,
+              sectionLabel: trackedSections[sectionId],
+              source: "section_visibility",
+            },
+            { uid, name, role, signedIn },
+          );
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -15% 0px", threshold: [0.45, 0.7] },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [loading, name, pathname, role, signedIn, uid]);
+
   return null;
 }

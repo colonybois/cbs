@@ -41,7 +41,10 @@ export default function UploadMemoryModal({
       setTitle("");
       setCaption("");
       setYear(String(new Date().getFullYear()));
-      setCredit(""); setRelatedEvent(""); setFeatured(false); setPublished(true);
+      setCredit("");
+      setRelatedEvent("");
+      setFeatured(false);
+      setPublished(true);
       setFile(null);
       setPreview(null);
       setError("");
@@ -78,7 +81,12 @@ export default function UploadMemoryModal({
       setError("Please enter a title.");
       return;
     }
-    if (!window.confirm(`Upload “${title.trim()}” to ${collectionName === "flashback" ? "the gallery" : "events"}?`)) return;
+    if (
+      !window.confirm(
+        `Upload “${title.trim()}” to ${collectionName === "flashback" ? "the gallery" : "events"}?`,
+      )
+    )
+      return;
     setUploading(true);
     setError("");
     try {
@@ -97,7 +105,15 @@ export default function UploadMemoryModal({
           uploadedBy: uid,
           createdAt: serverTimestamp(),
         });
-        await recordAudit({ actorId: uid, actorName: name || "Admin", action: "Uploaded gallery image", module: "Gallery", targetId: added.id, newValue: { title: title.trim(), year: Number(year), featured, published }, approvalStatus: "approved" });
+        await recordAudit({
+          actorId: uid,
+          actorName: name || "Admin",
+          action: "Uploaded gallery image",
+          module: "Gallery",
+          targetId: added.id,
+          newValue: { title: title.trim(), year: Number(year), featured, published },
+          approvalStatus: "approved",
+        });
       } else {
         await addDoc(collection(db, "events"), {
           title: title.trim(),
@@ -114,7 +130,7 @@ export default function UploadMemoryModal({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Upload failed. Check your admin access and try again."
+          : "Upload failed. Check your admin access and try again.",
       );
     } finally {
       setUploading(false);
@@ -129,21 +145,62 @@ export default function UploadMemoryModal({
     >
       <form onSubmit={submit} className="space-y-4">
         <fieldset disabled={uploading} className="space-y-4 disabled:opacity-60">
-
           {/* Title */}
           <label className="block text-sm font-semibold text-slate-700">
             Title *
             <input
               required
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Ganesh Chaturthi 2024"
               className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
           </label>
 
-          {collectionName === "flashback" && <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm font-semibold text-slate-700">Related event <input value={relatedEvent} onChange={e => setRelatedEvent(e.target.value)} placeholder="Optional event name" className="mt-1 w-full rounded-xl border border-orange-200 p-3" /></label><label className="block text-sm font-semibold text-slate-700">Photo credit <input value={credit} onChange={e => setCredit(e.target.value)} placeholder="Optional public credit" className="mt-1 w-full rounded-xl border border-orange-200 p-3" /></label></div>}
-          {collectionName === "flashback" && <div className="flex gap-5 text-sm font-semibold text-slate-700"><label><input type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} className="mr-2"/>Featured memory</label><label><input type="checkbox" checked={published} onChange={e => setPublished(e.target.checked)} className="mr-2"/>Publish now</label></div>}
+          {collectionName === "flashback" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm font-semibold text-slate-700">
+                Related event{" "}
+                <input
+                  value={relatedEvent}
+                  onChange={(e) => setRelatedEvent(e.target.value)}
+                  placeholder="Optional event name"
+                  className="mt-1 w-full rounded-xl border border-orange-200 p-3"
+                />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">
+                Photo credit{" "}
+                <input
+                  value={credit}
+                  onChange={(e) => setCredit(e.target.value)}
+                  placeholder="Optional public credit"
+                  className="mt-1 w-full rounded-xl border border-orange-200 p-3"
+                />
+              </label>
+            </div>
+          )}
+          {collectionName === "flashback" && (
+            <div className="flex gap-5 text-sm font-semibold text-slate-700">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={featured}
+                  onChange={(e) => setFeatured(e.target.checked)}
+                  className="mr-2"
+                />
+                Featured memory
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={published}
+                  onChange={(e) => setPublished(e.target.checked)}
+                  className="mr-2"
+                />
+                Publish now
+              </label>
+            </div>
+          )}
 
           {/* Year — flashback only */}
           {collectionName === "flashback" && (
@@ -155,7 +212,7 @@ export default function UploadMemoryModal({
                 min="2000"
                 max="2100"
                 value={year}
-                onChange={e => setYear(e.target.value)}
+                onChange={(e) => setYear(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
               />
             </label>
@@ -166,7 +223,7 @@ export default function UploadMemoryModal({
             Caption <span className="font-normal text-slate-400">(optional)</span>
             <textarea
               value={caption}
-              onChange={e => setCaption(e.target.value)}
+              onChange={(e) => setCaption(e.target.value)}
               placeholder="Short description…"
               rows={2}
               className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
@@ -200,8 +257,19 @@ export default function UploadMemoryModal({
               onClick={() => fileInputRef.current?.click()}
               className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 py-6 text-sm font-semibold text-orange-600 hover:border-orange-400 hover:bg-orange-100 transition"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4 4 4"/>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4 4 4"
+                />
               </svg>
               Choose photo (max 5 MB)
             </button>
@@ -217,7 +285,10 @@ export default function UploadMemoryModal({
 
         {/* Error */}
         {error && (
-          <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+          <p
+            role="alert"
+            className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700"
+          >
             {error}
           </p>
         )}

@@ -10,4 +10,18 @@ export const metadata: Metadata = {
   description: "Pandal events and transparent Chanda collection.",
   icons: { icon: "/assets/logo.png" },
 };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en"><body><AuthProvider><SiteVisitTracker/><NetworkBanner/><Header/><main className="mx-auto min-h-[calc(100vh-136px)] max-w-7xl px-5 py-8">{children}</main><Footer/></AuthProvider></body></html>; }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en">
+      <body>
+        <AuthProvider>
+          <SiteVisitTracker />
+          <NetworkBanner />
+          <Header />
+          <main className="mx-auto min-h-[calc(100vh-136px)] max-w-7xl px-5 py-8">{children}</main>
+          <Footer />
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}

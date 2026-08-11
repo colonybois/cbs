@@ -14,7 +14,10 @@ export function useNetworkStatus() {
     setIsOnline(navigator.onLine);
     window.addEventListener("online", online);
     window.addEventListener("offline", offline);
-    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
   }, []);
 
   return isOnline;

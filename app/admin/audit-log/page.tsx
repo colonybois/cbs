@@ -9,29 +9,654 @@ import { db } from "@/lib/firebase";
 
 type TimestampLike = { toDate?: () => Date } | string;
 type Values = Record<string, unknown>;
-type AuditLog = { id: string; auditId?: string; actorName?: string; actorId?: string; action?: string; module?: string; targetId?: string; approvalStatus?: "approved" | "rejected" | "pending"; previousValue?: Values; newValue?: Values; createdAt?: TimestampLike };
+type AuditLog = {
+  id: string;
+  auditId?: string;
+  actorName?: string;
+  actorId?: string;
+  action?: string;
+  module?: string;
+  targetId?: string;
+  approvalStatus?: "approved" | "rejected" | "pending";
+  previousValue?: Values;
+  newValue?: Values;
+  createdAt?: TimestampLike;
+};
 type Sort = "newest" | "oldest" | "admin" | "module" | "action" | "status";
-const modules = ["All", "Events", "Gallery", "Members", "Chanda", "Users/Admins", "Settings", "Authentication"];
-const actions = ["All", "Created", "Updated", "Deleted", "Approved", "Rejected", "Published", "Unpublished", "Activated", "Deactivated", "Role Changed", "Permission Changed", "Login", "Logout"];
-const label = (key: string) => key.replace(/([A-Z])/g, " $1").replace(/^./, value => value.toUpperCase()).replace(/Id$/, "ID");
-const clean = (value: unknown) => value === null || value === undefined || value === "" ? "Not provided" : typeof value === "boolean" ? value ? "Yes" : "No" : String(value);
-const asDate = (value: TimestampLike | undefined) => value && typeof value !== "string" ? value.toDate?.() : value ? new Date(value) : undefined;
-const date = (value: TimestampLike | undefined) => asDate(value)?.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) || "Time unavailable";
-const readableAction = (action = "Activity") => action.replace(/[_-]+/g, " ").replace(/\b\w/g, char => char.toUpperCase());
-const statusOf = (log: AuditLog) => log.approvalStatus === "approved" ? "Approved" : log.approvalStatus === "rejected" ? "Rejected" : log.approvalStatus === "pending" ? "Pending" : "Successful";
-const changes = (log: AuditLog) => { const before = log.previousValue || {}; const after = log.newValue || {}; return [...new Set([...Object.keys(before), ...Object.keys(after)])].filter(key => clean(before[key]) !== clean(after[key])).map(key => ({ key, before: clean(before[key]), after: clean(after[key]) })); };
-const summary = (log: AuditLog) => { const list = changes(log); if (!list.length) return log.targetId ? `Record ${log.targetId.slice(0, 8)}` : "Activity recorded"; if (list.length > 1) return `${list.length} changes made`; return `${label(list[0].key)}: ${list[0].before} → ${list[0].after}`; };
+const modules = [
+  "All",
+  "Events",
+  "Gallery",
+  "Members",
+  "Chanda",
+  "Users/Admins",
+  "Settings",
+  "Authentication",
+];
+const actions = [
+  "All",
+  "Created",
+  "Updated",
+  "Deleted",
+  "Approved",
+  "Rejected",
+  "Published",
+  "Unpublished",
+  "Activated",
+  "Deactivated",
+  "Role Changed",
+  "Permission Changed",
+  "Login",
+  "Logout",
+];
+const label = (key: string) =>
+  key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (value) => value.toUpperCase())
+    .replace(/Id$/, "ID");
+const clean = (value: unknown) =>
+  value === null || value === undefined || value === ""
+    ? "Not provided"
+    : typeof value === "boolean"
+      ? value
+        ? "Yes"
+        : "No"
+      : String(value);
+const asDate = (value: TimestampLike | undefined) =>
+  value && typeof value !== "string" ? value.toDate?.() : value ? new Date(value) : undefined;
+const date = (value: TimestampLike | undefined) =>
+  asDate(value)?.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) ||
+  "Time unavailable";
+const readableAction = (action = "Activity") =>
+  action.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+const statusOf = (log: AuditLog) =>
+  log.approvalStatus === "approved"
+    ? "Approved"
+    : log.approvalStatus === "rejected"
+      ? "Rejected"
+      : log.approvalStatus === "pending"
+        ? "Pending"
+        : "Successful";
+const changes = (log: AuditLog) => {
+  const before = log.previousValue || {};
+  const after = log.newValue || {};
+  return [...new Set([...Object.keys(before), ...Object.keys(after)])]
+    .filter((key) => clean(before[key]) !== clean(after[key]))
+    .map((key) => ({ key, before: clean(before[key]), after: clean(after[key]) }));
+};
+const summary = (log: AuditLog) => {
+  const list = changes(log);
+  if (!list.length)
+    return log.targetId ? `Record ${log.targetId.slice(0, 8)}` : "Activity recorded";
+  if (list.length > 1) return `${list.length} changes made`;
+  return `${label(list[0].key)}: ${list[0].before} → ${list[0].after}`;
+};
 
 export default function AuditLogPage() {
-  const [logs, setLogs] = useState<AuditLog[]>([]); const [error, setError] = useState(""); const [retry, setRetry] = useState(0); const [search, setSearch] = useState(""); const [module, setModule] = useState("All"); const [action, setAction] = useState("All"); const [actor, setActor] = useState("All"); const [status, setStatus] = useState("All"); const [period, setPeriod] = useState("Last 30 days"); const [from, setFrom] = useState(""); const [to, setTo] = useState(""); const [sort, setSort] = useState<Sort>("newest"); const [view, setView] = useState<"table" | "timeline">("table"); const [size, setSize] = useState(25); const [page, setPage] = useState(1); const [selected, setSelected] = useState<AuditLog | null>(null);
-  useEffect(() => onSnapshot(query(collection(db, "admin_audit_logs"), orderBy("createdAt", "desc"), limit(500)), snapshot => { setLogs(snapshot.docs.map(item => ({ id: item.id, ...item.data() } as AuditLog))); setError(""); }, () => setError("Unable to load audit activity.")), [retry]);
-  const actors = [...new Set(logs.map(log => log.actorName).filter(Boolean))] as string[];
-  const filtered = useMemo(() => logs.filter(log => { const term = search.toLowerCase(); const matchesSearch = !term || [log.actorName, log.action, log.module, log.targetId, log.auditId, log.id].some(value => value?.toLowerCase().includes(term)); if (!matchesSearch || (module !== "All" && log.module !== module) || (action !== "All" && !readableAction(log.action).toLowerCase().includes(action.toLowerCase())) || (actor !== "All" && log.actorName !== actor) || (status !== "All" && statusOf(log) !== status)) return false; const value = asDate(log.createdAt); if (!value) return period === "All time"; const now = new Date(); const start = new Date(now); if (period === "Today") start.setHours(0, 0, 0, 0); else if (period === "Yesterday") { start.setDate(now.getDate() - 1); start.setHours(0, 0, 0, 0); const end = new Date(start); end.setHours(23, 59, 59, 999); if (value < start || value > end) return false; } else if (period === "Last 7 days") start.setDate(now.getDate() - 7); else if (period === "Last 30 days") start.setDate(now.getDate() - 30); else if (period === "Custom") { if (from && value < new Date(`${from}T00:00:00`)) return false; if (to && value > new Date(`${to}T23:59:59`)) return false; return true; } else return true; return value >= start; }).sort((a, b) => { const left = sort === "admin" ? a.actorName || "" : sort === "module" ? a.module || "" : sort === "action" ? a.action || "" : sort === "status" ? statusOf(a) : asDate(a.createdAt)?.getTime() || 0; const right = sort === "admin" ? b.actorName || "" : sort === "module" ? b.module || "" : sort === "action" ? b.action || "" : sort === "status" ? statusOf(b) : asDate(b.createdAt)?.getTime() || 0; return typeof left === "number" && typeof right === "number" ? (sort === "oldest" ? left - right : right - left) : String(left).localeCompare(String(right)); }), [logs, search, module, action, actor, status, period, from, to, sort]);
-  const paged = filtered.slice((page - 1) * size, page * size); const totalPages = Math.max(1, Math.ceil(filtered.length / size)); const today = logs.filter(log => { const item = asDate(log.createdAt); const now = new Date(); return item?.toDateString() === now.toDateString(); }); const cards = [[logs.length, "Total Activities"], [today.length, "Today"], [logs.filter(log => changes(log).length > 0).length, "Changes"], [logs.filter(log => log.approvalStatus === "approved").length, "Approvals"], [logs.filter(log => log.approvalStatus === "rejected").length, "Rejected"], [logs.filter(log => log.module === "Authentication").length, "Admin Actions"]];
-  const clear = () => { setSearch(""); setModule("All"); setAction("All"); setActor("All"); setStatus("All"); setPeriod("Last 30 days"); setFrom(""); setTo(""); setPage(1); };
-  const exportCsv = () => { const rows = [["Audit ID", "Date & Time", "Admin/User", "Action", "Module", "Record ID", "Change", "Status"], ...filtered.map(log => [log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`, date(log.createdAt), log.actorName || "Unknown", readableAction(log.action), log.module || "Other", log.targetId || "", summary(log), statusOf(log)])]; const blob = new Blob([rows.map(row => row.map(cell => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n")], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "colony-bois-audit-log.csv"; link.click(); URL.revokeObjectURL(url); };
-  return <div className="space-y-6"><WelcomeBanner title="Admin Audit Log" text="Search, review, and understand protected administrative activity."/><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">{cards.map(([value, name]) => <Card key={String(name)} className="bg-white p-4"><p className="text-2xl font-black text-orange-600">{value}</p><p className="mt-1 text-sm text-slate-600">{name}</p></Card>)}</div><Card className="sticky top-20 z-10 p-4 shadow-md"><div className="grid gap-3 lg:grid-cols-4"><input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search admin, action, module, or ID" className="rounded-lg border border-slate-300 px-3 py-2 text-sm"/><select value={module} onChange={e => { setModule(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">{modules.map(item => <option key={item}>{item}</option>)}</select><select value={action} onChange={e => { setAction(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">{actions.map(item => <option key={item}>{item}</option>)}</select><select value={actor} onChange={e => { setActor(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"><option>All</option>{actors.map(item => <option key={item}>{item}</option>)}</select><select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">{["All", "Successful", "Pending", "Approved", "Rejected", "Failed"].map(item => <option key={item}>{item}</option>)}</select><select value={period} onChange={e => { setPeriod(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">{["Today", "Yesterday", "Last 7 days", "Last 30 days", "Custom", "All time"].map(item => <option key={item}>{item}</option>)}</select>{period === "Custom" && <><input type="date" value={from} onChange={e => setFrom(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"/><input type="date" value={to} onChange={e => setTo(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"/></>}<div className="flex gap-2"><button onClick={clear} className="rounded-lg border border-orange-300 px-3 py-2 text-sm font-bold text-orange-700">Clear Filters</button><button onClick={exportCsv} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-bold text-white">Export CSV</button></div></div></Card><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex rounded-lg bg-orange-50 p-1"><button onClick={() => setView("table")} className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "table" ? "bg-white text-orange-700 shadow" : "text-slate-600"}`}>Table View</button><button onClick={() => setView("timeline")} className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "timeline" ? "bg-white text-orange-700 shadow" : "text-slate-600"}`}>Timeline View</button></div><div className="flex items-center gap-2 text-sm text-slate-600">Sort <select value={sort} onChange={e => setSort(e.target.value as Sort)} className="rounded-lg border border-slate-300 p-2"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="admin">Admin / User</option><option value="module">Module</option><option value="action">Action</option><option value="status">Status</option></select></div></div>{error ? <Card className="p-8 text-center"><p className="font-bold text-slate-900">Unable to load audit activity</p><button onClick={() => setRetry(value => value + 1)} className="mt-4 rounded-lg bg-orange-500 px-4 py-2 font-bold text-white">Retry</button></Card> : view === "timeline" ? <Card className="p-6">{paged.length === 0 ? <Empty clear={clear}/> : <div className="space-y-6 border-l-2 border-orange-200 pl-6">{paged.map(log => <button onClick={() => setSelected(log)} key={log.id} className="relative block w-full text-left"><span className="absolute -left-[34px] top-1 h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-50"/><p className="text-xs font-semibold text-slate-500">{date(log.createdAt)}</p><p className="mt-1 font-bold text-slate-900">{readableAction(log.action)}</p><p className="mt-1 text-sm text-slate-600">{log.actorName || "Unknown admin"} · {summary(log)}</p></button>)}</div>}</Card> : <Card className="overflow-x-auto"><table className="min-w-[1050px] w-full text-left text-sm"><thead className="bg-orange-50 text-slate-700"><tr>{["Date & Time", "Admin / User", "Action", "Module", "Record", "Change", "Status", "Details"].map(item => <th key={item} className="px-4 py-3 font-bold">{item}</th>)}</tr></thead><tbody className="divide-y divide-orange-100">{paged.map(log => <tr key={log.id}><td className="px-4 py-4 text-slate-600">{date(log.createdAt)}</td><td className="px-4 py-4"><span className="mr-2 inline-grid h-7 w-7 place-items-center rounded-full bg-orange-100 text-xs font-black text-orange-700">{(log.actorName || "?").slice(0, 1).toUpperCase()}</span><span className="font-semibold text-slate-900">{log.actorName || "Unknown"}</span></td><td className="px-4 py-4 font-semibold text-slate-900">{readableAction(log.action)}</td><td className="px-4 py-4 text-slate-600">{log.module || "Other"}</td><td className="px-4 py-4 text-xs text-slate-500">{log.targetId ? log.targetId.slice(0, 12) : "—"}</td><td className="max-w-64 px-4 py-4 text-slate-600">{summary(log)}</td><td className="px-4 py-4"><Status value={statusOf(log)}/></td><td className="px-4 py-4"><button onClick={() => setSelected(log)} className="font-bold text-orange-700">View details</button></td></tr>)}{paged.length === 0 && <tr><td colSpan={8}><Empty clear={clear}/></td></tr>}</tbody></table></Card>}<div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600"><span>Showing {filtered.length ? (page - 1) * size + 1 : 0}–{Math.min(page * size, filtered.length)} of {filtered.length} activities</span><div className="flex items-center gap-2"><select value={size} onChange={e => { setSize(Number(e.target.value)); setPage(1); }} className="rounded-lg border border-slate-300 p-2"><option value={25}>25</option><option value={50}>50</option><option value={100}>100</option></select><button disabled={page === 1} onClick={() => setPage(page - 1)} className="rounded-lg border border-slate-300 px-3 py-2 disabled:opacity-40">←</button><span>{page} / {totalPages}</span><button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="rounded-lg border border-slate-300 px-3 py-2 disabled:opacity-40">→</button></div></div><Details log={selected} onClose={() => setSelected(null)}/></div>;
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [search, setSearch] = useState("");
+  const [module, setModule] = useState("All");
+  const [action, setAction] = useState("All");
+  const [actor, setActor] = useState("All");
+  const [status, setStatus] = useState("All");
+  const [period, setPeriod] = useState("Last 30 days");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [sort, setSort] = useState<Sort>("newest");
+  const [view, setView] = useState<"table" | "timeline">("table");
+  const [size, setSize] = useState(25);
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<AuditLog | null>(null);
+  useEffect(
+    () =>
+      onSnapshot(
+        query(collection(db, "admin_audit_logs"), orderBy("createdAt", "desc"), limit(500)),
+        (snapshot) => {
+          setLogs(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as AuditLog));
+          setError("");
+        },
+        () => setError("Unable to load audit activity."),
+      ),
+    [retry],
+  );
+  const actors = [...new Set(logs.map((log) => log.actorName).filter(Boolean))] as string[];
+  const filtered = useMemo(
+    () =>
+      logs
+        .filter((log) => {
+          const term = search.toLowerCase();
+          const matchesSearch =
+            !term ||
+            [log.actorName, log.action, log.module, log.targetId, log.auditId, log.id].some(
+              (value) => value?.toLowerCase().includes(term),
+            );
+          if (
+            !matchesSearch ||
+            (module !== "All" && log.module !== module) ||
+            (action !== "All" &&
+              !readableAction(log.action).toLowerCase().includes(action.toLowerCase())) ||
+            (actor !== "All" && log.actorName !== actor) ||
+            (status !== "All" && statusOf(log) !== status)
+          )
+            return false;
+          const value = asDate(log.createdAt);
+          if (!value) return period === "All time";
+          const now = new Date();
+          const start = new Date(now);
+          if (period === "Today") start.setHours(0, 0, 0, 0);
+          else if (period === "Yesterday") {
+            start.setDate(now.getDate() - 1);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(start);
+            end.setHours(23, 59, 59, 999);
+            if (value < start || value > end) return false;
+          } else if (period === "Last 7 days") start.setDate(now.getDate() - 7);
+          else if (period === "Last 30 days") start.setDate(now.getDate() - 30);
+          else if (period === "Custom") {
+            if (from && value < new Date(`${from}T00:00:00`)) return false;
+            if (to && value > new Date(`${to}T23:59:59`)) return false;
+            return true;
+          } else return true;
+          return value >= start;
+        })
+        .sort((a, b) => {
+          const left =
+            sort === "admin"
+              ? a.actorName || ""
+              : sort === "module"
+                ? a.module || ""
+                : sort === "action"
+                  ? a.action || ""
+                  : sort === "status"
+                    ? statusOf(a)
+                    : asDate(a.createdAt)?.getTime() || 0;
+          const right =
+            sort === "admin"
+              ? b.actorName || ""
+              : sort === "module"
+                ? b.module || ""
+                : sort === "action"
+                  ? b.action || ""
+                  : sort === "status"
+                    ? statusOf(b)
+                    : asDate(b.createdAt)?.getTime() || 0;
+          return typeof left === "number" && typeof right === "number"
+            ? sort === "oldest"
+              ? left - right
+              : right - left
+            : String(left).localeCompare(String(right));
+        }),
+    [logs, search, module, action, actor, status, period, from, to, sort],
+  );
+  const paged = filtered.slice((page - 1) * size, page * size);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / size));
+  const today = logs.filter((log) => {
+    const item = asDate(log.createdAt);
+    const now = new Date();
+    return item?.toDateString() === now.toDateString();
+  });
+  const cards = [
+    [logs.length, "Total Activities"],
+    [today.length, "Today"],
+    [logs.filter((log) => changes(log).length > 0).length, "Changes"],
+    [logs.filter((log) => log.approvalStatus === "approved").length, "Approvals"],
+    [logs.filter((log) => log.approvalStatus === "rejected").length, "Rejected"],
+    [logs.filter((log) => log.module === "Authentication").length, "Admin Actions"],
+  ];
+  const clear = () => {
+    setSearch("");
+    setModule("All");
+    setAction("All");
+    setActor("All");
+    setStatus("All");
+    setPeriod("Last 30 days");
+    setFrom("");
+    setTo("");
+    setPage(1);
+  };
+  const exportCsv = () => {
+    const rows = [
+      [
+        "Audit ID",
+        "Date & Time",
+        "Admin/User",
+        "Action",
+        "Module",
+        "Record ID",
+        "Change",
+        "Status",
+      ],
+      ...filtered.map((log) => [
+        log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`,
+        date(log.createdAt),
+        log.actorName || "Unknown",
+        readableAction(log.action),
+        log.module || "Other",
+        log.targetId || "",
+        summary(log),
+        statusOf(log),
+      ]),
+    ];
+    const blob = new Blob(
+      [
+        rows
+          .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+          .join("\n"),
+      ],
+      { type: "text/csv;charset=utf-8" },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "colony-bois-audit-log.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <div className="space-y-6">
+      <WelcomeBanner
+        title="Admin Audit Log"
+        text="Search, review, and understand protected administrative activity."
+      />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        {cards.map(([value, name]) => (
+          <Card key={String(name)} className="bg-white p-4">
+            <p className="text-2xl font-black text-orange-600">{value}</p>
+            <p className="mt-1 text-sm text-slate-600">{name}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="sticky top-20 z-10 p-4 shadow-md">
+        <div className="grid gap-3 lg:grid-cols-4">
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search admin, action, module, or ID"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <select
+            value={module}
+            onChange={(e) => {
+              setModule(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            {modules.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+          <select
+            value={action}
+            onChange={(e) => {
+              setAction(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            {actions.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+          <select
+            value={actor}
+            onChange={(e) => {
+              setActor(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option>All</option>
+            {actors.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            {["All", "Successful", "Pending", "Approved", "Rejected", "Failed"].map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+          <select
+            value={period}
+            onChange={(e) => {
+              setPeriod(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            {["Today", "Yesterday", "Last 7 days", "Last 30 days", "Custom", "All time"].map(
+              (item) => (
+                <option key={item}>{item}</option>
+              ),
+            )}
+          </select>
+          {period === "Custom" && (
+            <>
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={clear}
+              className="rounded-lg border border-orange-300 px-3 py-2 text-sm font-bold text-orange-700"
+            >
+              Clear Filters
+            </button>
+            <button
+              onClick={exportCsv}
+              className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-bold text-white"
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
+      </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex rounded-lg bg-orange-50 p-1">
+          <button
+            onClick={() => setView("table")}
+            className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "table" ? "bg-white text-orange-700 shadow" : "text-slate-600"}`}
+          >
+            Table View
+          </button>
+          <button
+            onClick={() => setView("timeline")}
+            className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "timeline" ? "bg-white text-orange-700 shadow" : "text-slate-600"}`}
+          >
+            Timeline View
+          </button>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          Sort{" "}
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as Sort)}
+            className="rounded-lg border border-slate-300 p-2"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="admin">Admin / User</option>
+            <option value="module">Module</option>
+            <option value="action">Action</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+      </div>
+      {error ? (
+        <Card className="p-8 text-center">
+          <p className="font-bold text-slate-900">Unable to load audit activity</p>
+          <button
+            onClick={() => setRetry((value) => value + 1)}
+            className="mt-4 rounded-lg bg-orange-500 px-4 py-2 font-bold text-white"
+          >
+            Retry
+          </button>
+        </Card>
+      ) : view === "timeline" ? (
+        <Card className="p-6">
+          {paged.length === 0 ? (
+            <Empty clear={clear} />
+          ) : (
+            <div className="space-y-6 border-l-2 border-orange-200 pl-6">
+              {paged.map((log) => (
+                <button
+                  onClick={() => setSelected(log)}
+                  key={log.id}
+                  className="relative block w-full text-left"
+                >
+                  <span className="absolute -left-[34px] top-1 h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-50" />
+                  <p className="text-xs font-semibold text-slate-500">{date(log.createdAt)}</p>
+                  <p className="mt-1 font-bold text-slate-900">{readableAction(log.action)}</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {log.actorName || "Unknown admin"} · {summary(log)}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </Card>
+      ) : (
+        <Card className="overflow-x-auto">
+          <table className="min-w-[1050px] w-full text-left text-sm">
+            <thead className="bg-orange-50 text-slate-700">
+              <tr>
+                {[
+                  "Date & Time",
+                  "Admin / User",
+                  "Action",
+                  "Module",
+                  "Record",
+                  "Change",
+                  "Status",
+                  "Details",
+                ].map((item) => (
+                  <th key={item} className="px-4 py-3 font-bold">
+                    {item}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-orange-100">
+              {paged.map((log) => (
+                <tr key={log.id}>
+                  <td className="px-4 py-4 text-slate-600">{date(log.createdAt)}</td>
+                  <td className="px-4 py-4">
+                    <span className="mr-2 inline-grid h-7 w-7 place-items-center rounded-full bg-orange-100 text-xs font-black text-orange-700">
+                      {(log.actorName || "?").slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="font-semibold text-slate-900">
+                      {log.actorName || "Unknown"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 font-semibold text-slate-900">
+                    {readableAction(log.action)}
+                  </td>
+                  <td className="px-4 py-4 text-slate-600">{log.module || "Other"}</td>
+                  <td className="px-4 py-4 text-xs text-slate-500">
+                    {log.targetId ? log.targetId.slice(0, 12) : "—"}
+                  </td>
+                  <td className="max-w-64 px-4 py-4 text-slate-600">{summary(log)}</td>
+                  <td className="px-4 py-4">
+                    <Status value={statusOf(log)} />
+                  </td>
+                  <td className="px-4 py-4">
+                    <button onClick={() => setSelected(log)} className="font-bold text-orange-700">
+                      View details
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {paged.length === 0 && (
+                <tr>
+                  <td colSpan={8}>
+                    <Empty clear={clear} />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </Card>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+        <span>
+          Showing {filtered.length ? (page - 1) * size + 1 : 0}–
+          {Math.min(page * size, filtered.length)} of {filtered.length} activities
+        </span>
+        <div className="flex items-center gap-2">
+          <select
+            value={size}
+            onChange={(e) => {
+              setSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="rounded-lg border border-slate-300 p-2"
+          >
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="rounded-lg border border-slate-300 px-3 py-2 disabled:opacity-40"
+          >
+            ←
+          </button>
+          <span>
+            {page} / {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            className="rounded-lg border border-slate-300 px-3 py-2 disabled:opacity-40"
+          >
+            →
+          </button>
+        </div>
+      </div>
+      <Details log={selected} onClose={() => setSelected(null)} />
+    </div>
+  );
 }
-function Status({ value }: { value: string }) { return <span className={`rounded-full px-2 py-1 text-xs font-bold ${value === "Approved" || value === "Successful" ? "bg-emerald-50 text-emerald-700" : value === "Rejected" || value === "Failed" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}>{value}</span>; }
-function Empty({ clear }: { clear: () => void }) { return <div className="p-8 text-center"><p className="font-bold text-slate-900">No audit activities found</p><p className="mt-1 text-sm text-slate-600">Try changing your filters or clearing the current search.</p><button onClick={clear} className="mt-3 font-bold text-orange-700">Clear Filters</button></div>; }
-function Details({ log, onClose }: { log: AuditLog | null; onClose: () => void }) { const items = log ? changes(log) : []; return <Modal open={!!log} onClose={onClose} title="Activity Details">{log && <div className="space-y-5"><div className="grid gap-3 rounded-xl bg-orange-50 p-4 text-sm sm:grid-cols-2"><p><b>Action</b><br/>{readableAction(log.action)}</p><p><b>Performed by</b><br/>{log.actorName || "Unknown"}</p><p><b>Module</b><br/>{log.module || "Other"}</p><p><b>Date & time</b><br/>{date(log.createdAt)}</p><p><b>Audit ID</b><br/><button onClick={() => navigator.clipboard.writeText(log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`)} className="font-mono text-orange-700">{log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`} ⧉</button></p><p><b>Status</b><br/><Status value={statusOf(log)}/></p>{log.targetId && <p className="sm:col-span-2"><b>Affected record ID</b><br/><span className="font-mono text-xs">{log.targetId}</span></p>}</div><div><h3 className="font-bold text-slate-900">Changes Made</h3>{items.length ? <div className="mt-3 overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left text-slate-500"><th className="pb-2">Field</th><th className="pb-2">Before</th><th className="pb-2">After</th></tr></thead><tbody>{items.map(item => <tr key={item.key} className="border-b border-orange-50"><td className="py-2 font-semibold">{label(item.key)}</td><td className="py-2 text-slate-600">{item.before}</td><td className="py-2 font-semibold text-orange-700">{item.after}</td></tr>)}</tbody></table></div> : <p className="mt-2 text-sm text-slate-600">No field-level changes were recorded for this activity.</p>}</div>{log.approvalStatus && <div className="rounded-xl border border-orange-200 p-4 text-sm"><b>Approval information</b><p className="mt-2">Requested by: {log.actorName || "Unknown"} → Decision: <Status value={statusOf(log)}/> → {date(log.createdAt)}</p></div>}</div>}</Modal>; }
+function Status({ value }: { value: string }) {
+  return (
+    <span
+      className={`rounded-full px-2 py-1 text-xs font-bold ${value === "Approved" || value === "Successful" ? "bg-emerald-50 text-emerald-700" : value === "Rejected" || value === "Failed" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}
+    >
+      {value}
+    </span>
+  );
+}
+function Empty({ clear }: { clear: () => void }) {
+  return (
+    <div className="p-8 text-center">
+      <p className="font-bold text-slate-900">No audit activities found</p>
+      <p className="mt-1 text-sm text-slate-600">
+        Try changing your filters or clearing the current search.
+      </p>
+      <button onClick={clear} className="mt-3 font-bold text-orange-700">
+        Clear Filters
+      </button>
+    </div>
+  );
+}
+function Details({ log, onClose }: { log: AuditLog | null; onClose: () => void }) {
+  const items = log ? changes(log) : [];
+  return (
+    <Modal open={!!log} onClose={onClose} title="Activity Details">
+      {log && (
+        <div className="space-y-5">
+          <div className="grid gap-3 rounded-xl bg-orange-50 p-4 text-sm sm:grid-cols-2">
+            <p>
+              <b>Action</b>
+              <br />
+              {readableAction(log.action)}
+            </p>
+            <p>
+              <b>Performed by</b>
+              <br />
+              {log.actorName || "Unknown"}
+            </p>
+            <p>
+              <b>Module</b>
+              <br />
+              {log.module || "Other"}
+            </p>
+            <p>
+              <b>Date & time</b>
+              <br />
+              {date(log.createdAt)}
+            </p>
+            <p>
+              <b>Audit ID</b>
+              <br />
+              <button
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`,
+                  )
+                }
+                className="font-mono text-orange-700"
+              >
+                {log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`} ⧉
+              </button>
+            </p>
+            <p>
+              <b>Status</b>
+              <br />
+              <Status value={statusOf(log)} />
+            </p>
+            {log.targetId && (
+              <p className="sm:col-span-2">
+                <b>Affected record ID</b>
+                <br />
+                <span className="font-mono text-xs">{log.targetId}</span>
+              </p>
+            )}
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Changes Made</h3>
+            {items.length ? (
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-slate-500">
+                      <th className="pb-2">Field</th>
+                      <th className="pb-2">Before</th>
+                      <th className="pb-2">After</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.key} className="border-b border-orange-50">
+                        <td className="py-2 font-semibold">{label(item.key)}</td>
+                        <td className="py-2 text-slate-600">{item.before}</td>
+                        <td className="py-2 font-semibold text-orange-700">{item.after}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">
+                No field-level changes were recorded for this activity.
+              </p>
+            )}
+          </div>
+          {log.approvalStatus && (
+            <div className="rounded-xl border border-orange-200 p-4 text-sm">
+              <b>Approval information</b>
+              <p className="mt-2">
+                Requested by: {log.actorName || "Unknown"} → Decision:{" "}
+                <Status value={statusOf(log)} /> → {date(log.createdAt)}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}

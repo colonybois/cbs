@@ -1,7 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut as firebaseSignOut, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  updateProfile,
+} from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, initAnalytics } from "@/lib/firebase";
 import { recordAudit } from "@/lib/audit";
@@ -29,8 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void initAnalytics();
-    return onAuthStateChanged(auth, async user => {
-      if (!user) { setProfile(null); setLoading(false); return; }
+    return onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
       try {
         const snapshot = await getDoc(doc(db, "users", user.uid));
         const data = snapshot.data() as Partial<UserProfile> | undefined;
@@ -38,10 +48,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return;
         }
-        const status: UserStatus = data?.status === "active" || data?.status === "pending" || data?.status === "rejected" || data?.status === "blocked" || data?.status === "suspended" ? data.status : "pending";
-        if (status !== "active") { await firebaseSignOut(auth); setProfile(null); return; }
-        setProfile({ uid: user.uid, name: data?.name || user.displayName || user.email?.split("@")[0] || "Colony Bois Member", phone: data?.phone || "", role: data?.role === "super_admin" ? "super_admin" : data?.role === "admin" ? "admin" : "member", status, createdAt: data?.createdAt || "" });
-      } catch { await firebaseSignOut(auth); setProfile(null); }
+        const status: UserStatus =
+          data?.status === "active" ||
+          data?.status === "pending" ||
+          data?.status === "rejected" ||
+          data?.status === "blocked" ||
+          data?.status === "suspended"
+            ? data.status
+            : "pending";
+        if (status !== "active") {
+          await firebaseSignOut(auth);
+          setProfile(null);
+          return;
+        }
+        setProfile({
+          uid: user.uid,
+          name: data?.name || user.displayName || user.email?.split("@")[0] || "Colony Bois Member",
+          phone: data?.phone || "",
+          role:
+            data?.role === "super_admin"
+              ? "super_admin"
+              : data?.role === "admin"
+                ? "admin"
+                : "member",
+          status,
+          createdAt: data?.createdAt || "",
+        });
+      } catch {
+        await firebaseSignOut(auth);
+        setProfile(null);
+      }
       setLoading(false);
     });
   }, []);
@@ -54,9 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseSignOut(auth);
       throw new Error(data?.status === "pending" ? "PENDING_APPROVAL" : "ACCOUNT_NOT_ACTIVE");
     }
-    const role = data?.role === "super_admin" ? "super_admin" : data?.role === "admin" ? "admin" : "member";
+    const role =
+      data?.role === "super_admin" ? "super_admin" : data?.role === "admin" ? "admin" : "member";
     if (role === "admin" || role === "super_admin") {
-      void recordAudit({ actorId: credential.user.uid, actorName: data?.name || credential.user.displayName || credential.user.email || "Admin", action: "Admin login", module: "Authentication" });
+      void recordAudit({
+        actorId: credential.user.uid,
+        actorName: data?.name || credential.user.displayName || credential.user.email || "Admin",
+        action: "Admin login",
+        module: "Authentication",
+      });
     }
     return role;
   };
@@ -86,11 +128,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   const signOut = async () => {
     if (profile?.role === "admin" || profile?.role === "super_admin") {
-      try { await recordAudit({ actorId: profile.uid, actorName: profile.name, action: "Admin logout", module: "Authentication" }); } catch { /* Logging must not prevent sign-out. */ }
+      try {
+        await recordAudit({
+          actorId: profile.uid,
+          actorName: profile.name,
+          action: "Admin logout",
+          module: "Authentication",
+        });
+      } catch {
+        /* Logging must not prevent sign-out. */
+      }
     }
     await firebaseSignOut(auth);
   };
-  return <AuthContext.Provider value={{ uid: profile?.uid || "", name: profile?.name || "", role: profile?.role || "member", status: profile?.status || "pending", signedIn: !!profile, loading, signIn, register, signOut }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        uid: profile?.uid || "",
+        name: profile?.name || "",
+        role: profile?.role || "member",
+        status: profile?.status || "pending",
+        signedIn: !!profile,
+        loading,
+        signIn,
+        register,
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuth() { const value = useContext(AuthContext); if (!value) throw new Error("useAuth must be used inside AuthProvider"); return value; }
+export function useAuth() {
+  const value = useContext(AuthContext);
+  if (!value) throw new Error("useAuth must be used inside AuthProvider");
+  return value;
+}

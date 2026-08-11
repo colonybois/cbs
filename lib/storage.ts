@@ -24,7 +24,7 @@ export async function uploadImageToStorage(file: File, _folder: StorageFolder): 
   const optimized = await compressImage(file);
   if (optimized.size > MAX_INLINE_BYTES) {
     throw new Error(
-      `The image is still too large after compression (${Math.round(optimized.size / 1024)} KB). Please choose a smaller image.`
+      `The image is still too large after compression (${Math.round(optimized.size / 1024)} KB). Please choose a smaller image.`,
     );
   }
   return toDataUrl(optimized);

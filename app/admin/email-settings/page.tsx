@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection, doc, onSnapshot, orderBy, query, setDoc,
-} from "firebase/firestore";
+import { collection, doc, onSnapshot, orderBy, query, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { recordAudit } from "@/lib/audit";
 import { useAuth } from "@/lib/auth-context";
@@ -43,28 +41,43 @@ const DEFAULT_SETTINGS: EmailSettings = {
 const dateFmt = (v: EmailLog["sentAt"]) => {
   if (!v) return "—";
   const d = typeof v === "string" ? new Date(v) : v?.toDate?.();
-  return d?.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) ?? "—";
+  return (
+    d?.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }) ?? "—"
+  );
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  sent:     "bg-emerald-100 text-emerald-700",
-  failed:   "bg-rose-100 text-rose-700",
-  queued:   "bg-amber-100 text-amber-700",
+  sent: "bg-emerald-100 text-emerald-700",
+  failed: "bg-rose-100 text-rose-700",
+  queued: "bg-amber-100 text-amber-700",
   not_sent: "bg-slate-100 text-slate-500",
 };
 
 const TYPE_LABEL: Record<string, string> = {
   thank_you: "Thank-You",
-  receipt:   "Receipt",
-  greeting:  "Greeting",
+  receipt: "Receipt",
+  greeting: "Greeting",
 };
 
 // ── toggle row component ──────────────────────────────────────────────────────
 function ToggleRow({
-  label, description, enabled, saving, onToggle,
+  label,
+  description,
+  enabled,
+  saving,
+  onToggle,
 }: {
-  label: string; description: string; enabled: boolean;
-  saving: boolean; onToggle: () => void;
+  label: string;
+  description: string;
+  enabled: boolean;
+  saving: boolean;
+  onToggle: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-orange-100 bg-white p-4">
@@ -79,7 +92,9 @@ function ToggleRow({
         role="switch"
         aria-checked={enabled}
       >
-        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${enabled ? "translate-x-5" : "translate-x-0"}`} />
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${enabled ? "translate-x-5" : "translate-x-0"}`}
+        />
       </button>
     </div>
   );
@@ -104,15 +119,15 @@ export default function EmailSettingsPage() {
   useEffect(() => {
     const unsub = onSnapshot(
       doc(db, "site_settings", "email"),
-      snap => {
+      (snap) => {
         if (snap.exists()) {
-          setSettings({ ...DEFAULT_SETTINGS, ...snap.data() as Partial<EmailSettings> });
+          setSettings({ ...DEFAULT_SETTINGS, ...(snap.data() as Partial<EmailSettings>) });
         } else {
           setSettings(DEFAULT_SETTINGS);
         }
         setLoadingSettings(false);
       },
-      () => setLoadingSettings(false)
+      () => setLoadingSettings(false),
     );
     return unsub;
   }, []);
@@ -121,8 +136,11 @@ export default function EmailSettingsPage() {
   useEffect(() => {
     const unsub = onSnapshot(
       query(collection(db, "email_logs"), orderBy("sentAt", "desc")),
-      snap => { setLogs(snap.docs.slice(0, 50).map(d => ({ id: d.id, ...d.data() } as EmailLog))); setLoadingLogs(false); },
-      () => setLoadingLogs(false)
+      (snap) => {
+        setLogs(snap.docs.slice(0, 50).map((d) => ({ id: d.id, ...d.data() }) as EmailLog));
+        setLoadingLogs(false);
+      },
+      () => setLoadingLogs(false),
     );
     return unsub;
   }, []);
@@ -135,7 +153,8 @@ export default function EmailSettingsPage() {
     try {
       await setDoc(doc(db, "site_settings", "email"), next, { merge: true });
       await recordAudit({
-        actorId: uid, actorName: adminName,
+        actorId: uid,
+        actorName: adminName,
         action: "Email notification setting changed",
         module: "Email Settings",
         previousValue: { [key]: prev },
@@ -149,21 +168,28 @@ export default function EmailSettingsPage() {
     }
   };
 
-  const toggles: { key: keyof Omit<EmailSettings, "updatedAt">; label: string; description: string }[] = [
+  const toggles: {
+    key: keyof Omit<EmailSettings, "updatedAt">;
+    label: string;
+    description: string;
+  }[] = [
     {
       key: "thankYouEnabled",
       label: "Donation Thank-You Emails",
-      description: "Send an instant thank-you email when a donor submits a public online Chanda contribution.",
+      description:
+        "Send an instant thank-you email when a donor submits a public online Chanda contribution.",
     },
     {
       key: "receiptEnabled",
       label: "Donation Receipt Emails",
-      description: "Send an official receipt email when an admin approves a collection (cash or UPI).",
+      description:
+        "Send an official receipt email when an admin approves a collection (cash or UPI).",
     },
     {
       key: "greetingEnabled",
       label: "Vinayaka Chavithi Greetings",
-      description: "Send a festive Vinayaka Chavithi greeting email to approved donors. Sent manually per donor.",
+      description:
+        "Send a festive Vinayaka Chavithi greeting email to approved donors. Sent manually per donor.",
     },
   ];
 
@@ -198,7 +224,7 @@ export default function EmailSettingsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {toggles.map(t => (
+            {toggles.map((t) => (
               <ToggleRow
                 key={t.key}
                 label={t.label}
@@ -220,7 +246,10 @@ export default function EmailSettingsPage() {
       {/* Email history */}
       <div>
         <h2 className="mb-3 text-lg font-black text-slate-900">Email History</h2>
-        <p className="mb-4 text-sm text-slate-500">Last 50 email delivery records. Donor email addresses are shown here — keep this page admin-only.</p>
+        <p className="mb-4 text-sm text-slate-500">
+          Last 50 email delivery records. Donor email addresses are shown here — keep this page
+          admin-only.
+        </p>
 
         {loadingLogs ? (
           <div className="space-y-2">
@@ -232,7 +261,9 @@ export default function EmailSettingsPage() {
           <Card className="p-8 text-center bg-white">
             <p className="text-2xl">📧</p>
             <p className="mt-2 font-bold text-slate-900">No emails sent yet</p>
-            <p className="mt-1 text-sm text-slate-500">Email logs will appear here after the first notification is sent.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Email logs will appear here after the first notification is sent.
+            </p>
           </Card>
         ) : (
           <Card className="overflow-hidden">
@@ -240,13 +271,26 @@ export default function EmailSettingsPage() {
               <table className="w-full text-sm">
                 <thead className="border-b border-orange-100 bg-orange-50/60">
                   <tr>
-                    {["Type", "Recipient", "Status", "Triggered by", "Collection", "Sent at", "Message ID / Error"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
+                    {[
+                      "Type",
+                      "Recipient",
+                      "Status",
+                      "Triggered by",
+                      "Collection",
+                      "Sent at",
+                      "Message ID / Error",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500"
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-orange-50">
-                  {logs.map(log => (
+                  {logs.map((log) => (
                     <tr key={log.id} className="hover:bg-orange-50/30 transition">
                       <td className="px-4 py-3">
                         <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
@@ -259,22 +303,38 @@ export default function EmailSettingsPage() {
                         <p className="text-xs text-slate-500">{log.recipientEmail || "—"}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_STYLE[log.status ?? "not_sent"] ?? STATUS_STYLE.not_sent}`}>
-                          {log.status === "sent" ? "✓ Sent" : log.status === "failed" ? "✕ Failed" : log.status === "queued" ? "… Queued" : "Not sent"}
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_STYLE[log.status ?? "not_sent"] ?? STATUS_STYLE.not_sent}`}
+                        >
+                          {log.status === "sent"
+                            ? "✓ Sent"
+                            : log.status === "failed"
+                              ? "✕ Failed"
+                              : log.status === "queued"
+                                ? "… Queued"
+                                : "Not sent"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{log.triggeredByName || "System"}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {log.triggeredByName || "System"}
+                      </td>
                       <td className="px-4 py-3 text-xs text-slate-500">
                         <span className="font-mono">{log.targetId?.slice(0, 8) ?? "—"}</span>
-                        {log.targetCollection && <p className="text-slate-400">{log.targetCollection}</p>}
+                        {log.targetCollection && (
+                          <p className="text-slate-400">{log.targetCollection}</p>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{dateFmt(log.sentAt)}</td>
+                      <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                        {dateFmt(log.sentAt)}
+                      </td>
                       <td className="px-4 py-3 text-xs max-w-48 truncate">
-                        {log.status === "sent" && log.messageId
-                          ? <span className="font-mono text-emerald-600">{log.messageId}</span>
-                          : log.error
-                          ? <span className="text-rose-600">{log.error}</span>
-                          : "—"}
+                        {log.status === "sent" && log.messageId ? (
+                          <span className="font-mono text-emerald-600">{log.messageId}</span>
+                        ) : log.error ? (
+                          <span className="text-rose-600">{log.error}</span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -287,8 +347,11 @@ export default function EmailSettingsPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-xl ${toast.ok ? "bg-emerald-600" : "bg-rose-600"}`}>
-          {toast.ok ? "✓ " : "✕ "}{toast.msg}
+        <div
+          className={`fixed bottom-6 right-6 z-[100] rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-xl ${toast.ok ? "bg-emerald-600" : "bg-rose-600"}`}
+        >
+          {toast.ok ? "✓ " : "✕ "}
+          {toast.msg}
         </div>
       )}
     </div>

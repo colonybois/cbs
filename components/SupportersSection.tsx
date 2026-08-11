@@ -18,15 +18,23 @@ export default function SupportersSection() {
   useEffect(() => {
     const unsub = onSnapshot(
       collection(db, "public_supporters"),
-      snap => {
+      (snap) => {
         setSupporters(
           snap.docs
-            .map(d => ({ id: d.id, displayName: d.data().displayName as string, message: d.data().message as string | null }))
-            .filter(d => d.displayName)
+            .map((d) => ({
+              id: d.id,
+              displayName: d.data().displayName as string,
+              message: d.data().message as string | null,
+            }))
+            .filter((d) => d.displayName),
         );
-        setError(""); setLoading(false);
+        setError("");
+        setLoading(false);
       },
-      () => { setError("Unable to load supporters right now."); setLoading(false); }
+      () => {
+        setError("Unable to load supporters right now.");
+        setLoading(false);
+      },
     );
     return unsub;
   }, []);
@@ -45,12 +53,20 @@ export default function SupportersSection() {
     el.addEventListener("scroll", updateArrows, { passive: true });
     const ro = new ResizeObserver(updateArrows);
     ro.observe(el);
-    return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
+    return () => {
+      el.removeEventListener("scroll", updateArrows);
+      ro.disconnect();
+    };
   }, [supporters]);
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || supporters.length === 0 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (
+      !el ||
+      supporters.length === 0 ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
     let frame = 0;
     let previous = performance.now();
     const move = (now: number) => {
@@ -73,7 +89,9 @@ export default function SupportersSection() {
     <div>
       <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Community love</p>
       <h2 className="mt-2 text-3xl font-black text-slate-900">🙏 Our Supporters</h2>
-      <p className="mt-3 text-slate-600">Thank you to everyone who supported Colony Bois Ganesh Utsav this year.</p>
+      <p className="mt-3 text-slate-600">
+        Thank you to everyone who supported Colony Bois Ganesh Utsav this year.
+      </p>
 
       {loading && (
         <div className="mt-7 flex gap-3">
@@ -93,19 +111,29 @@ export default function SupportersSection() {
         </div>
       )}
 
-      {!loading && error && <p className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
+      {!loading && error && (
+        <p className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+          {error}
+        </p>
+      )}
 
       {!loading && !error && supporters.length > 0 && (
         <div className="relative mt-7">
           {canLeft && (
-            <button onClick={() => scroll("left")} aria-label="Scroll left"
-              className="absolute -left-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition">
+            <button
+              onClick={() => scroll("left")}
+              aria-label="Scroll left"
+              className="absolute -left-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition"
+            >
               ‹
             </button>
           )}
           {canRight && (
-            <button onClick={() => scroll("right")} aria-label="Scroll right"
-              className="absolute -right-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition">
+            <button
+              onClick={() => scroll("right")}
+              aria-label="Scroll right"
+              className="absolute -right-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition"
+            >
               ›
             </button>
           )}
@@ -114,14 +142,26 @@ export default function SupportersSection() {
             ref={scrollRef}
             className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            onMouseEnter={() => { pausedRef.current = true; }}
-            onMouseLeave={() => { pausedRef.current = false; }}
-            onFocus={() => { pausedRef.current = true; }}
-            onBlur={() => { pausedRef.current = false; }}
-            onTouchStart={() => { pausedRef.current = true; }}
-            onTouchEnd={() => { pausedRef.current = false; }}
+            onMouseEnter={() => {
+              pausedRef.current = true;
+            }}
+            onMouseLeave={() => {
+              pausedRef.current = false;
+            }}
+            onFocus={() => {
+              pausedRef.current = true;
+            }}
+            onBlur={() => {
+              pausedRef.current = false;
+            }}
+            onTouchStart={() => {
+              pausedRef.current = true;
+            }}
+            onTouchEnd={() => {
+              pausedRef.current = false;
+            }}
           >
-            {supporters.map(s => (
+            {supporters.map((s) => (
               <div
                 key={s.id}
                 className="flex flex-none snap-start items-center gap-2 rounded-2xl border border-orange-200 bg-white px-4 py-3 shadow-sm shadow-orange-100/50"

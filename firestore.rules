@@ -94,9 +94,16 @@ service cloud.firestore {
     match /site_visits/{visitId} {
       allow create: if request.resource.data.sessionId is string
         && request.resource.data.sessionId.size() > 0
+        && request.resource.data.visitorId is string
+        && request.resource.data.visitorId.size() > 0
+        && request.resource.data.eventType in ['page_view', 'menu_click', 'section_view', 'external_click']
         && request.resource.data.path is string
         && request.resource.data.path.size() > 0
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt == request.time
+        && (
+          !request.resource.data.keys().hasAny(['visitorUid'])
+          || (signedIn() && request.resource.data.visitorUid == request.auth.uid)
+        );
       allow read: if isAdmin();
       allow update, delete: if false;
     }

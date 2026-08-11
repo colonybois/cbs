@@ -1,6 +1,11 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
@@ -20,7 +25,9 @@ export const auth = getAuth(app);
 export const db = (() => {
   if (typeof window === "undefined") return getFirestore(app);
   try {
-    return initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
   } catch {
     // Reuse an existing instance during Fast Refresh or if persistence is unavailable.
     return getFirestore(app);
@@ -29,7 +36,7 @@ export const db = (() => {
 export const storage = getStorage(app);
 
 export const initAnalytics = async () => {
-  if (typeof window !== "undefined" && await isSupported()) return getAnalytics(app);
+  if (typeof window !== "undefined" && (await isSupported())) return getAnalytics(app);
   return null;
 };
 

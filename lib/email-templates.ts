@@ -95,12 +95,20 @@ export function thankYouEmail(p: BaseParams) {
     <p style="margin:0 0 10px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#78716c;">
       Donation Details
     </p>
-    ${detailsTable([
-      row("Contribution", `<strong style="color:#ea580c;">₹${p.amount.toLocaleString("en-IN")}</strong>`),
-      row("Payment Method", p.paymentMethod),
-      row("Date", p.date),
-      row("Reference", `<span style="font-family:monospace;font-size:12px;">${p.referenceId}</span>`),
-    ].join(""))}
+    ${detailsTable(
+      [
+        row(
+          "Contribution",
+          `<strong style="color:#ea580c;">₹${p.amount.toLocaleString("en-IN")}</strong>`,
+        ),
+        row("Payment Method", p.paymentMethod),
+        row("Date", p.date),
+        row(
+          "Reference",
+          `<span style="font-family:monospace;font-size:12px;">${p.referenceId}</span>`,
+        ),
+      ].join(""),
+    )}
 
     <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#44403c;">
       Wishing you and your family a joyful and blessed
@@ -113,7 +121,10 @@ export function thankYouEmail(p: BaseParams) {
 
   return {
     subject: "Thank You for Supporting Colony Bois 🙏",
-    html: wrap(body, `Thank you for your ₹${p.amount.toLocaleString("en-IN")} contribution to Colony Bois Ganesh Chaturthi celebrations.`),
+    html: wrap(
+      body,
+      `Thank you for your ₹${p.amount.toLocaleString("en-IN")} contribution to Colony Bois Ganesh Chaturthi celebrations.`,
+    ),
   };
 }
 
@@ -153,7 +164,10 @@ export function receiptEmail(p: ReceiptParams) {
 
   return {
     subject: "Colony Bois — Contribution Receipt 🙏",
-    html: wrap(body, `Your official Colony Bois contribution receipt for ₹${p.amount.toLocaleString("en-IN")}.`),
+    html: wrap(
+      body,
+      `Your official Colony Bois contribution receipt for ₹${p.amount.toLocaleString("en-IN")}.`,
+    ),
   };
 }
 
@@ -188,6 +202,9 @@ export function greetingEmail(donorName: string) {
 
   return {
     subject: "Wishing You a Blessed Vinayaka Chavithi 🙏 — Colony Bois",
-    html: wrap(body, "Wishing you and your family a very happy and blessed Vinayaka Chavithi from Colony Bois!"),
+    html: wrap(
+      body,
+      "Wishing you and your family a very happy and blessed Vinayaka Chavithi from Colony Bois!",
+    ),
   };
 }
