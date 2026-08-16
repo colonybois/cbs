@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { ComityMember } from "@/types";
@@ -54,7 +54,9 @@ function MemberCard({ member }: { member: ComityMember }) {
 export default function ComityMembersSection() {
   const [members, setMembers] = useState<ComityMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const pauseTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -72,13 +74,57 @@ export default function ComityMembersSection() {
     return unsub;
   }, []);
 
-  if (!loading && members.length === 0) return null;
-
   // Featured first, then rest
   const featured = members.filter((m) => m.featured);
   const rest = members.filter((m) => !m.featured);
   const ordered = [...featured, ...rest];
-  const visibleMembers = showAll ? ordered : ordered.slice(0, 5);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (
+      !element ||
+      ordered.length < 2 ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    let frame = 0;
+    let previous = performance.now();
+    const tick = (now: number) => {
+      const elapsed = now - previous;
+      previous = now;
+      if (!pausedRef.current && !document.hidden && element.scrollWidth > element.clientWidth) {
+        const next = element.scrollLeft + elapsed * 0.035;
+        element.scrollLeft = next >= element.scrollWidth - element.clientWidth - 1 ? 0 : next;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(pauseTimerRef.current);
+    };
+  }, [ordered.length]);
+
+  const pauseAutoScroll = () => {
+    pausedRef.current = true;
+    clearTimeout(pauseTimerRef.current);
+    pauseTimerRef.current = setTimeout(() => {
+      pausedRef.current = false;
+    }, 2500);
+  };
+  const holdAutoScroll = () => {
+    clearTimeout(pauseTimerRef.current);
+    pausedRef.current = true;
+  };
+  const resumeAutoScroll = () => {
+    clearTimeout(pauseTimerRef.current);
+    pausedRef.current = false;
+  };
+
+  if (!loading && members.length === 0) return null;
 
   return (
     <div>
@@ -102,25 +148,21 @@ export default function ComityMembersSection() {
       {/* Cards — horizontal scroll */}
       {!loading && ordered.length > 0 && (
         <div
+          ref={scrollRef}
           className="mt-8 flex gap-5 overflow-x-auto pb-3"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          onFocus={holdAutoScroll}
+          onBlur={resumeAutoScroll}
+          onMouseEnter={holdAutoScroll}
+          onMouseLeave={resumeAutoScroll}
+          onPointerDown={pauseAutoScroll}
+          onTouchStart={pauseAutoScroll}
+          onWheel={pauseAutoScroll}
         >
-          {visibleMembers.map((m) => (
+          {ordered.map((m) => (
             <MemberCard key={m.id} member={m} />
           ))}
         </div>
-      )}
-      {!loading && ordered.length > 5 && (
-        <button
-          type="button"
-          onClick={() => setShowAll((value) => !value)}
-          className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-orange-700 transition hover:text-orange-600"
-        >
-          {showAll
-            ? "Show fewer committee members"
-            : `Show all ${ordered.length} committee members`}{" "}
-          <span aria-hidden="true">{showAll ? "↑" : "→"}</span>
-        </button>
       )}
     </div>
   );

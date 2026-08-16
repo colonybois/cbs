@@ -37,7 +37,7 @@ export default function HomePage() {
           <h2 className="mt-2 text-3xl font-black text-slate-900 sm:text-4xl">About Us</h2>
           <div className="mt-6 space-y-5 text-base leading-8 text-slate-700 sm:text-lg">
             <p>
-              Colony Bois began in <strong className="font-bold text-slate-900">2020</strong> as a
+              Colony Bois began in <strong className="font-bold text-slate-900">2019</strong> as a
               small group of friends from{" "}
               <strong className="font-bold text-slate-900">SC Colony, Rampuram</strong>, with a
               simple idea — to come together and celebrate{" "}
@@ -69,7 +69,7 @@ export default function HomePage() {
               to create memories that we can cherish for years to come.
             </p>
             <p>
-              From a small group of friends in 2020 to a celebration supported by an entire
+              From a small group of friends in 2019 to a celebration supported by an entire
               community,{" "}
               <strong className="font-bold text-slate-900">
                 Colony Bois continues to grow with the blessings of Lord Ganesha and the love of our
