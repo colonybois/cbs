@@ -11,12 +11,12 @@ function MemberCard({ member }: { member: ComityMember }) {
   return (
     <article className="group relative w-56 flex-none text-center">
       {member.featured && (
-        <span className="absolute left-1/2 top-1 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-black text-white shadow">
+        <span className="absolute left-1/2 top-1 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-2.5 py-0.5 text-xs font-bold text-white shadow">
           ★ Featured
         </span>
       )}
 
-      <div className="relative mx-auto flex h-44 w-44 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-orange-100 via-amber-50 to-orange-200 p-1 transition duration-500 group-hover:scale-105">
+      <div className="relative mx-auto flex h-44 w-44 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-amber-200 via-orange-100 to-amber-300 p-[3px] shadow-gold transition duration-500 group-hover:scale-105">
         {member.photoUrl && !imgErr ? (
           <img
             src={member.photoUrl}
@@ -36,7 +36,9 @@ function MemberCard({ member }: { member: ComityMember }) {
         <p className="text-xs font-black uppercase tracking-wider text-orange-600">
           {member.designation}
         </p>
-        <h3 className="mt-1 font-black leading-snug text-slate-900">{member.fullName}</h3>
+        <h3 className="mt-1 font-display text-lg font-semibold leading-snug text-slate-900">
+          {member.fullName}
+        </h3>
         {member.memberSince && (
           <p className="mt-1 text-xs text-slate-400">Member since {member.memberSince}</p>
         )}
@@ -128,10 +130,12 @@ export default function ComityMembersSection() {
 
   return (
     <div>
-      <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
         The team behind the celebration
       </p>
-      <h2 className="mt-2 text-3xl font-black text-slate-900">Committee Management Rosters</h2>
+      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">
+        Committee Management Rosters
+      </h2>
       <p className="mt-3 text-slate-600">
         Meet the dedicated committee that organizes Colony Bois Ganesh Chaturthi every year.
       </p>

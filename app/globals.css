@@ -7,112 +7,267 @@
     box-sizing: border-box;
   }
   html {
-    background: #ffffff;
+    background: #faf7f2;
     scroll-behavior: smooth;
+    scroll-padding-top: 5.25rem;
+    overflow-x: hidden;
+  }
+  @media (max-width: 767px) {
+    html {
+      scroll-padding-top: 4.85rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   body {
     margin: 0;
-    background: #ffffff;
-    color: #0f172a;
-    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    overflow-x: clip;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
+    background-color: #faf7f2;
+    background-image:
+      radial-gradient(ellipse 90% 50% at 50% -12%, rgba(212, 160, 23, 0.07), transparent 58%),
+      radial-gradient(ellipse 45% 35% at 100% 8%, rgba(196, 163, 90, 0.06), transparent 52%),
+      radial-gradient(circle at 18% 22%, rgba(196, 163, 90, 0.12) 0 1px, transparent 1.6px);
+    background-size:
+      auto,
+      auto,
+      48px 48px;
+    color: #3a2418;
+    font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  }
+  h1,
+  h2 {
+    font-family: var(--font-fraunces), Georgia, serif;
+    letter-spacing: -0.03em;
   }
   ::selection {
-    background: #f97316;
-    color: #ffffff;
+    background: #e85d04;
+    color: #fffbf5;
   }
   input,
   select,
   textarea {
     outline: none;
-    color: #0f172a;
+    color: #3f2a14;
+    font-family: inherit;
   }
   ::-webkit-scrollbar {
     width: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #fff7ed;
+    background: #fff4e6;
   }
   ::-webkit-scrollbar-thumb {
-    background: #f97316;
+    background: linear-gradient(180deg, #e85d04, #c9a227);
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #ea580c;
+    background: #d94a0a;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: var(--font-fraunces), Georgia, serif;
+  }
+  .font-yatra {
+    font-family: var(--font-yatra), cursive;
+  }
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
 }
 
 .grid-lines {
   background-image:
-    linear-gradient(rgba(249, 115, 22, 0.09) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(249, 115, 22, 0.09) 1px, transparent 1px);
-  background-size: 36px 36px;
+    radial-gradient(circle at 50% 0%, rgba(255, 248, 235, 0.5), transparent 48%),
+    radial-gradient(circle at 1px 1px, rgba(196, 163, 90, 0.16) 1.1px, transparent 0),
+    linear-gradient(rgba(184, 134, 60, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184, 134, 60, 0.04) 1px, transparent 1px);
+  background-size:
+    auto,
+    22px 22px,
+    48px 48px,
+    48px 48px;
 }
 
-/* Legacy utility remapping keeps every route in the shared light design system. */
+.temple-frame {
+  box-shadow:
+    0 0 0 1px rgba(212, 160, 23, 0.45),
+    0 0 0 6px rgba(250, 247, 242, 0.95),
+    0 0 0 7px rgba(196, 163, 90, 0.22),
+    0 22px 50px -24px rgba(184, 58, 8, 0.35);
+}
+
+.festive-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(48px);
+  opacity: 0.22;
+}
+
+.festive-orb-a {
+  width: 18rem;
+  height: 18rem;
+  left: -4rem;
+  top: 12rem;
+  background: radial-gradient(circle, rgba(212, 175, 110, 0.28), transparent 70%);
+}
+
+.festive-orb-b {
+  width: 22rem;
+  height: 22rem;
+  right: -6rem;
+  bottom: 8rem;
+  background: radial-gradient(circle, rgba(196, 163, 90, 0.22), transparent 70%);
+}
+
+@keyframes diya-flicker {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+  40% {
+    opacity: 0.72;
+    transform: scaleY(0.9) translateY(1px);
+  }
+  70% {
+    opacity: 0.95;
+    transform: scaleY(1.08) translateY(-1px);
+  }
+}
+
+@keyframes festive-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(4deg);
+  }
+}
+
+.diya-flame {
+  transform-origin: center bottom;
+  animation: diya-flicker 1.6s ease-in-out infinite;
+}
+
+.festive-float {
+  animation: festive-float 5.2s ease-in-out infinite;
+}
+
+.festive-float-delayed {
+  animation: festive-float 6s ease-in-out 0.9s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diya-flame,
+  .festive-float,
+  .festive-float-delayed {
+    animation: none !important;
+  }
+}
+
+/* Legacy utility remapping keeps every route in the shared festive design system. */
 body .bg-slate-950,
 body .bg-slate-950\/85,
 body .bg-slate-950\/75 {
-  background-color: #fff7ed;
+  background-color: #fff4e6;
 }
 body .bg-slate-900,
 body .bg-slate-900\/70 {
-  background-color: #ffffff;
+  background-color: #fffbf5;
 }
 body .bg-white\/\[\.03\],
 body .bg-white\/\[\.04\],
 body .bg-white\/5 {
-  background-color: #fff7ed;
+  background-color: #fff4e6;
 }
 body .border-white\/5,
 body .border-white\/10,
 body .border-white\/15 {
-  border-color: #fed7aa;
+  border-color: #f3d5a3;
 }
 body .divide-white\/5 > :not([hidden]) ~ :not([hidden]),
 body .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #ffedd5;
+  border-color: #ffe8c7;
 }
 body .text-white,
 body .text-slate-200 {
-  color: #0f172a;
+  color: #3f2a14;
+}
+body .bg-amber-600,
+body .bg-emerald-600,
+body .bg-orange-500,
+body .bg-orange-600,
+body .bg-saffron,
+body .bg-saffron-600,
+body [class*="from-orange-"].text-white,
+body [class*="from-saffron"].text-white,
+body [class*="bg-gradient"].text-white,
+body a[class*="bg-orange-"].text-white,
+body button[class*="bg-orange-"].text-white {
+  color: #fffbf5;
 }
 body .text-slate-300,
 body .text-slate-400 {
-  color: #475569;
+  color: #8b7355;
 }
 body .text-slate-500 {
-  color: #64748b;
+  color: #8b7355;
+}
+body .text-slate-600 {
+  color: #6b5344;
+}
+body .text-slate-700 {
+  color: #57534e;
+}
+body .text-slate-800,
+body .text-slate-900 {
+  color: #3f2a14;
 }
 body .text-slate-950 {
-  color: #ffffff;
+  color: #fffbf5;
 }
 body .text-amber-300,
 body .text-amber-400 {
-  color: #c2410c;
+  color: #b83a08;
 }
 body .bg-amber-400,
 body .bg-emerald-400 {
-  background-color: #f97316;
+  background-color: #e85d04;
 }
 body .hover\:bg-amber-300:hover,
 body .hover\:bg-emerald-300:hover {
-  background-color: #ea580c;
+  background-color: #d94a0a;
 }
 body .bg-amber-400\/10,
 body .bg-amber-400\/15,
 body .bg-emerald-400\/10,
 body .bg-emerald-400\/15 {
-  background-color: #fff7ed;
+  background-color: #fff4e6;
 }
 body .text-emerald-300 {
-  color: #c2410c;
+  color: #b83a08;
 }
 body .border-emerald-400\/20,
 body .border-emerald-400\/25,
 body .border-emerald-400\/30 {
-  border-color: #fed7aa;
+  border-color: #f3d5a3;
 }
 body .shadow-xl,
 body .shadow-2xl {
-  box-shadow: 0 12px 30px rgba(234, 88, 12, 0.1);
+  box-shadow: 0 16px 36px rgba(184, 58, 8, 0.12);
+}
+
+/* Room for Mushika's bottom rail + iOS home indicator */
+body {
+  padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
 }

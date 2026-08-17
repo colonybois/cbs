@@ -3,6 +3,7 @@ import { getAuth } from "firebase/auth";
 import {
   getFirestore,
   initializeFirestore,
+  memoryLocalCache,
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
@@ -19,21 +20,67 @@ const firebaseConfig = {
   measurementId: "G-2RXB0TBD10",
 };
 
+const IDB_RECOVERY_KEY = "cbs-firestore-idb-recovered";
+
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
-export const db = (() => {
+function isIdbFailure(reason: unknown) {
+  const text = reason instanceof Error ? `${reason.name} ${reason.message}` : String(reason ?? "");
+  return /indexeddb|idbdatabase|corruption/i.test(text);
+}
+
+function createFirestore() {
   if (typeof window === "undefined") return getFirestore(app);
+
+  const skipPersistent =
+    process.env.NODE_ENV !== "production" || window.sessionStorage.getItem(IDB_RECOVERY_KEY) === "1";
+
   try {
-    return initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-    });
+    return initializeFirestore(
+      app,
+      skipPersistent
+        ? { localCache: memoryLocalCache() }
+        : { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) },
+    );
   } catch {
-    // Reuse an existing instance during Fast Refresh or if persistence is unavailable.
-    return getFirestore(app);
+    try {
+      return initializeFirestore(app, { localCache: memoryLocalCache() });
+    } catch {
+      return getFirestore(app);
+    }
   }
-})();
+}
+
+export const auth = getAuth(app);
+export const db = createFirestore();
 export const storage = getStorage(app);
+
+if (typeof window !== "undefined") {
+  const recover = async (reason: unknown) => {
+    if (!isIdbFailure(reason) || sessionStorage.getItem(IDB_RECOVERY_KEY) === "1") return;
+    sessionStorage.setItem(IDB_RECOVERY_KEY, "1");
+    try {
+      const list = (await indexedDB.databases?.()) ?? [];
+      for (const info of list) {
+        if (info.name && /firebase|firestore/i.test(info.name)) indexedDB.deleteDatabase(info.name);
+      }
+    } catch {
+      // Browser may block listing databases; reload still switches to memory cache.
+    }
+    window.location.reload();
+  };
+
+  window.addEventListener("unhandledrejection", (event) => {
+    if (!isIdbFailure(event.reason)) return;
+    event.preventDefault();
+    void recover(event.reason);
+  });
+  window.addEventListener("error", (event) => {
+    if (!isIdbFailure(event.error ?? event.message)) return;
+    event.preventDefault();
+    void recover(event.error ?? event.message);
+  });
+}
 
 export const initAnalytics = async () => {
   if (typeof window !== "undefined" && (await isSupported())) return getAnalytics(app);

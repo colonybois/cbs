@@ -1,0 +1,118 @@
+@keyframes mushika-run-leg-front {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(18deg);
+  }
+}
+
+@keyframes mushika-run-leg-back {
+  0%,
+  100% {
+    transform: translateY(-3px) rotate(-18deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes mushika-run-tail {
+  0%,
+  100% {
+    transform: rotate(6deg);
+  }
+  50% {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes mushika-run-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes mushika-idle-tail {
+  0%,
+  100% {
+    transform: rotate(4deg);
+  }
+  50% {
+    transform: rotate(-4deg);
+  }
+}
+
+@keyframes mushika-idle-ear {
+  0%,
+  85%,
+  100% {
+    transform: rotate(0deg);
+  }
+  90% {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes mushika-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.15);
+  }
+}
+
+.mushika-part {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mushika-running .mushika-body {
+  animation: mushika-run-bob 0.32s ease-in-out infinite;
+}
+
+.mushika-running .mushika-leg-front {
+  animation: mushika-run-leg-front 0.32s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.mushika-running .mushika-leg-back {
+  animation: mushika-run-leg-back 0.32s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.mushika-running .mushika-tail {
+  animation: mushika-run-tail 0.32s ease-in-out infinite;
+  transform-origin: right center;
+}
+
+.mushika-idle .mushika-tail {
+  animation: mushika-idle-tail 2.6s ease-in-out infinite;
+  transform-origin: right center;
+}
+
+.mushika-idle .mushika-ear {
+  animation: mushika-idle-ear 4.5s ease-in-out infinite;
+}
+
+.mushika-part.mushika-eye {
+  animation: mushika-blink 4s ease-in-out infinite;
+}
+
+.mushika-scroll-companion {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mushika-scroll-companion .mushika-part {
+    animation: none !important;
+  }
+}

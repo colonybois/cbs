@@ -120,7 +120,7 @@ export default function Login() {
   const registrationHidden = registrationConfig.hideRegistrationUI;
 
   return (
-    <div className="mx-auto mt-8 max-w-md rounded-3xl border border-orange-200 bg-white p-7 shadow-xl shadow-orange-100/50">
+    <div className="mx-auto mt-8 max-w-md rounded-3xl border border-amber-200 bg-white/90 p-7 shadow-gold">
       <div className="flex rounded-xl bg-orange-50 p-1">
         <button
           onClick={() => changeMode("signin")}
@@ -143,10 +143,11 @@ export default function Login() {
           Registrations are currently closed by the administration.
         </div>
       )}
-      <p className="mt-6 text-sm font-bold uppercase tracking-widest text-orange-600">
+      <p className="mt-2 font-yatra text-lg text-orange-700">Ganpati Bappa Morya</p>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
         Colony Bois secure access
       </p>
-      <h1 className="mt-2 text-3xl font-black text-slate-900">
+      <h1 className="mt-2 font-display text-3xl font-semibold text-slate-900">
         {mode === "signin" ? "Welcome back" : "Create an account"}
       </h1>
       <p className="mt-2 text-sm text-slate-600">

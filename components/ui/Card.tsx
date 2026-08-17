@@ -8,7 +8,7 @@ export default function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-orange-200 bg-white shadow-xl shadow-orange-100/50 ${className}`}
+      className={`rounded-2xl border border-amber-200/90 bg-[#fffdf8] shadow-temple ${className}`}
     >
       {children}
     </section>

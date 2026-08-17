@@ -39,8 +39,8 @@ export default function FestivalJourney() {
 
   return (
     <div>
-      <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Day by day</p>
-      <h2 className="mt-2 text-3xl font-black text-slate-900">Festival Journey</h2>
+      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">Day by day</p>
+      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">Festival Journey</h2>
       <p className="mt-3 text-slate-600">
         Every celebration, every moment — beautifully documented.
       </p>
@@ -71,11 +71,11 @@ export default function FestivalJourney() {
           {days.map((day) => (
             <article
               key={day.id}
-              className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-lg hover:shadow-orange-100 ${day.featured ? "border-amber-400 ring-2 ring-amber-300/40" : "border-orange-100"}`}
+              className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-temple transition hover:-translate-y-0.5 hover:shadow-gold ${day.featured ? "border-amber-400 ring-2 ring-amber-300/50" : "border-amber-200"}`}
             >
               {/* Featured badge */}
               {day.featured && (
-                <span className="absolute left-3 top-3 z-10 rounded-full bg-amber-400 px-3 py-0.5 text-xs font-black text-white shadow">
+                <span className="absolute left-3 top-3 z-10 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-0.5 text-xs font-bold text-white shadow">
                   ★ Featured
                 </span>
               )}
@@ -106,13 +106,15 @@ export default function FestivalJourney() {
                     })}
                   </p>
                 )}
-                <h3 className="font-black text-slate-900 leading-snug">{day.heading}</h3>
+                <h3 className="font-display text-lg font-semibold leading-snug text-slate-900">
+                  {day.heading}
+                </h3>
                 {day.shortDesc && (
                   <p className="mt-2 text-sm text-slate-500 line-clamp-2">{day.shortDesc}</p>
                 )}
                 <Link
                   href={`/festival/${day.id}`}
-                  className="mt-4 inline-flex items-center gap-1 self-start rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 transition"
+                  className="mt-4 inline-flex items-center gap-1 self-start rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:from-orange-600 hover:to-amber-600 transition"
                 >
                   View More →
                 </Link>

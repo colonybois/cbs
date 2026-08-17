@@ -8,9 +8,11 @@ export default function ContactSection() {
     <section aria-label="Contact Colony Bois">
       <div className="grid gap-5 md:grid-cols-2">
         {/* Left: email + phone */}
-        <div className="rounded-2xl border border-orange-200 bg-white p-5 shadow-md shadow-orange-100/50 space-y-4">
+        <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-temple space-y-4">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-orange-600">Email us</p>
+            <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
+              Email us
+            </p>
             <div className="mt-2">
               <a
                 href={`mailto:${COLONY_BOIS_CONTACT.email}`}
@@ -21,7 +23,9 @@ export default function ContactSection() {
             </div>
           </div>
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-orange-600">Talk to us</p>
+            <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
+              Talk to us
+            </p>
             <div className="mt-2 space-y-2">
               {phoneNumbers.map((contact) => (
                 <a
@@ -40,12 +44,14 @@ export default function ContactSection() {
         </div>
 
         {/* Right: pandal location */}
-        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5 flex flex-col justify-between shadow-md shadow-orange-100/50">
+        <div className="flex flex-col justify-between rounded-2xl border border-amber-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-temple">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-orange-600">
+            <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
               Pandal location
             </p>
-            <h2 className="mt-2 font-bold text-slate-900">📍 {pandalLocation.title}</h2>
+            <h2 className="mt-2 font-display text-lg font-semibold text-slate-900">
+              📍 {pandalLocation.title}
+            </h2>
             <p className="mt-2 text-sm text-slate-600">
               Find us at our Vinayaka pandal during the festival. Tap below for turn-by-turn
               directions.
@@ -55,7 +61,7 @@ export default function ContactSection() {
             href={pandalLocation.mapsUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-5 inline-block rounded-lg bg-orange-500 px-6 py-3 font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 text-center"
+            className="mt-5 inline-block rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3 text-center font-bold text-white shadow-temple hover:from-orange-600 hover:to-amber-600"
           >
             Navigate to Pandal →
           </a>

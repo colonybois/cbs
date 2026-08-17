@@ -125,10 +125,10 @@ export default function FlashbackSection() {
   return (
     <div>
       {/* Header */}
-      <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
         Past celebrations &amp; memories
       </p>
-      <h2 className="mt-2 text-3xl font-black text-slate-900">Utsav Flashback</h2>
+      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">Utsav Flashback</h2>
       <p className="mt-3 text-slate-600">
         A live collection of Colony Bois pandal themes, devotion, and beautiful memories.
       </p>
@@ -136,7 +136,7 @@ export default function FlashbackSection() {
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedYear("all")}
-            className={`rounded-full px-3 py-1.5 text-sm font-bold ${selectedYear === "all" ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-700 hover:bg-orange-100"}`}
+            className={`rounded-full px-3 py-1.5 text-sm font-bold ${selectedYear === "all" ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm" : "bg-orange-50 text-orange-700 hover:bg-orange-100"}`}
           >
             All
           </button>
@@ -144,7 +144,7 @@ export default function FlashbackSection() {
             <button
               key={year}
               onClick={() => setSelectedYear(year)}
-              className={`rounded-full px-3 py-1.5 text-sm font-bold ${selectedYear === year ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-700 hover:bg-orange-100"}`}
+              className={`rounded-full px-3 py-1.5 text-sm font-bold ${selectedYear === year ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm" : "bg-orange-50 text-orange-700 hover:bg-orange-100"}`}
             >
               {year}
             </button>
@@ -180,7 +180,7 @@ export default function FlashbackSection() {
             <button
               onClick={() => scroll("left")}
               aria-label="Scroll left"
-              className="absolute -left-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition"
+              className="absolute -left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md transition hover:bg-orange-50"
             >
               ‹
             </button>
@@ -191,7 +191,7 @@ export default function FlashbackSection() {
             <button
               onClick={() => scroll("right")}
               aria-label="Scroll right"
-              className="absolute -right-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition"
+              className="absolute -right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md transition hover:bg-orange-50"
             >
               ›
             </button>
@@ -215,7 +215,7 @@ export default function FlashbackSection() {
                   pauseAutoScroll();
                   setSelected(memory);
                 }}
-                className="group relative h-64 w-44 flex-none overflow-hidden rounded-2xl border-2 border-orange-200 bg-orange-50 shadow-sm transition hover:border-orange-500 hover:shadow-lg hover:shadow-orange-100"
+                className="group relative h-64 w-44 flex-none overflow-hidden rounded-2xl border-2 border-amber-200 bg-orange-50 shadow-temple transition hover:border-amber-400 hover:shadow-gold"
               >
                 {failed.has(memory.id) ? (
                   <div className="grid h-full place-items-center p-4 text-center">

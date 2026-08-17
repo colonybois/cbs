@@ -87,8 +87,10 @@ export default function SupportersSection() {
 
   return (
     <div>
-      <p className="text-sm font-bold uppercase tracking-widest text-orange-600">Community love</p>
-      <h2 className="mt-2 text-3xl font-black text-slate-900">🙏 Our Supporters</h2>
+      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
+        Community love
+      </p>
+      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">Our Supporters</h2>
       <p className="mt-3 text-slate-600">
         Thank you to everyone who supported Colony Bois Ganesh Utsav this year.
       </p>
@@ -123,7 +125,7 @@ export default function SupportersSection() {
             <button
               onClick={() => scroll("left")}
               aria-label="Scroll left"
-              className="absolute -left-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition"
+              className="absolute -left-4 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md transition hover:bg-orange-50 sm:flex"
             >
               ‹
             </button>
@@ -132,7 +134,7 @@ export default function SupportersSection() {
             <button
               onClick={() => scroll("right")}
               aria-label="Scroll right"
-              className="absolute -right-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md hover:bg-orange-50 transition"
+              className="absolute -right-4 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md transition hover:bg-orange-50 sm:flex"
             >
               ›
             </button>
@@ -140,7 +142,7 @@ export default function SupportersSection() {
 
           <div
             ref={scrollRef}
-            className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2"
+            className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-2 sm:mx-0 sm:px-0"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             onMouseEnter={() => {
               pausedRef.current = true;
@@ -164,7 +166,7 @@ export default function SupportersSection() {
             {supporters.map((s) => (
               <div
                 key={s.id}
-                className="flex flex-none snap-start items-center gap-2 rounded-2xl border border-orange-200 bg-white px-4 py-3 shadow-sm shadow-orange-100/50"
+                className="flex flex-none snap-start items-center gap-2 rounded-2xl border border-amber-200 bg-white/90 px-4 py-3 shadow-temple"
               >
                 <span className="text-lg">❤️</span>
                 <span className="whitespace-nowrap font-bold text-slate-900">{s.displayName}</span>

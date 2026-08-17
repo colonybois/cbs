@@ -93,23 +93,25 @@ export default function FestivalDayDetail() {
       </Link>
 
       {/* Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-orange-200 shadow-xl shadow-orange-100/50">
+      <div className="relative overflow-hidden rounded-3xl border border-amber-200 shadow-gold">
         <img
           src={day.coverImageUrl}
           alt={day.heading}
           className="h-72 w-full object-cover sm:h-96"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/75 via-stone-950/20 to-transparent" />
         <div className="absolute bottom-0 left-0 p-6">
-          <span className="rounded-xl bg-orange-500 px-3 py-1 text-sm font-black text-white shadow">
+          <span className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-1 text-sm font-bold text-white shadow">
             {day.dayLabel}
           </span>
           {day.featured && (
-            <span className="ml-2 rounded-xl bg-amber-400 px-3 py-1 text-sm font-black text-white shadow">
+            <span className="ml-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 px-3 py-1 text-sm font-bold text-white shadow">
               ★ Featured
             </span>
           )}
-          <h1 className="mt-3 text-2xl font-black text-white sm:text-4xl">{day.heading}</h1>
+          <h1 className="mt-3 font-display text-2xl font-semibold text-orange-50 sm:text-4xl">
+            {day.heading}
+          </h1>
         </div>
       </div>
 
@@ -151,7 +153,7 @@ export default function FestivalDayDetail() {
       {/* Gallery */}
       {day.galleryUrls?.length > 0 && (
         <div>
-          <h2 className="text-xl font-black text-slate-900 mb-4">Photo Gallery</h2>
+          <h2 className="mb-4 font-display text-xl font-semibold text-slate-900">Photo Gallery</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {day.galleryUrls.map((url, i) => (
               <button
@@ -174,7 +176,7 @@ export default function FestivalDayDetail() {
       {/* Video */}
       {day.videoUrl && (
         <div>
-          <h2 className="text-xl font-black text-slate-900 mb-4">Video</h2>
+          <h2 className="mb-4 font-display text-xl font-semibold text-slate-900">Video</h2>
           <div className="overflow-hidden rounded-2xl border border-orange-100 shadow-sm aspect-video">
             <iframe
               src={day.videoUrl}

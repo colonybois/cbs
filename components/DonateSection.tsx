@@ -164,8 +164,8 @@ export default function DonateSection() {
   if (success) {
     return (
       <div className="rounded-2xl border-2 border-orange-400 bg-orange-50 p-10 text-center">
-        <span className="text-5xl">🚩</span>
-        <h3 className="mt-3 text-xl font-bold text-slate-900">Jai Dev Ganesha!</h3>
+        <span className="font-yatra text-5xl text-orange-700">Ganpati Bappa Morya</span>
+        <h3 className="mt-3 font-display text-xl font-semibold text-slate-900">Jai Dev Ganesha!</h3>
         <p className="mt-2 text-slate-700">
           Your contribution has been logged for verification. Thank you!
         </p>
@@ -174,7 +174,7 @@ export default function DonateSection() {
         </p>
         <button
           onClick={reset}
-          className="mt-6 rounded-lg bg-orange-500 px-6 py-2.5 font-bold text-white hover:bg-orange-600"
+          className="mt-6 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-2.5 font-bold text-white shadow-temple hover:from-orange-600 hover:to-amber-600"
         >
           Submit Another Contribution
         </button>
@@ -186,8 +186,9 @@ export default function DonateSection() {
     <div className="py-4">
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 text-center">
-          <h2 className="text-3xl font-extrabold text-slate-900">
-            🚩 Online <span className="text-orange-600">Chanda / Contribution</span>
+          <p className="font-yatra text-xl text-orange-700">Mangal May Utsav</p>
+          <h2 className="mt-1 font-display text-3xl font-semibold text-slate-900">
+            Online <span className="text-orange-600">Chanda / Contribution</span>
           </h2>
           <p className="mt-2 text-slate-500">Scan the QR, pay, then fill in your details below.</p>
         </div>
@@ -195,7 +196,7 @@ export default function DonateSection() {
         <form
           noValidate
           onSubmit={submit}
-          className="rounded-2xl border border-orange-100 bg-orange-50/40 p-6 shadow-sm md:p-8 space-y-5"
+          className="rounded-2xl border border-amber-200 bg-white/80 p-6 shadow-gold md:p-8 space-y-5"
         >
           <p className="text-sm font-semibold text-slate-600">
             After paying, fill in your details:
@@ -440,7 +441,7 @@ export default function DonateSection() {
           <button
             type="submit"
             disabled={loading || !isOnline}
-            className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-50 transition"
+            className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 py-3 font-bold text-white shadow-temple hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 transition"
           >
             {loading ? "Submitting…" : "Submit Contribution Details"}
           </button>

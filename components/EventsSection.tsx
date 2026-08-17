@@ -61,10 +61,12 @@ export default function EventsSection() {
   );
   return (
     <div>
-      <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
         Vinayaka Chavathi
       </p>
-      <h2 className="mt-2 text-3xl font-black text-slate-900">Pandal events &amp; schedule</h2>
+      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">
+        Pandal events &amp; schedule
+      </h2>
       <p className="mt-3 max-w-2xl text-slate-600">
         Poojas, cultural programs, and major Colony Bois celebrations published live by organizers.
       </p>
@@ -86,7 +88,7 @@ export default function EventsSection() {
           ([category, items]) =>
             items.length > 0 && (
               <section key={category}>
-                <h3 className="mb-3 text-lg font-black text-slate-900">{category}</h3>
+                <h3 className="mb-3 font-display text-lg font-semibold text-slate-900">{category}</h3>
                 <div className="grid gap-4 lg:grid-cols-2">
                   {items.map((event) => {
                     const state = eventState(event);
@@ -120,7 +122,7 @@ export default function EventsSection() {
                                       : "⚪ Completed"}
                                 </span>
                               </div>
-                              <h4 className="mt-2 font-bold text-slate-900">{event.title}</h4>
+                              <h4 className="mt-2 font-display font-semibold text-slate-900">{event.title}</h4>
                               <p className="mt-1 text-sm font-semibold text-orange-700">
                                 🕐 {eventTimes(event)} · {event.venue}
                               </p>
