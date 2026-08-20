@@ -186,7 +186,7 @@ export default function AdminEvents() {
               )}
               <div className="p-5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold uppercase tracking-widest text-orange-600">
+                  <span className="text-xs font-bold uppercase tracking-widest text-saffron-600">
                     {event.eventDate}
                   </span>
                   <span
@@ -204,7 +204,7 @@ export default function AdminEvents() {
                 <div className="mt-4 flex gap-3">
                   <button
                     onClick={() => openEdit(event)}
-                    className="text-xs font-bold text-orange-700"
+                    className="text-xs font-bold text-saffron-700"
                   >
                     Edit
                   </button>
@@ -230,19 +230,19 @@ export default function AdminEvents() {
             value={form.title}
             onChange={(e) => change("title", e.target.value)}
             placeholder="Event title *"
-            className="w-full rounded-xl border border-orange-200 p-3"
+            className="w-full rounded-xl border border-saffron-200 p-3"
           />
           <div className="grid gap-3 sm:grid-cols-2">
             <input
               value={form.eventDate}
               onChange={(e) => change("eventDate", e.target.value)}
               type="date"
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             />
             <select
               value={form.category}
               onChange={(e) => change("category", e.target.value)}
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             >
               {categories.map((category) => (
                 <option key={category}>{category}</option>
@@ -252,58 +252,58 @@ export default function AdminEvents() {
               value={form.startTime}
               onChange={(e) => change("startTime", e.target.value)}
               type="time"
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             />
             <input
               value={form.endTime}
               onChange={(e) => change("endTime", e.target.value)}
               type="time"
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             />
           </div>
           <input
             value={form.venue}
             onChange={(e) => change("venue", e.target.value)}
             placeholder="Venue *"
-            className="w-full rounded-xl border border-orange-200 p-3"
+            className="w-full rounded-xl border border-saffron-200 p-3"
           />
           <textarea
             value={form.description}
             onChange={(e) => change("description", e.target.value)}
             placeholder="Full description"
-            className="min-h-24 w-full rounded-xl border border-orange-200 p-3"
+            className="min-h-24 w-full rounded-xl border border-saffron-200 p-3"
           />
           <div className="grid gap-3 sm:grid-cols-2">
             <input
               value={form.prasadam}
               onChange={(e) => change("prasadam", e.target.value)}
               placeholder="Prasadam details"
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             />
             <input
               value={form.coordinator}
               onChange={(e) => change("coordinator", e.target.value)}
               placeholder="Coordinator"
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             />
             <input
               value={form.sponsor}
               onChange={(e) => change("sponsor", e.target.value)}
               placeholder="Sponsor"
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             />
             <input
               value={form.coHost}
               onChange={(e) => change("coHost", e.target.value)}
               placeholder="Co-host"
-              className="w-full rounded-xl border border-orange-200 p-3"
+              className="w-full rounded-xl border border-saffron-200 p-3"
             />
           </div>
           <textarea
             value={form.announcements}
             onChange={(e) => change("announcements", e.target.value)}
             placeholder="Important announcement"
-            className="min-h-20 w-full rounded-xl border border-orange-200 p-3"
+            className="min-h-20 w-full rounded-xl border border-saffron-200 p-3"
           />
           <label className="block text-sm font-semibold text-slate-700">
             Event poster{" "}

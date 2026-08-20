@@ -53,7 +53,7 @@ export default function NetworkBanner() {
   return (
     <div
       role="status"
-      className={`sticky left-0 right-0 top-0 z-50 shadow-md transition-all duration-300 ${isDismissing ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"} ${offline ? "bg-amber-600 text-white" : "bg-emerald-600 text-white"}`}
+      className={`sticky left-0 right-0 top-0 z-50 shadow-md transition-all duration-300 ${isDismissing ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"} ${offline ? "bg-saffron-600 text-white" : "bg-emerald-600 text-white"}`}
     >
       <div className="flex min-h-10 items-center justify-center gap-2 px-4 py-2 text-center text-sm font-semibold">
         <WifiIcon offline={offline} />

@@ -29,7 +29,7 @@ export default function ScrollReveal({
 }: ScrollRevealProps) {
   const ref = useRef<HTMLElement | null>(null);
   const [enabled, setEnabled] = useState(false);
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [from, setFrom] = useState<RevealFrom>("down");
 
   useEffect(() => {
@@ -47,7 +47,13 @@ export default function ScrollReveal({
     };
 
     setEnabled(true);
-    setVisible(inViewNow());
+
+    let frame = 0;
+    frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => {
+        if (inViewNow()) setVisible(true);
+      });
+    });
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -55,11 +61,14 @@ export default function ScrollReveal({
         setFrom(entry.boundingClientRect.top > 0 ? "down" : "up");
         setVisible(entry.isIntersecting);
       },
-      { threshold, rootMargin: "-8% 0px -8% 0px" },
+      { threshold: [0, threshold], rootMargin: "-8% 0px -12% 0px" },
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [threshold]);
 
   const style: CSSProperties | undefined =

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import SectionHeading from "@/components/SectionHeading";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 
@@ -16,6 +17,16 @@ type FestivalDay = {
   status: string;
   displayOrder: number;
 };
+
+function formatEventDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default function FestivalJourney() {
   const [days, setDays] = useState<FestivalDay[]>([]);
@@ -39,84 +50,88 @@ export default function FestivalJourney() {
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">Day by day</p>
-      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">Festival Journey</h2>
-      <p className="mt-3 text-slate-600">
-        Every celebration, every moment — beautifully documented.
-      </p>
+      <SectionHeading
+        kicker="Day by day"
+        title="Festival Journey"
+        symbol="॥"
+        tone="primary"
+        lede="Every celebration, every moment — beautifully documented."
+      />
 
-      {/* Skeletons */}
       {loading && (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 -mx-4 grid gap-6 sm:mx-0 lg:grid-cols-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-2xl bg-orange-100 h-72" />
+            <div
+              key={i}
+              className="overflow-hidden bg-white sm:rounded-2xl sm:border sm:border-zinc-200"
+            >
+              <div className="aspect-square animate-pulse bg-navy/5" />
+              <div className="space-y-3 p-5">
+                <div className="h-7 w-28 animate-pulse rounded bg-navy/5" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-navy/5" />
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Empty */}
       {!loading && days.length === 0 && (
-        <div className="mt-8 rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-10 text-center">
+        <div className="mt-8 rounded-2xl border border-dashed border-saffron-200 bg-white p-10 text-center">
           <p className="text-4xl">🎪</p>
-          <h3 className="mt-3 font-bold text-slate-900">Festival journey coming soon</h3>
-          <p className="mt-2 text-sm text-slate-600">
+          <h3 className="mt-3 font-bold text-ink">Festival journey coming soon</h3>
+          <p className="section-note mx-auto mt-2 max-w-sm">
             Daily updates will appear here during the celebrations.
           </p>
         </div>
       )}
 
-      {/* Timeline cards */}
       {!loading && days.length > 0 && (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 -mx-4 grid gap-6 sm:mx-0 lg:grid-cols-2">
           {days.map((day) => (
             <article
               key={day.id}
-              className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-temple transition hover:-translate-y-0.5 hover:shadow-gold ${day.featured ? "border-amber-400 ring-2 ring-amber-300/50" : "border-amber-200"}`}
+              className={`group flex flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:shadow-temple sm:transition sm:hover:-translate-y-0.5 sm:hover:shadow-gold ${
+                day.featured
+                  ? "sm:border-saffron-400 sm:ring-2 sm:ring-saffron-200/50"
+                  : "sm:border-zinc-200"
+              }`}
             >
-              {/* Featured badge */}
-              {day.featured && (
-                <span className="absolute left-3 top-3 z-10 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-0.5 text-xs font-bold text-white shadow">
-                  ★ Featured
-                </span>
-              )}
-
-              {/* Cover */}
-              <div className="relative h-48 overflow-hidden bg-orange-50">
+              <div className="relative aspect-square overflow-hidden bg-navy/5">
                 <img
                   src={day.coverImageUrl}
                   alt={day.heading}
                   loading="lazy"
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
-                {/* Day pill */}
-                <span className="absolute bottom-3 left-3 rounded-xl bg-orange-500/90 px-3 py-1 text-xs font-black text-white shadow">
-                  {day.dayLabel}
-                </span>
               </div>
 
-              {/* Body */}
-              <div className="flex flex-1 flex-col p-5">
+              <div className="flex flex-1 flex-col border-t border-navy/5 px-4 pb-4 pt-3.5 sm:px-5 sm:pb-5 sm:pt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-display text-[1.65rem] font-semibold leading-none tracking-tight text-primary sm:text-2xl">
+                    {day.dayLabel}
+                  </h3>
+                  {day.featured && (
+                    <span className="rounded-full bg-secondary/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-saffron-800">
+                      Featured
+                    </span>
+                  )}
+                </div>
                 {day.eventDate && (
-                  <p className="mb-2 text-xs font-semibold text-orange-500">
-                    {new Date(day.eventDate).toLocaleDateString("en-IN", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                  <p className="mt-1.5 text-xs font-medium text-[var(--text-light)]">
+                    {formatEventDate(day.eventDate)}
                   </p>
                 )}
-                <h3 className="font-display text-lg font-semibold leading-snug text-slate-900">
+                <p className="mt-2 font-display text-base font-semibold leading-snug text-[var(--text-muted)]">
                   {day.heading}
-                </h3>
+                </p>
                 {day.shortDesc && (
-                  <p className="mt-2 text-sm text-slate-500 line-clamp-2">{day.shortDesc}</p>
+                  <p className="section-note mt-1.5 line-clamp-2">{day.shortDesc}</p>
                 )}
                 <Link
                   href={`/festival/${day.id}`}
-                  className="mt-4 inline-flex items-center gap-1 self-start rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:from-orange-600 hover:to-amber-600 transition"
+                  className="btn-festive mt-3.5 w-full py-2.5 text-[11px] sm:mt-4"
                 >
-                  View More →
+                  View the day
                 </Link>
               </div>
             </article>

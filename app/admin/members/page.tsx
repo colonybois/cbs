@@ -51,7 +51,7 @@ const dateOf = (v: TsLike | undefined) => {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  pending_approval: "bg-amber-100 text-amber-700",
+  pending_approval: "bg-white text-saffron-700",
   approved: "bg-emerald-100 text-emerald-700",
   rejected: "bg-rose-100 text-rose-700",
 };
@@ -261,7 +261,7 @@ export default function MembersManagementPage() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
-            <thead className="border-b border-orange-100 bg-orange-50/50 text-xs font-bold uppercase tracking-wider text-slate-600">
+            <thead className="border-b border-saffron-100 bg-white text-xs font-bold uppercase tracking-wider text-slate-600">
               <tr>
                 {["Collector", "UPI / QR", "Cash", "Total", "Pending Cash"].map((h) => (
                   <th key={h} className="px-6 py-4">
@@ -288,7 +288,7 @@ export default function MembersManagementPage() {
                   <tr
                     key={m.id}
                     onClick={() => setSelected(m)}
-                    className="cursor-pointer hover:bg-orange-50/60 transition"
+                    className="cursor-pointer hover:bg-white transition"
                   >
                     <td className="px-6 py-4 font-bold text-slate-900">
                       {m.name}
@@ -297,7 +297,7 @@ export default function MembersManagementPage() {
                     <td className="px-6 py-4 font-semibold text-emerald-600">
                       ₹{m.upiTotal.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 font-semibold text-orange-600">
+                    <td className="px-6 py-4 font-semibold text-saffron-600">
                       ₹{m.cashTotal.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 font-black text-slate-900">
@@ -323,7 +323,7 @@ export default function MembersManagementPage() {
           <div className="space-y-5 max-h-[75vh] overflow-y-auto pr-1">
             {/* Collection summary */}
             <div>
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">
+              <p className="text-xs font-black uppercase tracking-wider text-saffron-600 mb-2">
                 Collection Summary
               </p>
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -331,12 +331,12 @@ export default function MembersManagementPage() {
                   <p className="text-emerald-700 text-xs">Approved Total</p>
                   <b className="text-lg">₹{sum(filteredApproved).toLocaleString()}</b>
                 </div>
-                <div className="rounded-xl bg-amber-50 p-3">
-                  <p className="text-amber-700 text-xs">Pending Approval</p>
+                <div className="rounded-xl bg-white p-3">
+                  <p className="text-saffron-700 text-xs">Pending Approval</p>
                   <b className="text-lg">₹{sum(filteredPending).toLocaleString()}</b>
                 </div>
-                <div className="rounded-xl bg-orange-50 p-3">
-                  <p className="text-orange-700 text-xs">Approved Cash</p>
+                <div className="rounded-xl bg-white p-3">
+                  <p className="text-saffron-700 text-xs">Approved Cash</p>
                   <b>
                     ₹
                     {sum(filteredApproved.filter((d) => d.paymentMode === "cash")).toLocaleString()}
@@ -362,8 +362,8 @@ export default function MembersManagementPage() {
             </div>
 
             {/* Cash accountability */}
-            <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm space-y-1">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">
+            <div className="rounded-xl border border-saffron-200 bg-white p-4 text-sm space-y-1">
+              <p className="text-xs font-black uppercase tracking-wider text-saffron-600 mb-2">
                 Cash Accountability
               </p>
               <div className="flex justify-between">
@@ -374,12 +374,12 @@ export default function MembersManagementPage() {
                 <span>Cash Handed Over</span>
                 <b>₹{(sum(approvedCash) - outstanding).toLocaleString()}</b>
               </div>
-              <div className="flex justify-between text-amber-700">
+              <div className="flex justify-between text-saffron-700">
                 <span>Cash Pending Handover</span>
                 <b>₹{outstanding.toLocaleString()}</b>
               </div>
               {outstanding > 0 && (
-                <div className="flex justify-between text-rose-700 border-t border-orange-200 pt-1 font-bold">
+                <div className="flex justify-between text-rose-700 border-t border-saffron-200 pt-1 font-bold">
                   <span>Outstanding</span>
                   <span>₹{outstanding.toLocaleString()}</span>
                 </div>
@@ -391,7 +391,7 @@ export default function MembersManagementPage() {
               <button
                 disabled={handingOver}
                 onClick={() => void confirmHandover()}
-                className="w-full rounded-xl bg-orange-500 py-3 font-bold text-white hover:bg-orange-600 disabled:opacity-50"
+                className="w-full rounded-xl bg-saffron py-3 font-bold text-white hover:bg-saffron-600 disabled:opacity-50"
               >
                 {handingOver
                   ? "Confirming…"
@@ -401,7 +401,7 @@ export default function MembersManagementPage() {
 
             {/* Transaction history */}
             <div>
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">
+              <p className="text-xs font-black uppercase tracking-wider text-saffron-600 mb-2">
                 Transaction History
               </p>
               <div className="flex flex-wrap gap-2 mb-3">
@@ -409,7 +409,7 @@ export default function MembersManagementPage() {
                   value={donationSearch}
                   onChange={(e) => setDonationSearch(e.target.value)}
                   placeholder="Search donor or reference…"
-                  className="flex-1 min-w-32 rounded-xl border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400"
+                  className="flex-1 min-w-32 rounded-xl border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-saffron-400"
                 />
                 <select
                   value={statusFilter}
@@ -496,11 +496,11 @@ export default function MembersManagementPage() {
                         {d.note && <p className="text-xs text-slate-400 italic">{d.note}</p>}
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-none">
-                        <p className="font-black text-orange-600">
+                        <p className="font-black text-saffron-600">
                           ₹{Number(d.amount || 0).toLocaleString()}
                         </p>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-bold ${d.paymentMode === "cash" ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"}`}
+                          className={`rounded-full px-2 py-0.5 text-xs font-bold ${d.paymentMode === "cash" ? "bg-white text-saffron-700" : "bg-emerald-100 text-emerald-700"}`}
                         >
                           {(d.paymentMode ?? "").toUpperCase()}
                         </span>

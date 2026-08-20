@@ -62,9 +62,9 @@ export default function FestivalDayDetail() {
   if (loading)
     return (
       <div className="mx-auto max-w-4xl space-y-6 py-8">
-        <div className="h-72 animate-pulse rounded-3xl bg-orange-100" />
-        <div className="h-8 animate-pulse rounded-xl bg-orange-50 w-1/2" />
-        <div className="h-4 animate-pulse rounded-xl bg-orange-50" />
+        <div className="h-72 animate-pulse rounded-3xl bg-white" />
+        <div className="h-8 animate-pulse rounded-xl bg-white w-1/2" />
+        <div className="h-4 animate-pulse rounded-xl bg-white" />
       </div>
     );
 
@@ -75,7 +75,7 @@ export default function FestivalDayDetail() {
         <h1 className="mt-4 text-2xl font-black text-slateate-900">Day not found</h1>
         <Link
           href="/#gallery"
-          className="mt-6 inline-block rounded-xl bg-orange-500 px-6 py-3 font-bold text-white hover:bg-orange-600"
+          className="mt-6 inline-block rounded-xl bg-saffron px-6 py-3 font-bold text-white hover:bg-saffron-600"
         >
           Back to Festival Journey
         </Link>
@@ -87,13 +87,13 @@ export default function FestivalDayDetail() {
       {/* Back */}
       <Link
         href="/#festival"
-        className="inline-flex items-center gap-2 text-sm font-bold text-orange-600 hover:text-orange-700"
+        className="inline-flex items-center gap-2 text-sm font-bold text-saffron-600 hover:text-saffron-700"
       >
         ← Festival Journey
       </Link>
 
       {/* Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-amber-200 shadow-gold">
+      <div className="relative overflow-hidden rounded-3xl border border-saffron-200 shadow-gold">
         <img
           src={day.coverImageUrl}
           alt={day.heading}
@@ -101,15 +101,15 @@ export default function FestivalDayDetail() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950/75 via-stone-950/20 to-transparent" />
         <div className="absolute bottom-0 left-0 p-6">
-          <span className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-1 text-sm font-bold text-white shadow">
+          <span className="rounded-xl bg-gradient-to-r from-saffron-800 to-saffron px-3 py-1 text-sm font-bold text-white shadow">
             {day.dayLabel}
           </span>
           {day.featured && (
-            <span className="ml-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 px-3 py-1 text-sm font-bold text-white shadow">
+            <span className="ml-2 rounded-xl bg-gradient-to-r from-saffron to-saffron-400 px-3 py-1 text-sm font-bold text-white shadow">
               ★ Featured
             </span>
           )}
-          <h1 className="mt-3 font-display text-2xl font-semibold text-orange-50 sm:text-4xl">
+          <h1 className="mt-3 font-display text-2xl font-semibold text-saffron-50 sm:text-4xl">
             {day.heading}
           </h1>
         </div>
@@ -118,7 +118,7 @@ export default function FestivalDayDetail() {
       {/* Meta */}
       <div className="flex flex-wrap gap-4 text-sm">
         {day.eventDate && (
-          <span className="flex items-center gap-1.5 rounded-xl bg-orange-50 border border-orange-200 px-4 py-2 font-semibold text-slate-700">
+          <span className="flex items-center gap-1.5 rounded-xl bg-white border border-saffron-200 px-4 py-2 font-semibold text-slate-700">
             📅{" "}
             {new Date(day.eventDate).toLocaleDateString("en-IN", {
               weekday: "long",
@@ -129,12 +129,12 @@ export default function FestivalDayDetail() {
           </span>
         )}
         {day.eventTime && (
-          <span className="flex items-center gap-1.5 rounded-xl bg-orange-50 border border-orange-200 px-4 py-2 font-semibold text-slate-700">
+          <span className="flex items-center gap-1.5 rounded-xl bg-white border border-saffron-200 px-4 py-2 font-semibold text-slate-700">
             ⏰ {day.eventTime}
           </span>
         )}
         {day.location && (
-          <span className="flex items-center gap-1.5 rounded-xl bg-orange-50 border border-orange-200 px-4 py-2 font-semibold text-slate-700">
+          <span className="flex items-center gap-1.5 rounded-xl bg-white border border-saffron-200 px-4 py-2 font-semibold text-slate-700">
             📍 {day.location}
           </span>
         )}
@@ -142,7 +142,7 @@ export default function FestivalDayDetail() {
 
       {/* Description */}
       {(day.shortDesc || day.detailedDesc) && (
-        <div className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm space-y-3">
+        <div className="rounded-2xl border border-saffron-100 bg-white p-6 shadow-sm space-y-3">
           {day.shortDesc && <p className="text-lg font-semibold text-slate-700">{day.shortDesc}</p>}
           {day.detailedDesc && (
             <p className="text-slate-600 leading-relaxed whitespace-pre-line">{day.detailedDesc}</p>
@@ -159,7 +159,7 @@ export default function FestivalDayDetail() {
               <button
                 key={i}
                 onClick={() => setLightbox(url)}
-                className="group overflow-hidden rounded-2xl border border-orange-100 bg-orange-50"
+                className="group overflow-hidden rounded-2xl border border-saffron-100 bg-white"
               >
                 <img
                   src={url}
@@ -177,7 +177,7 @@ export default function FestivalDayDetail() {
       {day.videoUrl && (
         <div>
           <h2 className="mb-4 font-display text-xl font-semibold text-slate-900">Video</h2>
-          <div className="overflow-hidden rounded-2xl border border-orange-100 shadow-sm aspect-video">
+          <div className="overflow-hidden rounded-2xl border border-saffron-100 shadow-sm aspect-video">
             <iframe
               src={day.videoUrl}
               className="h-full w-full"
@@ -201,23 +201,23 @@ export default function FestivalDayDetail() {
         </a>
         <button
           onClick={() => navigator.clipboard.writeText(shareUrl)}
-          className="rounded-xl border border-orange-300 px-4 py-2 text-sm font-bold text-orange-700 hover:bg-orange-50"
+          className="rounded-xl border border-saffron-200 px-4 py-2 text-sm font-bold text-saffron-700 hover:bg-white"
         >
           Copy Link
         </button>
       </div>
 
       {/* Prev / Next */}
-      <div className="grid gap-4 sm:grid-cols-2 border-t border-orange-100 pt-6">
+      <div className="grid gap-4 sm:grid-cols-2 border-t border-saffron-100 pt-6">
         {prev ? (
           <Link
             href={`/festival/${prev.id}`}
-            className="group flex items-center gap-3 rounded-2xl border border-orange-200 bg-white p-4 hover:border-orange-400 hover:shadow-md transition"
+            className="group flex items-center gap-3 rounded-2xl border border-saffron-200 bg-white p-4 hover:border-saffron-400 hover:shadow-md transition"
           >
-            <span className="text-orange-400 text-xl">←</span>
+            <span className="text-saffron-400 text-xl">←</span>
             <div>
               <p className="text-xs font-bold uppercase text-slate-400">Previous</p>
-              <p className="font-bold text-slate-800 group-hover:text-orange-600">
+              <p className="font-bold text-slate-800 group-hover:text-saffron-600">
                 {prev.dayLabel} · {prev.heading}
               </p>
             </div>
@@ -228,15 +228,15 @@ export default function FestivalDayDetail() {
         {next ? (
           <Link
             href={`/festival/${next.id}`}
-            className="group flex items-center justify-end gap-3 rounded-2xl border border-orange-200 bg-white p-4 hover:border-orange-400 hover:shadow-md transition"
+            className="group flex items-center justify-end gap-3 rounded-2xl border border-saffron-200 bg-white p-4 hover:border-saffron-400 hover:shadow-md transition"
           >
             <div className="text-right">
               <p className="text-xs font-bold uppercase text-slate-400">Next</p>
-              <p className="font-bold text-slate-800 group-hover:text-orange-600">
+              <p className="font-bold text-slate-800 group-hover:text-saffron-600">
                 {next.dayLabel} · {next.heading}
               </p>
             </div>
-            <span className="text-orange-400 text-xl">→</span>
+            <span className="text-saffron-400 text-xl">→</span>
           </Link>
         ) : (
           <div />
@@ -251,7 +251,7 @@ export default function FestivalDayDetail() {
         >
           <button
             onClick={() => setLightbox(null)}
-            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-900 font-bold hover:bg-orange-50"
+            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-900 font-bold hover:bg-white"
           >
             ✕
           </button>

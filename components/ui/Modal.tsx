@@ -13,8 +13,8 @@ export default function Modal({
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-orange-950/20 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-orange-200 bg-white p-6 shadow-2xl shadow-orange-100/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-saffron-900/20 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-gold/40 bg-[var(--background)] p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-content-main">{title}</h2>
           <button onClick={onClose} className="text-content-muted hover:text-saffron">

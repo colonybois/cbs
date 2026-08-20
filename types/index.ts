@@ -124,3 +124,13 @@ export interface Donation {
   date: string;
   collector?: string;
 }
+
+export interface ChatFaq {
+  id: string;
+  question: string;
+  answer: string;
+  displayOrder: number;
+  published: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}

@@ -55,7 +55,7 @@ const dateFmt = (v: EmailLog["sentAt"]) => {
 const STATUS_STYLE: Record<string, string> = {
   sent: "bg-emerald-100 text-emerald-700",
   failed: "bg-rose-100 text-rose-700",
-  queued: "bg-amber-100 text-amber-700",
+  queued: "bg-white text-saffron-700",
   not_sent: "bg-slate-100 text-slate-500",
 };
 
@@ -80,7 +80,7 @@ function ToggleRow({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-orange-100 bg-white p-4">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-saffron-100 bg-white p-4">
       <div>
         <p className="font-semibold text-slate-900">{label}</p>
         <p className="mt-0.5 text-sm text-slate-500">{description}</p>
@@ -219,7 +219,7 @@ export default function EmailSettingsPage() {
         {loadingSettings ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-orange-50" />
+              <div key={i} className="h-16 animate-pulse rounded-xl bg-white" />
             ))}
           </div>
         ) : (
@@ -254,7 +254,7 @@ export default function EmailSettingsPage() {
         {loadingLogs ? (
           <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-12 animate-pulse rounded-xl bg-orange-50" />
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-white" />
             ))}
           </div>
         ) : logs.length === 0 ? (
@@ -269,7 +269,7 @@ export default function EmailSettingsPage() {
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="border-b border-orange-100 bg-orange-50/60">
+                <thead className="border-b border-saffron-100 bg-white">
                   <tr>
                     {[
                       "Type",
@@ -289,11 +289,11 @@ export default function EmailSettingsPage() {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-orange-50">
+                <tbody className="divide-y divide-saffron-50">
                   {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-orange-50/30 transition">
+                    <tr key={log.id} className="hover:bg-white transition">
                       <td className="px-4 py-3">
-                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
+                        <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-saffron-700">
                           {TYPE_LABEL[log.type ?? ""] ?? log.type ?? "—"}
                         </span>
                       </td>

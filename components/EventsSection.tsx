@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import Card from "@/components/ui/Card";
+import SectionHeading from "@/components/SectionHeading";
 import Modal from "@/components/ui/Modal";
 import { db } from "@/lib/firebase";
 import type { EventCategory, PandalEvent } from "@/types";
@@ -61,34 +61,36 @@ export default function EventsSection() {
   );
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
-        Vinayaka Chavathi
-      </p>
-      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">
-        Pandal events &amp; schedule
-      </h2>
-      <p className="mt-3 max-w-2xl text-slate-600">
-        Poojas, cultural programs, and major Colony Bois celebrations published live by organizers.
-      </p>
+      <SectionHeading
+        kicker="Vinayaka Chavathi"
+        title="Pandal events & schedule"
+        symbol="श्री"
+        tone="navy"
+        lede="Poojas, cultural programs, and major Colony Bois celebrations published live by organizers."
+      />
       {loading && (
-        <Card className="mt-7 p-8 text-center text-slate-500">Loading festival schedule…</Card>
+        <div className="mt-7 rounded-2xl bg-white p-8 text-center text-slate-500">
+          Loading festival schedule…
+        </div>
       )}
-      {error && <Card className="mt-7 border-rose-200 bg-rose-50 p-6 text-rose-700">{error}</Card>}
+      {error && (
+        <div className="mt-7 rounded-2xl bg-rose-50 p-6 text-rose-700">{error}</div>
+      )}
       {!loading && !error && events.length === 0 && (
-        <Card className="mt-7 p-8 text-center">
+        <div className="mt-7 rounded-2xl bg-white p-8 text-center">
           <div className="text-3xl">🪔</div>
-          <h3 className="mt-3 font-bold text-slate-900">No events published yet</h3>
-          <p className="mt-2 text-sm text-slate-600">
+          <h3 className="mt-3 font-bold text-ink">No events published yet</h3>
+          <p className="section-note mx-auto mt-2 max-w-sm">
             Please check back soon for the festival schedule.
           </p>
-        </Card>
+        </div>
       )}
       <div className="mt-7 space-y-9">
         {grouped.map(
           ([category, items]) =>
             items.length > 0 && (
               <section key={category}>
-                <h3 className="mb-3 font-display text-lg font-semibold text-slate-900">{category}</h3>
+                <h3 className="mb-3 font-display text-lg font-semibold text-ink">{category}</h3>
                 <div className="grid gap-4 lg:grid-cols-2">
                   {items.map((event) => {
                     const state = eventState(event);
@@ -98,22 +100,24 @@ export default function EventsSection() {
                         onClick={() => setSelected(event)}
                         className={`text-left ${state === "live" ? "rounded-2xl ring-2 ring-rose-400 ring-offset-2" : ""}`}
                       >
-                        <Card className="h-full overflow-hidden p-0 transition hover:-translate-y-0.5 hover:shadow-md">
-                          <div className="flex">
+                        <div className="h-full overflow-hidden rounded-2xl bg-white transition hover:-translate-y-0.5 hover:shadow-md">
+                          <div className="flex h-full flex-col">
                             {event.imageUrl && (
-                              <img
-                                src={event.imageUrl}
-                                alt=""
-                                className="hidden h-40 w-32 object-cover sm:block"
-                              />
+                              <div className="relative aspect-square w-full overflow-hidden bg-white">
+                                <img
+                                  src={event.imageUrl}
+                                  alt=""
+                                  className="absolute inset-0 h-full w-full object-cover"
+                                />
+                              </div>
                             )}
                             <div className="min-w-0 flex-1 p-5">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs font-bold uppercase tracking-wider text-orange-600">
+                                <span className="text-xs font-bold uppercase tracking-wider text-saffron-600">
                                   {event.eventDate}
                                 </span>
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${state === "live" ? "bg-rose-100 text-rose-700" : state === "upcoming" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}
+                                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${state === "live" ? "bg-rose-100 text-rose-700" : state === "upcoming" ? "bg-white text-saffron-700" : "bg-slate-100 text-slate-600"}`}
                                 >
                                   {state === "live"
                                     ? "🔴 Live Now"
@@ -122,8 +126,8 @@ export default function EventsSection() {
                                       : "⚪ Completed"}
                                 </span>
                               </div>
-                              <h4 className="mt-2 font-display font-semibold text-slate-900">{event.title}</h4>
-                              <p className="mt-1 text-sm font-semibold text-orange-700">
+                              <h4 className="mt-2 font-display font-semibold text-ink">{event.title}</h4>
+                              <p className="mt-1 text-sm font-semibold text-saffron-700">
                                 🕐 {eventTimes(event)} · {event.venue}
                               </p>
                               <p className="mt-2 line-clamp-2 text-sm text-slate-600">
@@ -141,7 +145,7 @@ export default function EventsSection() {
                               )}
                             </div>
                           </div>
-                        </Card>
+                        </div>
                       </button>
                     );
                   })}
@@ -162,11 +166,11 @@ export default function EventsSection() {
                 <img
                   src={selected.imageUrl}
                   alt={selected.title}
-                  className="max-h-72 w-full rounded-xl object-cover"
+                  className="aspect-square w-full rounded-xl object-cover"
                 />
               )}
             </>
-            <p className="rounded-lg bg-orange-50 px-3 py-2 text-sm font-bold text-orange-800">
+            <p className="rounded-lg bg-white px-3 py-2 text-sm font-bold text-saffron-800">
               {selected.category || "Pooja & Harathi"} · {selected.eventDate} ·{" "}
               {eventTimes(selected)}
             </p>
@@ -197,7 +201,7 @@ export default function EventsSection() {
               )}
             </div>
             {selected.announcements && (
-              <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+              <div className="rounded-xl bg-white p-3 text-sm text-saffron-900">
                 <b>Announcement:</b> {selected.announcements}
               </div>
             )}

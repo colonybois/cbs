@@ -15,6 +15,10 @@ export const COLONY_BOIS_CONTACT = {
     handle: "@colony_bois",
     url: "https://www.instagram.com/colony_bois?igsh=MWdtaWdkN3VmeHprZA==",
   },
+  whatsapp: {
+    number: "7997752156",
+    url: "https://wa.me/917997752156",
+  },
   phoneNumbers: [
     { label: " ", number: "+919121429608", display: "+91 91214 29608" },
     { label: " ", number: "+918106565698", display: "+91 81065 65698" },
@@ -23,6 +27,9 @@ export const COLONY_BOIS_CONTACT = {
   ],
   pandalLocation: {
     title: "Colony Bois Vinayaka Pandal",
+    address: "Colony ground, S.C. Colony, Rampuram, Andhra Pradesh 531173",
     mapsUrl: "https://maps.app.goo.gl/ZNFj8VaJ85W3EfYe6?g_st=aw",
+    embedUrl:
+      "https://maps.google.com/maps?q=R55M%2BQFF+Colony+ground,+S.C.Colony,+Rampuram,+Andhra+Pradesh+531173&z=16&output=embed",
   },
 } as const;

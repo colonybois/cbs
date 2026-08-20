@@ -111,7 +111,7 @@ function DropZone({
         onChange(Array.from(e.dataTransfer.files));
       }}
       onClick={() => ref.current?.click()}
-      className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-6 text-sm font-semibold transition ${dragging ? "border-orange-500 bg-orange-50" : "border-orange-300 bg-white hover:border-orange-400 hover:bg-orange-50"} text-orange-600`}
+      className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-6 text-sm font-semibold transition ${dragging ? "border-saffron bg-white" : "border-saffron-200 bg-white hover:border-saffron-400 hover:bg-white"} text-saffron-600`}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -143,9 +143,9 @@ function DropZone({
 // ── progress bar ──────────────────────────────────────────────────────────────
 function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-orange-100">
+    <div className="h-2 w-full overflow-hidden rounded-full bg-white">
       <div
-        className="h-full rounded-full bg-orange-500 transition-all duration-300"
+        className="h-full rounded-full bg-saffron transition-all duration-300"
         style={{ width: `${value}%` }}
       />
     </div>
@@ -349,7 +349,7 @@ export default function AdminFestivalDays() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+          <p className="text-sm font-bold uppercase tracking-widest text-saffron-600">
             Content Management
           </p>
           <h1 className="mt-1 text-3xl font-black text-slate-900">Festival Days</h1>
@@ -366,12 +366,12 @@ export default function AdminFestivalDays() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by title or day…"
-          className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-400"
         />
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as "date" | "order")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-400"
         >
           <option value="order">Sort by display order</option>
           <option value="date">Sort by date</option>
@@ -383,7 +383,7 @@ export default function AdminFestivalDays() {
         {loading ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-12 animate-pulse rounded-xl bg-orange-50" />
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-white" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -400,7 +400,7 @@ export default function AdminFestivalDays() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-orange-100 bg-orange-50/60">
+              <thead className="border-b border-saffron-100 bg-white">
                 <tr>
                   {[
                     "Cover",
@@ -421,23 +421,23 @@ export default function AdminFestivalDays() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-orange-50">
+              <tbody className="divide-y divide-saffron-50">
                 {filtered.map((day) => (
-                  <tr key={day.id} className="hover:bg-orange-50/40 transition">
+                  <tr key={day.id} className="hover:bg-white transition">
                     <td className="px-4 py-3">
                       <img
                         src={day.coverImageUrl}
                         alt={day.heading}
-                        className="h-12 w-16 rounded-lg object-cover border border-orange-100"
+                        className="h-12 w-16 rounded-lg object-cover border border-saffron-100"
                       />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="rounded-lg bg-orange-500 px-2 py-0.5 text-xs font-black text-white">
+                        <span className="rounded-lg bg-saffron px-2 py-0.5 text-xs font-black text-white">
                           {day.dayLabel}
                         </span>
                         {day.featured && (
-                          <span className="rounded-lg bg-amber-400 px-2 py-0.5 text-xs font-black text-white">
+                          <span className="rounded-lg bg-saffron-400 px-2 py-0.5 text-xs font-black text-white">
                             ★
                           </span>
                         )}
@@ -472,7 +472,7 @@ export default function AdminFestivalDays() {
                         </a>
                         <button
                           onClick={() => openEdit(day)}
-                          className="rounded-lg border border-orange-200 px-2.5 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-50 transition"
+                          className="rounded-lg border border-saffron-200 px-2.5 py-1.5 text-xs font-bold text-saffron-600 hover:bg-white transition"
                         >
                           Edit
                         </button>
@@ -506,7 +506,7 @@ export default function AdminFestivalDays() {
                 <input
                   {...field("dayLabel")}
                   placeholder="Day 1, Opening Ceremony…"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
               <label className="block text-sm font-semibold text-slate-700">
@@ -515,7 +515,7 @@ export default function AdminFestivalDays() {
                   type="number"
                   {...field("displayOrder")}
                   min="0"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
             </div>
@@ -526,7 +526,7 @@ export default function AdminFestivalDays() {
                 required
                 {...field("heading")}
                 placeholder="e.g. Grand Ganesh Puja & Procession"
-                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
               />
             </label>
 
@@ -536,7 +536,7 @@ export default function AdminFestivalDays() {
                 {...field("shortDesc")}
                 rows={2}
                 placeholder="Brief summary shown on the timeline card…"
-                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
               />
             </label>
 
@@ -546,7 +546,7 @@ export default function AdminFestivalDays() {
                 {...field("detailedDesc")}
                 rows={4}
                 placeholder="Full story of the day…"
-                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
               />
             </label>
 
@@ -556,7 +556,7 @@ export default function AdminFestivalDays() {
                 <input
                   type="date"
                   {...field("eventDate")}
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
               <label className="block text-sm font-semibold text-slate-700">
@@ -564,7 +564,7 @@ export default function AdminFestivalDays() {
                 <input
                   type="time"
                   {...field("eventTime")}
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
               <label className="block text-sm font-semibold text-slate-700">
@@ -572,7 +572,7 @@ export default function AdminFestivalDays() {
                 <input
                   {...field("location")}
                   placeholder="Pandal, Rampuram"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
             </div>
@@ -587,7 +587,7 @@ export default function AdminFestivalDays() {
                   <img
                     src={coverPreview}
                     alt="Cover preview"
-                    className="h-40 w-full rounded-xl object-cover border border-orange-200"
+                    className="h-40 w-full rounded-xl object-cover border border-saffron-200"
                   />
                   <button
                     type="button"
@@ -627,7 +627,7 @@ export default function AdminFestivalDays() {
                       <img
                         src={src}
                         alt={`Gallery ${i + 1}`}
-                        className="h-20 w-20 rounded-xl object-cover border border-orange-100"
+                        className="h-20 w-20 rounded-xl object-cover border border-saffron-100"
                       />
                       <button
                         type="button"
@@ -648,7 +648,7 @@ export default function AdminFestivalDays() {
               <input
                 {...field("videoUrl")}
                 placeholder="https://youtube.com/embed/…"
-                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
               />
             </label>
 
@@ -660,18 +660,18 @@ export default function AdminFestivalDays() {
                   onChange={(e) =>
                     setForm((p) => ({ ...p, status: e.target.value as "published" | "draft" }))
                   }
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 >
                   <option value="published">Published</option>
                   <option value="draft">Draft</option>
                 </select>
               </label>
-              <label className="flex items-center gap-3 rounded-xl border border-orange-200 p-3 cursor-pointer mt-6">
+              <label className="flex items-center gap-3 rounded-xl border border-saffron-200 p-3 cursor-pointer mt-6">
                 <input
                   type="checkbox"
                   checked={form.featured}
                   onChange={(e) => setForm((p) => ({ ...p, featured: e.target.checked }))}
-                  className="h-4 w-4 accent-orange-500"
+                  className="h-4 w-4 accent-saffron"
                 />
                 <span className="text-sm font-semibold text-slate-700">
                   Featured / Highlight this day

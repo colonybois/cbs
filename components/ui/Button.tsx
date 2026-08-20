@@ -5,14 +5,13 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 export default function Button({ children, variant = "primary", className = "", ...props }: Props) {
   const styles = {
-    primary:
-      "bg-gradient-to-r from-saffron to-festive-amber text-white shadow-temple hover:from-saffron-600 hover:to-festive-gold",
-    secondary: "bg-festive-gold text-white hover:bg-saffron-600",
-    ghost: "border border-saffron-200 text-saffron-700 hover:bg-saffron-50",
+    primary: "btn-festive",
+    secondary: "bg-gold text-on-primary hover:bg-accent",
+    ghost: "border border-primary/25 text-ink hover:bg-[var(--background-warm)]",
   };
   return (
     <button
-      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${styles[variant]} ${className}`}
+      className={`rounded-full px-4 py-2.5 text-sm font-bold transition ${styles[variant]} ${className}`}
       {...props}
     >
       {children}

@@ -153,7 +153,7 @@ export default function UploadMemoryModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Ganesh Chaturthi 2024"
-              className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
             />
           </label>
 
@@ -165,7 +165,7 @@ export default function UploadMemoryModal({
                   value={relatedEvent}
                   onChange={(e) => setRelatedEvent(e.target.value)}
                   placeholder="Optional event name"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3"
                 />
               </label>
               <label className="block text-sm font-semibold text-slate-700">
@@ -174,7 +174,7 @@ export default function UploadMemoryModal({
                   value={credit}
                   onChange={(e) => setCredit(e.target.value)}
                   placeholder="Optional public credit"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3"
                 />
               </label>
             </div>
@@ -213,7 +213,7 @@ export default function UploadMemoryModal({
                 max="2100"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
               />
             </label>
           )}
@@ -226,7 +226,7 @@ export default function UploadMemoryModal({
               onChange={(e) => setCaption(e.target.value)}
               placeholder="Short description…"
               rows={2}
-              className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
             />
           </label>
 
@@ -236,7 +236,7 @@ export default function UploadMemoryModal({
               <img
                 src={preview}
                 alt="Preview"
-                className="h-44 w-full rounded-xl object-cover border border-orange-200"
+                className="h-44 w-full rounded-xl object-cover border border-saffron-200"
               />
               <button
                 type="button"
@@ -255,7 +255,7 @@ export default function UploadMemoryModal({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 py-6 text-sm font-semibold text-orange-600 hover:border-orange-400 hover:bg-orange-100 transition"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-saffron-200 bg-white py-6 text-sm font-semibold text-saffron-600 hover:border-saffron-400 hover:bg-white transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

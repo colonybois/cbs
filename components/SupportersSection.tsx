@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
+import SectionHeading from "@/components/SectionHeading";
 import { db } from "@/lib/firebase";
 
 type Supporter = { id: string; displayName: string; message?: string | null };
@@ -87,27 +88,27 @@ export default function SupportersSection() {
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
-        Community love
-      </p>
-      <h2 className="mt-2 font-display text-3xl font-semibold text-slate-900">Our Supporters</h2>
-      <p className="mt-3 text-slate-600">
-        Thank you to everyone who supported Colony Bois Ganesh Utsav this year.
-      </p>
+      <SectionHeading
+        kicker="Community love"
+        title="Our Supporters"
+        symbol="✦"
+        tone="accent"
+        lede="Thank you to everyone who supported Colony Bois Ganesh Utsav this year."
+      />
 
       {loading && (
         <div className="mt-7 flex gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-14 w-44 flex-none animate-pulse rounded-2xl bg-orange-100" />
+            <div key={i} className="h-14 w-44 flex-none animate-pulse rounded-2xl bg-white" />
           ))}
         </div>
       )}
 
       {!loading && !error && supporters.length === 0 && (
-        <div className="mt-7 rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-8 text-center">
+        <div className="mt-7 rounded-2xl border border-dashed border-saffron-200 bg-white p-8 text-center">
           <p className="text-2xl">🙏</p>
           <p className="mt-2 font-bold text-slate-900">Supporters will appear here</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="section-note mx-auto mt-1 max-w-sm">
             Donors who consent to public display will show up here after admin approval.
           </p>
         </div>
@@ -125,7 +126,7 @@ export default function SupportersSection() {
             <button
               onClick={() => scroll("left")}
               aria-label="Scroll left"
-              className="absolute -left-4 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md transition hover:bg-orange-50 sm:flex"
+              className="absolute -left-4 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-saffron-200 bg-white text-lg text-saffron-600 shadow-md transition hover:bg-white sm:flex"
             >
               ‹
             </button>
@@ -134,7 +135,7 @@ export default function SupportersSection() {
             <button
               onClick={() => scroll("right")}
               aria-label="Scroll right"
-              className="absolute -right-4 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-orange-200 bg-white text-lg text-orange-600 shadow-md transition hover:bg-orange-50 sm:flex"
+              className="absolute -right-4 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-saffron-200 bg-white text-lg text-saffron-600 shadow-md transition hover:bg-white sm:flex"
             >
               ›
             </button>
@@ -166,7 +167,7 @@ export default function SupportersSection() {
             {supporters.map((s) => (
               <div
                 key={s.id}
-                className="flex flex-none snap-start items-center gap-2 rounded-2xl border border-amber-200 bg-white/90 px-4 py-3 shadow-temple"
+                className="flex flex-none snap-start items-center gap-2 rounded-2xl border border-saffron-200 bg-white/90 px-4 py-3 shadow-temple"
               >
                 <span className="text-lg">❤️</span>
                 <span className="whitespace-nowrap font-bold text-slate-900">{s.displayName}</span>

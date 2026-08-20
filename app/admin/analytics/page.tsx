@@ -91,9 +91,9 @@ function ProgressList({ items }: { items: { label: string; count: number }[] }) 
             <span className="truncate font-semibold text-slate-700">{item.label}</span>
             <b className="text-slate-900">{item.count}</b>
           </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-orange-50">
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
             <div
-              className="h-full rounded-full bg-orange-500"
+              className="h-full rounded-full bg-saffron"
               style={{ width: `${Math.max((item.count / max) * 100, 4)}%` }}
             />
           </div>
@@ -294,12 +294,12 @@ export default function AnalyticsPage() {
     );
 
   const paymentMethods = [
-    ["Cash", donationData.cash, "bg-orange-500"],
+    ["Cash", donationData.cash, "bg-saffron"],
     ["UPI", donationData.upi, "bg-emerald-500"],
   ] as const;
   const donationSources = [
     ["Self donations", donationData.self, "bg-sky-500"],
-    ["Member collections", donationData.member, "bg-amber-500"],
+    ["Member collections", donationData.member, "bg-saffron"],
   ] as const;
   const maxDay = Math.max(...donationData.days.map((day) => day.amount), 1);
   const siteExportRows = siteData.recent.map((item) => [
@@ -345,7 +345,7 @@ export default function AnalyticsPage() {
       <section className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+            <p className="text-sm font-bold uppercase tracking-widest text-saffron-600">
               Public reach
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-900">Site Visitor Analytics</h2>
@@ -375,7 +375,7 @@ export default function AnalyticsPage() {
             [String(siteData.signedInVisitors), "Known visitors"],
           ].map(([value, label]) => (
             <Card key={label} className="bg-white p-4">
-              <p className="text-2xl font-black text-orange-600">{value}</p>
+              <p className="text-2xl font-black text-saffron-600">{value}</p>
               <p className="mt-1 text-sm text-slate-600">{label}</p>
             </Card>
           ))}
@@ -404,7 +404,7 @@ export default function AnalyticsPage() {
 
         <div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
           <Card className="overflow-hidden">
-            <div className="border-b border-orange-100 p-5">
+            <div className="border-b border-saffron-100 p-5">
               <h3 className="text-lg font-black text-slate-900">Who Visited</h3>
               <p className="mt-1 text-sm text-slate-500">
                 Signed-in users show by name; anonymous visitors show by browser visitor ID.
@@ -412,7 +412,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-[760px] w-full text-left text-sm">
-                <thead className="border-b border-orange-100 bg-orange-50 text-xs font-bold uppercase tracking-wider text-slate-600">
+                <thead className="border-b border-saffron-100 bg-white text-xs font-bold uppercase tracking-wider text-slate-600">
                   <tr>
                     {[
                       "Visitor",
@@ -429,16 +429,16 @@ export default function AnalyticsPage() {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-orange-50">
+                <tbody className="divide-y divide-saffron-50">
                   {siteData.visitors.map((visitor) => (
                     <tr key={`${visitor.label}-${visitor.lastSeen?.getTime() || 0}`}>
                       <td className="px-4 py-3 font-bold text-slate-900">{visitor.label}</td>
                       <td className="px-4 py-3 text-slate-600">{visitor.role}</td>
                       <td className="px-4 py-3 text-slate-500">{displayDate(visitor.lastSeen)}</td>
-                      <td className="px-4 py-3 font-semibold text-orange-700">
+                      <td className="px-4 py-3 font-semibold text-saffron-700">
                         {visitor.pageViews}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-orange-700">
+                      <td className="px-4 py-3 font-semibold text-saffron-700">
                         {visitor.menuClicks}
                       </td>
                       <td className="px-4 py-3 text-slate-600">{visitor.device}</td>
@@ -458,13 +458,13 @@ export default function AnalyticsPage() {
           </Card>
 
           <Card className="overflow-hidden">
-            <div className="border-b border-orange-100 p-5">
+            <div className="border-b border-saffron-100 p-5">
               <h3 className="text-lg font-black text-slate-900">Recent Public Activity</h3>
               <p className="mt-1 text-sm text-slate-500">
                 {siteData.todayEvents} event{siteData.todayEvents === 1 ? "" : "s"} today
               </p>
             </div>
-            <div className="divide-y divide-orange-50">
+            <div className="divide-y divide-saffron-50">
               {siteData.recent.map((item) => (
                 <div key={item.id} className="p-4 text-sm">
                   <div className="flex items-center justify-between gap-3">
@@ -490,22 +490,22 @@ export default function AnalyticsPage() {
 
       <section className="space-y-5">
         <div>
-          <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+          <p className="text-sm font-bold uppercase tracking-widest text-saffron-600">
             Collection performance
           </p>
           <h2 className="mt-1 text-2xl font-black text-slate-900">Donation Analytics</h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <Card className="p-5">
-            <p className="text-2xl font-black text-orange-600">{money(donationData.total)}</p>
+            <p className="text-2xl font-black text-saffron-600">{money(donationData.total)}</p>
             <p className="mt-2 text-sm text-slate-600">Approved collection</p>
           </Card>
           <Card className="p-5">
-            <p className="text-2xl font-black text-orange-600">{money(donationData.cash)}</p>
+            <p className="text-2xl font-black text-saffron-600">{money(donationData.cash)}</p>
             <p className="mt-2 text-sm text-slate-600">Cash payments</p>
           </Card>
           <Card className="p-5">
-            <p className="text-2xl font-black text-orange-600">{money(donationData.upi)}</p>
+            <p className="text-2xl font-black text-saffron-600">{money(donationData.upi)}</p>
             <p className="mt-2 text-sm text-slate-600">UPI payments</p>
           </Card>
         </div>
@@ -522,9 +522,9 @@ export default function AnalyticsPage() {
                   <span className="text-xs font-bold text-slate-600">
                     {day.amount ? money(day.amount) : "—"}
                   </span>
-                  <div className="flex h-28 w-full items-end rounded-t bg-orange-50">
+                  <div className="flex h-28 w-full items-end rounded-t bg-white">
                     <div
-                      className="w-full rounded-t bg-orange-500"
+                      className="w-full rounded-t bg-saffron"
                       style={{ height: `${(day.amount / maxDay) * 100}%` }}
                     />
                   </div>

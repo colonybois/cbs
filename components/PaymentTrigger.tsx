@@ -9,7 +9,7 @@ export default function PaymentTrigger() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-xl border border-orange-300 bg-white px-5 py-3 font-bold text-orange-700 shadow-sm hover:bg-orange-50"
+      className="btn-festive px-5 py-3 font-bold shadow-sm"
       >
         Contribute via UPI
       </button>

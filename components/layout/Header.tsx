@@ -4,22 +4,24 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { COLONY_BOIS_ASSETS } from "@/lib/assets";
-import { COLONY_BOIS_CONTACT } from "@/lib/constants";
+import { COLONY_BOIS_ASSETS } from "@/lib/constants";
 import { recordSiteAnalyticsEvent } from "@/lib/site-analytics";
 import { useRegistrationConfig } from "@/hooks/useRegistrationConfig";
+import { useHomeSections, type HomeSectionId } from "@/hooks/useHomeSections";
 import { smoothScrollToId } from "@/lib/smooth-scroll";
+import { useChatPanel } from "@/components/chat/ChatPanelContext";
 import "./mobile-menu.css";
 
-const publicSections = [
+const publicNavItems: readonly [string, HomeSectionId][] = [
   ["Home", "hero"],
+  ["About", "about"],
   ["Events", "events"],
-  ["Gallery & Flashback", "gallery"],
-  ["Chanda / Contribution", "donate"],
-  ["About Us", "about"],
-  ["Committee Management Rosters", "comity"],
+  ["Gallery", "gallery"],
+  ["Festival", "festival"],
+  ["Committee", "comity"],
+  ["Sponsors", "supporters"],
   ["Contact", "contact"],
-] as const;
+];
 
 function MenuIcon({ id }: { id: string }) {
   const common = {
@@ -53,6 +55,13 @@ function MenuIcon({ id }: { id: string }) {
           <path d="m21 15-4.5-4.5L7 20" />
         </svg>
       );
+    case "festival":
+      return (
+        <svg {...common}>
+          <path d="M12 3v18M8 7h8M7 11h10M8 15h8" />
+          <circle cx="12" cy="5" r="1.5" />
+        </svg>
+      );
     case "donate":
       return (
         <svg {...common}>
@@ -80,6 +89,18 @@ function MenuIcon({ id }: { id: string }) {
           <path d="M6.5 4.5h3l1.4 3.4-1.8 1.1a12 12 0 0 0 6 6l1.1-1.8 3.4 1.4v3A2 2 0 0 1 18 19 15 15 0 0 1 5 6a2 2 0 0 1 1.5-1.5z" />
         </svg>
       );
+    case "supporters":
+      return (
+        <svg {...common}>
+          <path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z" />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg {...common}>
+          <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H12l-4 3.2V16H7.5A2.5 2.5 0 0 1 5 13.5z" />
+        </svg>
+      );
     default:
       return (
         <svg {...common}>
@@ -90,6 +111,7 @@ function MenuIcon({ id }: { id: string }) {
 }
 const adminLinks = [
   ["Dashboard", "/admin/dashboard"],
+  ["Hero Videos", "/admin/dashboard#hero-videos"],
   ["Analytics", "/admin/analytics"],
   ["Chanda Transactions", "/admin/chanda-transactions"],
   ["Payment Ledger", "/admin/payment-ledger"],
@@ -98,6 +120,8 @@ const adminLinks = [
   ["Gallery", "/admin/gallery"],
   ["Festival Days", "/admin/festival-days"],
   ["Committee Members", "/admin/comity-members"],
+  ["Chat Q&A", "/admin/chat"],
+  ["Homepage Sections", "/admin/home-sections"],
   ["Approvals", "/admin/approvals"],
   ["Email Settings", "/admin/email-settings"],
   ["Admin Audit Log", "/admin/audit-log"],
@@ -106,14 +130,18 @@ const memberLinks = [["My Dashboard", "/member/dashboard"]] as const;
 
 export default function Header() {
   const { uid, name, signedIn, loading, role, signOut } = useAuth();
+  const { openChat } = useChatPanel();
   const { config: registrationConfig } = useRegistrationConfig();
+  const { isEnabled } = useHomeSections();
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const [activeSection, setActiveSection] = useState("hero");
   const inPortal = pathname.startsWith("/admin") || pathname.startsWith("/member");
   const portalLinks = role === "admin" || role === "super_admin" ? adminLinks : memberLinks;
+  const visiblePublicNav = publicNavItems.filter(([, id]) => isEnabled(id));
+  const showDonate = isEnabled("donate");
   const closeMenu = () => setIsMobileMenuOpen(false);
   useEffect(() => {
     document.body.style.overflow = "";
@@ -130,30 +158,6 @@ export default function Header() {
   useEffect(() => {
     closeMenu();
   }, [pathname]);
-  useEffect(() => {
-    if (!isMobileMenuOpen) return;
-
-    let startY = 0;
-    const onTouchStart = (event: TouchEvent) => {
-      startY = event.touches[0]?.clientY ?? 0;
-    };
-    const onTouchMove = (event: TouchEvent) => {
-      const y = event.touches[0]?.clientY ?? 0;
-      if (Math.abs(y - startY) > 12) closeMenu();
-    };
-    const onScrollAway = () => closeMenu();
-
-    window.addEventListener("scroll", onScrollAway, { passive: true });
-    window.addEventListener("wheel", onScrollAway, { passive: true });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScrollAway);
-      window.removeEventListener("wheel", onScrollAway);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [isMobileMenuOpen]);
   const handleSignOut = async () => {
     if (!window.confirm("Are you sure you want to sign out?")) return;
     closeMenu();
@@ -173,6 +177,7 @@ export default function Header() {
   };
   const scrollToSection = (label: string, id: string, source: string) => {
     trackMenu(label, `#${id}`, source);
+    setActiveSection(id);
     const menuWasOpen = isMobileMenuOpen;
     closeMenu();
     const run = () => {
@@ -182,70 +187,32 @@ export default function Header() {
     if (menuWasOpen) window.setTimeout(run, 180);
     else run();
   };
-  const instagramIcon = (
-    <a
-      href={COLONY_BOIS_CONTACT.instagram.url}
-      target="_blank"
-      rel="noreferrer"
-      aria-label="Colony Bois on Instagram"
-      onClick={() =>
-        void recordSiteAnalyticsEvent(
-          {
-            eventType: "external_click",
-            menuLabel: "Instagram",
-            menuTarget: COLONY_BOIS_CONTACT.instagram.url,
-            source: "header_social",
-          },
-          { uid, name, role, signedIn },
-        )
-      }
-      className="grid h-8 w-8 place-items-center rounded-lg text-slate-600 hover:text-orange-600 transition"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        className="h-5 w-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-        <circle cx="12" cy="12" r="4" />
-        <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
-      </svg>
-    </a>
-  );
+  const openPublicChat = (source: string) => {
+    trackMenu("Chat", "chat", source);
+    closeMenu();
+    window.setTimeout(openChat, isMobileMenuOpen ? 180 : 0);
+  };
   const brand = (
     <Link
       href="/"
       onClick={() => {
         trackMenu("Home", "/", "header_brand");
+        setActiveSection("hero");
         closeMenu();
       }}
-      className="flex items-center gap-3 text-left"
+      className="flex items-center gap-2.5 text-left sm:gap-3"
     >
-      <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full border-2 border-amber-300 bg-gradient-to-br from-orange-50 to-amber-100 shadow-sm">
-        {!imgError ? (
-          <img
-            src={COLONY_BOIS_ASSETS.logo.src}
-            alt={COLONY_BOIS_ASSETS.logo.alt}
-            width={44}
-            height={44}
-            className="h-full w-full object-contain"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <span className="text-xs font-black text-orange-700">CB</span>
-        )}
-      </span>
-      <span className="leading-tight">
-        <span className="block font-display text-lg font-semibold tracking-tight text-slate-900">
-          Colony <span className="text-orange-600">Bois</span>
+      <img
+        src={COLONY_BOIS_ASSETS.logo.src}
+        alt={COLONY_BOIS_ASSETS.logo.alt}
+        className="h-10 w-10 rounded-full border-2 border-gold object-cover shadow-sm sm:h-11 sm:w-11"
+      />
+      <span className="min-w-0 leading-tight">
+        <span className="block whitespace-nowrap font-yatra text-[13px] text-primary sm:text-lg">
+          || श्री गणेशाय नमः ||
         </span>
-        <span className="hidden font-yatra text-[11px] leading-none text-amber-700 sm:block">
-          Ganpati Bappa Morya
+        <span className="mt-0.5 block font-cinzel text-[10px] uppercase tracking-[0.18em] text-ink sm:text-[11px] sm:tracking-[0.22em]">
+          Colony Bois
         </span>
       </span>
     </Link>
@@ -259,7 +226,7 @@ export default function Header() {
             trackMenu("Home", "/", "portal_header");
             closeMenu();
           }}
-          className="text-sm font-medium text-slate-700 hover:text-orange-600"
+          className="text-sm font-medium uppercase tracking-[0.16em] text-primary hover:text-accent"
         >
           Home
         </Link>
@@ -272,7 +239,7 @@ export default function Header() {
             trackMenu(label, href, "portal_header");
             closeMenu();
           }}
-          className={`text-sm font-medium hover:text-orange-600 ${pathname === href ? "font-bold text-orange-600" : "text-slate-700"}`}
+          className={`text-sm font-medium uppercase tracking-[0.12em] hover:text-accent ${pathname === href ? "font-semibold text-accent" : "text-primary"}`}
         >
           {label}
         </Link>
@@ -280,21 +247,21 @@ export default function Header() {
     </>
   );
   const authActions = loading ? (
-    <span className="h-9 w-28 animate-pulse rounded-lg bg-orange-100" />
+    <span className="h-9 w-28 animate-pulse rounded-full bg-[var(--background-warm)]" />
   ) : signedIn ? (
     <>
       {!inPortal && (
         <Link
           href={dashboardPath}
           onClick={() => trackMenu("Dashboard", dashboardPath, "header_auth")}
-          className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:from-orange-600 hover:to-amber-600"
+          className="hidden rounded-full border border-[#e8b8bc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary hover:bg-[var(--background-warm)] lg:inline-flex"
         >
           Dashboard
         </Link>
       )}
       <button
         onClick={() => void handleSignOut()}
-        className="rounded-lg border border-orange-300 px-3 py-1.5 text-sm font-bold text-orange-700 hover:bg-orange-50"
+        className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-primary/80 hover:text-accent lg:inline-flex"
       >
         Sign Out
       </button>
@@ -305,7 +272,7 @@ export default function Header() {
         <Link
           href="/register"
           onClick={() => trackMenu("Register", "/register", "header_auth")}
-          className="text-sm font-bold text-orange-700 hover:text-orange-600"
+          className="hidden text-xs font-semibold uppercase tracking-[0.14em] text-primary hover:text-accent lg:inline"
         >
           Register
         </Link>
@@ -313,38 +280,69 @@ export default function Header() {
       <Link
         href="/login"
         onClick={() => trackMenu("Sign In", "/login", "header_auth")}
-        className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:from-orange-600 hover:to-amber-600"
+        className="hidden rounded-full border border-[#e8b8bc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary hover:bg-[var(--background-warm)] lg:inline-flex"
       >
         Sign In
       </Link>
     </>
   );
+  const donateButton =
+    !inPortal && showDonate ? (
+      <button
+        type="button"
+        onClick={() => scrollToSection("Donate", "donate", "header_donate")}
+        className="btn-festive px-5 py-2 text-xs sm:px-6 sm:text-[13px]"
+      >
+        Donate
+      </button>
+    ) : null;
+  const mobileSections = [
+    ...visiblePublicNav,
+    ...(showDonate ? ([["Donate", "donate"]] as const) : []),
+  ];
+
   return (
-    <header className="sticky top-0 z-50 border-b border-amber-200/70 bg-[#fffcf8]/95 shadow-sm">
-      <div className="relative z-50 mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4">
+    <>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-[#e8b8bc] bg-[var(--background)]">
+      <div className="relative z-50 mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-4 lg:px-6">
         {brand}
-        <nav className="hidden items-center gap-5 md:flex">
+        <nav className="hidden items-center gap-6 lg:flex xl:gap-7">
           {inPortal
             ? portalNav
-            : publicSections.map(([label, id]) => (
+            : visiblePublicNav.map(([label, id]) => (
                 <button
                   key={id}
                   onClick={() => scrollToSection(label, id, "public_header_desktop")}
-                  className={`text-sm font-medium hover:text-orange-600 ${id === "donate" ? "font-bold text-orange-600" : "text-slate-700"}`}
+                  className={`relative pb-1 font-cinzel text-[12px] font-semibold uppercase tracking-[0.16em] transition ${
+                    pathname === "/" && activeSection === id
+                      ? "text-primary"
+                      : "text-primary/80 hover:text-accent"
+                  }`}
                 >
                   {label}
+                  {pathname === "/" && activeSection === id && (
+                    <span className="absolute inset-x-1 -bottom-0.5 h-[3px] rounded-full bg-[#e8b8bc]" />
+                  )}
                 </button>
               ))}
-          {instagramIcon}
-          {authActions}
+          {!inPortal && (
+            <button
+              type="button"
+              onClick={() => openPublicChat("public_header_desktop")}
+              className="relative pb-1 font-cinzel text-[12px] font-semibold uppercase tracking-[0.16em] text-primary/80 transition hover:text-accent"
+            >
+              Chat
+            </button>
+          )}
         </nav>
-        <div className="flex items-center gap-1 md:hidden">
-          {instagramIcon}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {authActions}
+          {donateButton}
           <button
             onClick={() => setIsMobileMenuOpen((value) => !value)}
             aria-expanded={isMobileMenuOpen}
             aria-label="Toggle navigation menu"
-            className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-amber-200 bg-orange-50 text-orange-800 touch-manipulation"
+            className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-[#e8b8bc] bg-[var(--background-warm)] text-primary touch-manipulation lg:hidden"
           >
             <span className="relative block h-4 w-5">
               <span
@@ -366,13 +364,13 @@ export default function Header() {
             type="button"
             aria-label="Close navigation menu"
             onClick={closeMenu}
-            className={`mobile-menu-backdrop fixed inset-0 z-40 bg-stone-900/35 md:hidden ${isMobileMenuOpen ? "" : "is-closing"}`}
+            className={`mobile-menu-backdrop fixed inset-0 z-40 bg-primary-dark/35 lg:hidden ${isMobileMenuOpen ? "" : "is-closing"}`}
           />
           <div
-            className={`mobile-menu-panel fixed inset-x-0 top-[calc(4rem+0.25rem)] z-50 flex max-h-[min(78dvh,calc(100dvh-4.5rem))] flex-col overflow-y-auto overscroll-contain border-b border-amber-200 bg-[#fffbf5] px-3 py-3 text-left shadow-xl md:hidden ${isMobileMenuOpen ? "" : "is-closing"}`}
+            className={`mobile-menu-panel fixed inset-x-0 top-[calc(4.25rem+0.25rem)] z-50 flex max-h-[min(78dvh,calc(100dvh-4.75rem))] flex-col overflow-y-auto overscroll-contain border-b border-[#e8b8bc] bg-[var(--background)] px-3 py-3 text-left shadow-xl lg:hidden ${isMobileMenuOpen ? "" : "is-closing"}`}
           >
-            <p className="mobile-menu-item px-2 pb-2 font-yatra text-sm text-orange-700">
-              Ganpati Bappa Morya
+            <p className="mobile-menu-item px-2 pb-2 font-yatra text-sm text-primary">
+              गणपति बप्पा मोरया
             </p>
             {inPortal
               ? portalLinks.map(([label, href], index) => (
@@ -384,35 +382,53 @@ export default function Header() {
                       closeMenu();
                     }}
                     style={{ animationDelay: `${60 + index * 45}ms` }}
-                    className={`mobile-menu-item mb-1 flex items-center gap-3 rounded-2xl border px-3 py-3 text-left font-medium transition ${pathname === href ? "border-orange-300 bg-orange-50 font-bold text-orange-700" : "border-amber-100 bg-white text-slate-800"}`}
+                    className={`mobile-menu-item mb-1 flex items-center gap-3 rounded-2xl border px-3 py-3 text-left font-medium transition ${pathname === href ? "border-[#e8b8bc] bg-[var(--background-warm)] font-bold text-primary" : "border-[#e8b8bc] bg-white text-[var(--text)]"}`}
                   >
                     {label}
                   </Link>
                 ))
-              : publicSections.map(([label, id], index) => (
-                  <button
-                    key={id}
-                    onClick={() => scrollToSection(label, id, "public_header_mobile")}
-                    style={{ animationDelay: `${60 + index * 45}ms` }}
-                    className={`mobile-menu-item mb-1.5 flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition active:scale-[0.99] ${id === "donate" ? "border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 font-bold text-orange-700" : "border-amber-100 bg-white text-slate-800"}`}
-                  >
-                    <span
-                      className={`grid h-10 w-10 flex-none place-items-center rounded-xl ${id === "donate" ? "bg-gradient-to-br from-orange-500 to-amber-500 text-orange-50" : "bg-orange-50 text-orange-700"}`}
+              : (
+                <>
+                  {mobileSections.map(([label, id], index) => (
+                    <button
+                      key={id}
+                      onClick={() => scrollToSection(label, id, "public_header_mobile")}
+                      style={{ animationDelay: `${60 + index * 45}ms` }}
+                      className={`mobile-menu-item mb-1.5 flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition active:scale-[0.99] ${id === "donate" ? "border-primary/30 bg-primary/5 font-bold text-primary" : "border-[#e8b8bc] bg-white text-[var(--text)]"}`}
                     >
-                      <MenuIcon id={id} />
+                      <span
+                        className={`grid h-10 w-10 flex-none place-items-center rounded-xl ${id === "donate" ? "bg-primary text-on-primary" : "bg-[var(--background-warm)] text-primary"}`}
+                      >
+                        <MenuIcon id={id} />
+                      </span>
+                      <span className="min-w-0 flex-1 leading-snug">{label}</span>
+                      <span className="text-lg text-[#c45c64]" aria-hidden>
+                        ›
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => openPublicChat("public_header_mobile")}
+                    style={{ animationDelay: `${60 + mobileSections.length * 45}ms` }}
+                    className="mobile-menu-item mb-1.5 flex w-full items-center gap-3 rounded-2xl border border-[#e8b8bc] bg-white px-3 py-3 text-left text-[var(--text)] transition active:scale-[0.99]"
+                  >
+                    <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[var(--background-warm)] text-primary">
+                      <MenuIcon id="chat" />
                     </span>
-                    <span className="min-w-0 flex-1 leading-snug">{label}</span>
-                    <span className="text-lg text-amber-400" aria-hidden>
+                    <span className="min-w-0 flex-1 leading-snug">Chat</span>
+                    <span className="text-lg text-[#c45c64]" aria-hidden>
                       ›
                     </span>
                   </button>
-                ))}
+                </>
+              )}
             {loading ? (
-              <span className="mx-2 mt-2 h-11 animate-pulse rounded-2xl bg-orange-100" />
+              <span className="mx-2 mt-2 h-11 animate-pulse rounded-2xl bg-[var(--background-warm)]" />
             ) : signedIn ? (
               <div
                 className="mobile-menu-item mt-2 flex gap-2 px-1 pt-1"
-                style={{ animationDelay: `${60 + publicSections.length * 45}ms` }}
+                style={{ animationDelay: `${60 + mobileSections.length * 45}ms` }}
               >
                 {!inPortal && (
                   <Link
@@ -421,14 +437,14 @@ export default function Header() {
                       trackMenu("Dashboard", dashboardPath, "mobile_header_auth");
                       closeMenu();
                     }}
-                    className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-2.5 text-center font-bold text-white"
+                    className="btn-festive flex-1 py-2.5 text-center text-sm"
                   >
                     Dashboard
                   </Link>
                 )}
                 <button
                   onClick={() => void handleSignOut()}
-                  className="rounded-xl border border-orange-300 px-3 py-2.5 text-sm font-bold text-orange-700"
+                  className="rounded-full border border-[#e8b8bc] px-3 py-2.5 text-sm font-bold text-primary"
                 >
                   Sign Out
                 </button>
@@ -436,7 +452,7 @@ export default function Header() {
             ) : (
               <div
                 className="mobile-menu-item mt-2 flex gap-2 px-1 pt-1"
-                style={{ animationDelay: `${60 + publicSections.length * 45}ms` }}
+                style={{ animationDelay: `${60 + mobileSections.length * 45}ms` }}
               >
                 {!registrationConfig.hideRegistrationUI && (
                   <Link
@@ -445,7 +461,7 @@ export default function Header() {
                       trackMenu("Register", "/register", "mobile_header_auth");
                       closeMenu();
                     }}
-                    className="flex-1 rounded-xl border border-orange-300 py-2.5 text-center font-bold text-orange-700"
+                    className="flex-1 rounded-full border border-[#e8b8bc] py-2.5 text-center font-bold text-primary"
                   >
                     Register
                   </Link>
@@ -456,7 +472,7 @@ export default function Header() {
                     trackMenu("Sign In", "/login", "mobile_header_auth");
                     closeMenu();
                   }}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-2.5 text-center font-bold text-white"
+                  className="btn-festive flex-1 py-2.5 text-center text-sm"
                 >
                   Sign In
                 </Link>
@@ -466,5 +482,7 @@ export default function Header() {
         </>
       )}
     </header>
+    <div className="h-[4.25rem]" aria-hidden />
+    </>
   );
 }

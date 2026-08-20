@@ -42,7 +42,7 @@ const EMAIL_BADGE: Record<string, string> = {
   sent: "bg-emerald-100 text-emerald-700",
   failed: "bg-rose-100 text-rose-700",
   not_sent: "bg-slate-100 text-slate-500",
-  queued: "bg-amber-100 text-amber-700",
+  queued: "bg-white text-saffron-700",
 };
 
 export default function ChandaTransactionsPage() {
@@ -294,7 +294,7 @@ export default function ChandaTransactionsPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {summary.map(([v, l]) => (
           <Card key={l} className="bg-white p-5">
-            <p className="text-2xl font-black text-orange-600">{v}</p>
+            <p className="text-2xl font-black text-saffron-600">{v}</p>
             <p className="mt-2 text-sm text-slate-600">{l}</p>
           </Card>
         ))}
@@ -370,7 +370,7 @@ export default function ChandaTransactionsPage() {
 
       <Card className="overflow-x-auto">
         <table className="min-w-[1200px] w-full text-left text-sm">
-          <thead className="border-b border-orange-100 bg-orange-50 text-slate-700">
+          <thead className="border-b border-saffron-100 bg-white text-slate-700">
             <tr>
               {canDelete && (
                 <th className="px-4 py-3">
@@ -402,7 +402,7 @@ export default function ChandaTransactionsPage() {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-orange-100">
+          <tbody className="divide-y divide-saffron-100">
             {filtered.map((item) => (
               <tr key={item.id} className="align-top">
                 {canDelete && (
@@ -420,7 +420,7 @@ export default function ChandaTransactionsPage() {
                   {item.screenshotUrl ? (
                     <button
                       onClick={() => setLightbox(item.screenshotUrl!)}
-                      className="group relative overflow-hidden rounded-lg border border-orange-200 bg-orange-50 hover:border-orange-400 transition"
+                      className="group relative overflow-hidden rounded-lg border border-saffron-200 bg-white hover:border-saffron-400 transition"
                     >
                       <img
                         src={item.screenshotUrl}
@@ -443,7 +443,7 @@ export default function ChandaTransactionsPage() {
                   <br />
                   <span className="font-normal text-slate-500">{item.phone || "No phone"}</span>
                 </td>
-                <td className="px-4 py-4 font-bold text-orange-700">
+                <td className="px-4 py-4 font-bold text-saffron-700">
                   ₹{Number(item.amount || 0).toLocaleString()}
                 </td>
                 <td className="px-4 py-4 text-slate-600">{item.transactionId || "Not provided"}</td>
@@ -454,7 +454,7 @@ export default function ChandaTransactionsPage() {
                 {/* Status */}
                 <td className="px-4 py-4">
                   <span
-                    className={`rounded-full px-2 py-1 text-xs font-bold ${item.status === "approved" ? "bg-emerald-50 text-emerald-700" : item.status === "rejected" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}
+                    className={`rounded-full px-2 py-1 text-xs font-bold ${item.status === "approved" ? "bg-emerald-50 text-emerald-700" : item.status === "rejected" ? "bg-rose-50 text-rose-700" : "bg-white text-saffron-700"}`}
                   >
                     {statusLabel(item.status)}
                   </span>
@@ -484,7 +484,7 @@ export default function ChandaTransactionsPage() {
                           <button
                             disabled={emailingId === item.id}
                             onClick={() => void triggerEmail(item, "receipt", uid, name)}
-                            className="block rounded-lg border border-orange-300 bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700 hover:bg-orange-100 disabled:opacity-50"
+                            className="block rounded-lg border border-saffron-200 bg-white px-2 py-1 text-xs font-bold text-saffron-700 hover:bg-white disabled:opacity-50"
                           >
                             {emailingId === item.id ? "Sending…" : "Retry Email"}
                           </button>
@@ -502,7 +502,7 @@ export default function ChandaTransactionsPage() {
                       <button
                         disabled={updatingId === item.id}
                         onClick={() => void review(item, "approved")}
-                        className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                        className="rounded-lg bg-saffron px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
                       >
                         Verify
                       </button>
@@ -540,7 +540,7 @@ export default function ChandaTransactionsPage() {
         >
           <button
             onClick={() => setLightbox(null)}
-            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-900 font-bold hover:bg-orange-50"
+            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-900 font-bold hover:bg-white"
           >
             ✕
           </button>

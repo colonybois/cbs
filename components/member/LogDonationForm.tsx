@@ -115,18 +115,18 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
 
   if (lastReceipt) {
     return (
-      <div className="rounded-2xl border-2 border-orange-400 bg-orange-50 p-6 text-center space-y-3">
+      <div className="rounded-2xl border-2 border-saffron-400 bg-white p-6 text-center space-y-3">
         <span className="text-4xl">✅</span>
         <h3 className="text-lg font-black text-slate-900">Collection Submitted!</h3>
         <p
-          className={`text-sm font-semibold ${lastReceipt.paymentMode === "upi" ? "text-emerald-700" : "text-orange-700"}`}
+          className={`text-sm font-semibold ${lastReceipt.paymentMode === "upi" ? "text-emerald-700" : "text-saffron-700"}`}
         >
           {lastReceipt.paymentMode === "upi"
             ? "UPI Collection Approved"
             : "Waiting for Admin Approval"}
         </p>
-        <div className="mx-auto mt-3 max-w-xs rounded-xl border border-orange-200 bg-white p-4 text-left text-sm">
-          <p className="text-xs font-black uppercase tracking-widest text-orange-600 mb-2">
+        <div className="mx-auto mt-3 max-w-xs rounded-xl border border-saffron-200 bg-white p-4 text-left text-sm">
+          <p className="text-xs font-black uppercase tracking-widest text-saffron-600 mb-2">
             Collection Receipt
           </p>
           <div className="space-y-1 text-slate-700">
@@ -138,7 +138,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
             </p>
             <p>
               <span className="font-semibold">Amount:</span>{" "}
-              <strong className="text-orange-600">₹{lastReceipt.amount.toLocaleString()}</strong>
+              <strong className="text-saffron-600">₹{lastReceipt.amount.toLocaleString()}</strong>
             </p>
             <p>
               <span className="font-semibold">Method:</span> {lastReceipt.paymentMode.toUpperCase()}
@@ -149,7 +149,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
             <p>
               <span className="font-semibold">Status:</span>{" "}
               <span
-                className={`font-bold ${lastReceipt.paymentMode === "upi" ? "text-emerald-600" : "text-amber-600"}`}
+                className={`font-bold ${lastReceipt.paymentMode === "upi" ? "text-emerald-600" : "text-saffron-600"}`}
               >
                 {lastReceipt.paymentMode === "upi" ? "Approved" : "Pending Approval"}
               </span>
@@ -162,7 +162,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         </div>
         <button
           onClick={() => setLastReceipt(null)}
-          className="mt-2 w-full rounded-xl bg-orange-500 py-3 font-bold text-white hover:bg-orange-600 text-sm"
+          className="mt-2 w-full rounded-xl bg-saffron py-3 font-bold text-white hover:bg-saffron-600 text-sm"
         >
           Log Another Collection
         </button>
@@ -171,7 +171,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-saffron-100 bg-white p-5 shadow-sm">
       <h2 className="mb-4 text-lg font-black text-slate-900">📋 Record Chanda Collection</h2>
       <form noValidate onSubmit={submit} className="space-y-4">
         {/* Donor name */}
@@ -185,7 +185,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
               setError("");
             }}
             placeholder="e.g. Ramesh Kumar"
-            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-saffron"
           />
         </label>
 
@@ -204,7 +204,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
               setError("");
             }}
             placeholder="10-digit mobile number"
-            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-saffron"
           />
         </label>
 
@@ -220,7 +220,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
               setError("");
             }}
             placeholder="e.g. 501"
-            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-saffron"
           />
         </label>
 
@@ -231,7 +231,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
             <button
               type="button"
               onClick={() => setPaymentMode("cash")}
-              className={`rounded-xl border-2 py-3 text-base font-bold transition ${paymentMode === "cash" ? "border-orange-500 bg-orange-500 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}
+              className={`rounded-xl border-2 py-3 text-base font-bold transition ${paymentMode === "cash" ? "border-saffron bg-saffron text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}
             >
               💵 Cash
             </button>
@@ -266,7 +266,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
                       />
                     </div>
                   ) : (
-                    <p className="rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
+                    <p className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-saffron-800">
                       Offline — Reconnect to generate the UPI QR
                     </p>
                   )}
@@ -290,7 +290,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
                     Open UPI App →
                   </span>
                 )}
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-800">
+                <div className="rounded-xl border border-saffron-200 bg-white px-3 py-3 text-left text-sm text-saffron-800">
                   <p className="font-bold">🟡 Waiting for payment</p>
                   <p className="mt-1">
                     After payment, submit the collection. UPI collections are approved immediately.
@@ -313,7 +313,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Any receipt reference or note"
-              className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-saffron"
             />
           </label>
         )}
@@ -324,7 +324,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
           </p>
         )}
         {!isOnline && (
-          <p className="rounded-xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-800">
+          <p className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-saffron-800">
             Offline — Reconnect to submit
           </p>
         )}
@@ -332,7 +332,7 @@ export default function LogDonationForm({ collectorId, collectorName }: Props) {
         <button
           type="submit"
           disabled={loading || !isOnline}
-          className={`w-full rounded-xl py-4 text-base font-black text-white shadow-md disabled:opacity-50 transition ${paymentMode === "cash" ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-700"}`}
+          className={`w-full rounded-xl py-4 text-base font-black text-white shadow-md disabled:opacity-50 transition ${paymentMode === "cash" ? "bg-saffron hover:bg-saffron-600" : "bg-emerald-600 hover:bg-emerald-700"}`}
         >
           {loading
             ? "Submitting…"

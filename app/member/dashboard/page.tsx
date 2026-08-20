@@ -42,7 +42,7 @@ const dateOf = (v: TsLike | undefined) => {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  pending_approval: "bg-amber-100 text-amber-700",
+  pending_approval: "bg-white text-saffron-700",
   approved: "bg-emerald-100 text-emerald-700",
   rejected: "bg-rose-100 text-rose-700",
   flagged: "bg-violet-100 text-violet-700",
@@ -85,7 +85,7 @@ function ReceiptModal({ d, name, onClose }: { d: Donation; name: string; onClose
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-black uppercase tracking-widest text-orange-600">
+          <p className="text-xs font-black uppercase tracking-widest text-saffron-600">
             Collection Receipt
           </p>
           <button
@@ -269,7 +269,7 @@ export default function MemberDashboard() {
 
       {/* Greeting */}
       <div>
-        <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+        <p className="text-sm font-bold uppercase tracking-widest text-saffron-600">
           My Collection Portal
         </p>
         <h1 className="mt-1 text-3xl font-black text-slate-900">Hello, {name || "Volunteer"} 👋</h1>
@@ -290,12 +290,12 @@ export default function MemberDashboard() {
             {
               label: "Pending Approval",
               value: `₹${pendingTotal.toLocaleString()}`,
-              color: "text-amber-600",
+              color: "text-saffron-600",
             },
             {
               label: "Approved Cash",
               value: `₹${approvedCash.toLocaleString()}`,
-              color: "text-orange-600",
+              color: "text-saffron-600",
             },
             {
               label: "Approved UPI",
@@ -305,7 +305,7 @@ export default function MemberDashboard() {
           ].map((c) => (
             <div
               key={c.label}
-              className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-saffron-100 bg-white p-4 shadow-sm"
             >
               <p className={`text-2xl font-black ${c.color}`}>{c.value}</p>
               <p className="mt-1 text-sm text-slate-500">{c.label}</p>
@@ -326,7 +326,7 @@ export default function MemberDashboard() {
           {loading && (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-14 animate-pulse rounded-xl bg-orange-50" />
+                <div key={i} className="h-14 animate-pulse rounded-xl bg-white" />
               ))}
             </div>
           )}
@@ -342,7 +342,7 @@ export default function MemberDashboard() {
             </div>
           )}
           {!loading && !loadError && donations.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-8 text-center">
+            <div className="rounded-2xl border border-dashed border-saffron-200 bg-white p-8 text-center">
               <p className="text-2xl">📋</p>
               <p className="mt-2 font-bold text-slate-900">No collection records yet</p>
               <p className="mt-1 text-sm text-slate-500">
@@ -355,7 +355,7 @@ export default function MemberDashboard() {
               {donations.map((d) => (
                 <div
                   key={d.id}
-                  className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-orange-100 bg-white p-3 shadow-sm hover:border-orange-300 transition"
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-saffron-100 bg-white p-3 shadow-sm hover:border-saffron-200 transition"
                   onClick={() => setReceipt(d)}
                 >
                   <div className="min-w-0">
@@ -367,7 +367,7 @@ export default function MemberDashboard() {
                     </p>
                     {d.paymentMode === "upi" && (
                       <p
-                        className={`text-xs font-semibold ${d.paymentVerificationStatus === "verified" ? "text-emerald-700" : "text-amber-700"}`}
+                        className={`text-xs font-semibold ${d.paymentVerificationStatus === "verified" ? "text-emerald-700" : "text-saffron-700"}`}
                       >
                         {d.paymentVerificationStatus === "verified"
                           ? "UPI · Payment Verified"
@@ -376,7 +376,7 @@ export default function MemberDashboard() {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-none">
-                    <p className="font-black text-orange-600">
+                    <p className="font-black text-saffron-600">
                       ₹{Number(d.amount || 0).toLocaleString()}
                     </p>
                     <span

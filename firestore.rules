@@ -59,13 +59,17 @@ service cloud.firestore {
         && request.resource.data.collectionSource == 'direct_self'
         && request.resource.data.donorEmail is string
         && request.resource.data.donorEmail.size() > 0
-        && request.resource.data.phone is string
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.screenshotUrl is string
         && request.resource.data.screenshotUrl.size() > 0
-        && request.resource.data.showPublicName == true
-        && request.resource.data.status == 'pending';
+        && request.resource.data.showPublicName is bool
+        && request.resource.data.status == 'pending'
+        && (
+          !('phone' in request.resource.data)
+          || request.resource.data.phone == null
+          || request.resource.data.phone is string
+        );
       // Allow public read of approved donations where donor consented to public display (for Supporters section)
       allow get: if isAdmin() || (resource.data.status == 'approved' && resource.data.showPublicName == true);
       allow list: if isAdmin();
@@ -157,13 +161,8 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /site_settings/hero {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /site_settings/registration_config {
-      allow read: if true;
+    match /site_settings/{settingId} {
+      allow read: if settingId != "email";
       allow write: if isAdmin();
     }
 
@@ -188,6 +187,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isActive();
       allow update, delete: if false;
+    }
+
+    match /chat_faqs/{faqId} {
+      allow get, list: if isAdmin() || resource.data.published == true;
+      allow create, update, delete: if isAdmin();
     }
 
     match /{document=**} {

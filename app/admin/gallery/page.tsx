@@ -91,7 +91,7 @@ function ActionDialog({
         <div className="mt-4 flex flex-col gap-2">
           <button
             onClick={onReplace}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-800 hover:bg-orange-50 transition"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-800 hover:bg-white transition"
           >
             <IconReplace /> Replace image
           </button>
@@ -203,14 +203,14 @@ export default function AdminGallery() {
       {loading && (
         <div className="mt-8 flex flex-wrap gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-52 w-40 animate-pulse rounded-2xl bg-orange-100" />
+            <div key={i} className="h-52 w-40 animate-pulse rounded-2xl bg-white" />
           ))}
         </div>
       )}
 
       {/* Empty */}
       {!loading && sorted.length === 0 && (
-        <div className="mt-8 rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-12 text-center">
+        <div className="mt-8 rounded-2xl border border-dashed border-saffron-200 bg-white p-12 text-center">
           <div className="text-4xl">📸</div>
           <h2 className="mt-3 font-bold text-slate-900">No memories yet</h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -229,7 +229,7 @@ export default function AdminGallery() {
             <button
               key={item.id}
               onClick={() => setActionTarget(item)}
-              className="group relative h-52 w-40 overflow-hidden rounded-2xl border-2 border-orange-100 bg-orange-50 shadow-sm transition hover:border-orange-400 hover:shadow-md"
+              className="group relative h-52 w-40 overflow-hidden rounded-2xl border-2 border-saffron-100 bg-white shadow-sm transition hover:border-saffron-400 hover:shadow-md"
             >
               <img
                 src={item.imageUrl}
@@ -237,11 +237,11 @@ export default function AdminGallery() {
                 className="h-full w-full object-cover transition duration-200 group-hover:brightness-75"
               />
               {/* Year pill */}
-              <span className="absolute left-2 top-2 rounded-lg bg-orange-500/90 px-2 py-0.5 text-xs font-black text-white shadow">
+              <span className="absolute left-2 top-2 rounded-lg bg-saffron/90 px-2 py-0.5 text-xs font-black text-white shadow">
                 {item.year}
               </span>
               {item.featured && (
-                <span className="absolute right-2 top-2 rounded-lg bg-amber-400 px-2 py-0.5 text-xs font-black text-slate-900">
+                <span className="absolute right-2 top-2 rounded-lg bg-saffron-400 px-2 py-0.5 text-xs font-black text-slate-900">
                   Featured
                 </span>
               )}
@@ -268,12 +268,12 @@ export default function AdminGallery() {
           {sorted.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-2 rounded-lg border border-orange-100 bg-white px-3 py-2 text-xs"
+              className="flex items-center gap-2 rounded-lg border border-saffron-100 bg-white px-3 py-2 text-xs"
             >
               <span className="max-w-32 truncate font-semibold text-slate-700">{item.title}</span>
               <button
                 onClick={() => void toggle(item, "featured")}
-                className="font-bold text-orange-700"
+                className="font-bold text-saffron-700"
               >
                 {item.featured ? "Unfeature" : "Feature"}
               </button>

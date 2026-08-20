@@ -110,12 +110,12 @@ function Avatar({ src, name, size = "lg" }: { src?: string; name: string; size?:
         src={src}
         alt={name}
         onError={() => setErr(true)}
-        className={`${cls} rounded-full object-cover border-2 border-orange-200`}
+        className={`${cls} rounded-full object-cover border-2 border-saffron-200`}
       />
     );
   return (
     <div
-      className={`${cls} flex items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-500 font-black text-white`}
+      className={`${cls} flex items-center justify-center rounded-full bg-gradient-to-br from-saffron-400 to-saffron font-black text-white`}
     >
       {name.charAt(0).toUpperCase()}
     </div>
@@ -353,7 +353,7 @@ export default function AdminComityMembers() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+          <p className="text-sm font-bold uppercase tracking-widest text-saffron-600">
             Administration
           </p>
           <h1 className="mt-1 text-3xl font-black text-slate-900">Committee Members</h1>
@@ -371,7 +371,7 @@ export default function AdminComityMembers() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name…"
-            className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-400"
           />
           {(search || filter !== "all") && (
             <button
@@ -390,7 +390,7 @@ export default function AdminComityMembers() {
             <button
               key={val}
               onClick={() => setFilter(val)}
-              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${filter === val ? "bg-orange-500 text-white" : "border border-orange-200 bg-white text-slate-600 hover:bg-orange-50"}`}
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${filter === val ? "bg-saffron text-white" : "border border-saffron-200 bg-white text-slate-600 hover:bg-white"}`}
             >
               {label}
             </button>
@@ -403,7 +403,7 @@ export default function AdminComityMembers() {
         {loading ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-orange-50" />
+              <div key={i} className="h-16 animate-pulse rounded-xl bg-white" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -420,7 +420,7 @@ export default function AdminComityMembers() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-orange-100 bg-orange-50/60">
+              <thead className="border-b border-saffron-100 bg-white">
                 <tr>
                   {[
                     "Photo",
@@ -440,9 +440,9 @@ export default function AdminComityMembers() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-orange-50">
+              <tbody className="divide-y divide-saffron-50">
                 {filtered.map((m) => (
-                  <tr key={m.id} className="hover:bg-orange-50/40 transition">
+                  <tr key={m.id} className="hover:bg-white transition">
                     <td className="px-4 py-3">
                       <Avatar src={m.photoUrl} name={m.fullName} size="sm" />
                     </td>
@@ -450,10 +450,10 @@ export default function AdminComityMembers() {
                       <div className="flex items-center gap-2">
                         <div>
                           <p className="font-bold text-slate-900">{m.fullName}</p>
-                          <p className="text-xs text-orange-600">{m.designation}</p>
+                          <p className="text-xs text-saffron-600">{m.designation}</p>
                         </div>
                         {m.featured && (
-                          <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-black text-white">
+                          <span className="rounded-full bg-saffron-400 px-2 py-0.5 text-xs font-black text-white">
                             ★ Featured
                           </span>
                         )}
@@ -469,7 +469,7 @@ export default function AdminComityMembers() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${m.publicVisible ? "bg-orange-100 text-orange-700" : "bg-slate-100 text-slate-500"}`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${m.publicVisible ? "bg-white text-saffron-700" : "bg-slate-100 text-slate-500"}`}
                       >
                         {m.publicVisible ? "Public" : "Hidden"}
                       </span>
@@ -494,7 +494,7 @@ export default function AdminComityMembers() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => openEdit(m)}
-                          className="rounded-lg border border-orange-200 px-2.5 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-50"
+                          className="rounded-lg border border-saffron-200 px-2.5 py-1.5 text-xs font-bold text-saffron-600 hover:bg-white"
                         >
                           Edit
                         </button>
@@ -530,7 +530,7 @@ export default function AdminComityMembers() {
                   <img
                     src={photoPreview}
                     alt="Preview"
-                    className="h-24 w-24 rounded-full object-cover border-2 border-orange-200"
+                    className="h-24 w-24 rounded-full object-cover border-2 border-saffron-200"
                   />
                   <button
                     type="button"
@@ -548,7 +548,7 @@ export default function AdminComityMembers() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="mt-2 flex items-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-600 hover:border-orange-400 transition"
+                  className="mt-2 flex items-center gap-2 rounded-xl border-2 border-dashed border-saffron-200 bg-white px-4 py-3 text-sm font-semibold text-saffron-600 hover:border-saffron-400 transition"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -590,7 +590,7 @@ export default function AdminComityMembers() {
                   required
                   {...f("fullName")}
                   placeholder="e.g. Ravi Kumar"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
               <label className="block text-sm font-semibold text-slate-700">
@@ -600,7 +600,7 @@ export default function AdminComityMembers() {
                   onChange={(e) =>
                     setForm((p) => ({ ...p, designation: e.target.value as ComityDesignation }))
                   }
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 >
                   {DESIGNATIONS.map((d) => (
                     <option key={d} value={d}>
@@ -617,7 +617,7 @@ export default function AdminComityMembers() {
                 <input
                   {...f("memberSince")}
                   placeholder="e.g. 2020"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
               <label className="block text-sm font-semibold text-slate-700">
@@ -626,7 +626,7 @@ export default function AdminComityMembers() {
                   type="number"
                   {...f("displayOrder")}
                   min="0"
-                  className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
                 />
               </label>
             </div>
@@ -637,7 +637,7 @@ export default function AdminComityMembers() {
                 {...f("bio")}
                 rows={3}
                 placeholder="Brief introduction…"
-                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
               />
             </label>
 
@@ -649,7 +649,7 @@ export default function AdminComityMembers() {
               <input
                 {...f("publicContact")}
                 placeholder="e.g. +91 98765 43210"
-                className="mt-1 w-full rounded-xl border border-orange-200 p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full rounded-xl border border-saffron-200 p-3 focus:outline-none focus:ring-2 focus:ring-saffron-400"
               />
             </label>
 
@@ -665,7 +665,7 @@ export default function AdminComityMembers() {
               ).map(([key, label]) => (
                 <label
                   key={key}
-                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-orange-100 bg-orange-50/40 p-3"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-saffron-100 bg-white p-3"
                 >
                   <input
                     type="checkbox"
@@ -673,7 +673,7 @@ export default function AdminComityMembers() {
                     onChange={() =>
                       toggle(key as "showContact" | "featured" | "active" | "publicVisible")
                     }
-                    className="h-4 w-4 accent-orange-500"
+                    className="h-4 w-4 accent-saffron"
                   />
                   <span className="text-sm font-semibold text-slate-700">{label}</span>
                 </label>
@@ -711,7 +711,7 @@ export default function AdminComityMembers() {
               <Avatar src={deleteTarget.photoUrl} name={deleteTarget.fullName} size="sm" />
               <div>
                 <p className="font-bold text-slate-900">{deleteTarget.fullName}</p>
-                <p className="text-sm text-orange-600">{deleteTarget.designation}</p>
+                <p className="text-sm text-saffron-600">{deleteTarget.designation}</p>
               </div>
             </div>
             <p className="mt-3 text-sm text-slate-500">

@@ -59,6 +59,22 @@
 
 .mobile-menu-panel {
   animation: menu-panel-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff transparent;
+}
+
+.mobile-menu-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mobile-menu-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-menu-panel::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  border-radius: 999px;
+  border: 2px solid transparent;
 }
 
 .mobile-menu-panel.is-closing {

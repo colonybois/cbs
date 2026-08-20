@@ -57,10 +57,10 @@ export default function PaymentModal({ open, onClose }: { open: boolean; onClose
       aria-modal="true"
       aria-labelledby="payment-title"
     >
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-orange-500 bg-white p-6 shadow-2xl shadow-orange-200/60">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-saffron bg-white p-6 shadow-2xl shadow-saffron-200/60">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="payment-title" className="text-xl font-black text-orange-600">
+            <h2 id="payment-title" className="text-xl font-black text-saffron-600">
               Scan QR & Pay Chanda via UPI
             </h2>
             <p className="mt-1 text-sm text-slate-600">Thank you for supporting Colony Bois.</p>
@@ -68,12 +68,12 @@ export default function PaymentModal({ open, onClose }: { open: boolean; onClose
           <button
             onClick={onClose}
             aria-label="Close payment modal"
-            className="rounded-lg px-2 py-1 text-slate-500 hover:bg-orange-50 hover:text-orange-600"
+            className="rounded-lg px-2 py-1 text-slate-500 hover:bg-white hover:text-saffron-600"
           >
             ✕
           </button>
         </div>
-        <div className="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
+        <div className="mt-5 rounded-xl border border-saffron-200 bg-white p-4">
           <img
             src={COLONY_BOIS_ASSETS.paymentQr.src}
             alt={COLONY_BOIS_ASSETS.paymentQr.alt}
@@ -82,12 +82,12 @@ export default function PaymentModal({ open, onClose }: { open: boolean; onClose
               event.currentTarget.style.display = "none";
             }}
           />
-          <p className="py-8 text-center text-sm text-orange-700">
+          <p className="py-8 text-center text-sm text-saffron-700">
             Place <b>payment-qr.jpg</b> in public/assets/images to show the PhonePe QR code.
           </p>
         </div>
         {submitted ? (
-          <div className="mt-5 rounded-xl bg-orange-50 p-4 text-sm font-semibold text-orange-800">
+          <div className="mt-5 rounded-xl bg-white p-4 text-sm font-semibold text-saffron-800">
             ✓ Your payment proof has been submitted for admin approval.
           </div>
         ) : (
@@ -96,14 +96,14 @@ export default function PaymentModal({ open, onClose }: { open: boolean; onClose
               required
               name="residentName"
               placeholder="Resident name"
-              className="w-full rounded-xl border border-orange-200 bg-white p-3"
+              className="w-full rounded-xl border border-saffron-200 bg-white p-3"
             />
             <input
               required
               name="phone"
               type="tel"
               placeholder="Phone number"
-              className="w-full rounded-xl border border-orange-200 bg-white p-3"
+              className="w-full rounded-xl border border-saffron-200 bg-white p-3"
             />
             <input
               required
@@ -112,15 +112,15 @@ export default function PaymentModal({ open, onClose }: { open: boolean; onClose
               min="1"
               step="0.01"
               placeholder="Amount paid (₹)"
-              className="w-full rounded-xl border border-orange-200 bg-white p-3"
+              className="w-full rounded-xl border border-saffron-200 bg-white p-3"
             />
             <input
               required
               name="transactionId"
               placeholder="Transaction ID / UTR number"
-              className="w-full rounded-xl border border-orange-200 bg-white p-3"
+              className="w-full rounded-xl border border-saffron-200 bg-white p-3"
             />
-            <label className="block rounded-xl border border-dashed border-orange-300 bg-orange-50 p-3 text-sm font-semibold text-slate-700">
+            <label className="block rounded-xl border border-dashed border-saffron-200 bg-white p-3 text-sm font-semibold text-slate-700">
               Upload payment screenshot
               <input
                 required
@@ -130,11 +130,11 @@ export default function PaymentModal({ open, onClose }: { open: boolean; onClose
                 className="mt-2 block w-full text-xs"
               />
               {screenshot && (
-                <span className="mt-2 block text-xs text-orange-700">{screenshot.name}</span>
+                <span className="mt-2 block text-xs text-saffron-700">{screenshot.name}</span>
               )}
             </label>
             {!isOnline && (
-              <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
+              <p className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-saffron-800">
                 Offline — Reconnect to submit
               </p>
             )}
@@ -142,7 +142,7 @@ export default function PaymentModal({ open, onClose }: { open: boolean; onClose
             <button
               disabled={uploading || !isOnline}
               type="submit"
-              className="w-full rounded-lg bg-orange-500 px-6 py-3 font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg bg-saffron px-6 py-3 font-bold text-white shadow-md shadow-saffron/20 hover:bg-saffron-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploading ? "Uploading…" : "Submit for verification"}
             </button>

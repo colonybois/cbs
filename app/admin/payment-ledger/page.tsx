@@ -42,7 +42,7 @@ const dateFmt = (v: TsLike | undefined) => {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  pending_approval: "bg-amber-100 text-amber-700",
+  pending_approval: "bg-white text-saffron-700",
   approved: "bg-emerald-100 text-emerald-700",
   rejected: "bg-rose-100 text-rose-700",
 };
@@ -379,7 +379,7 @@ export default function PaymentLedgerPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         {summary.map(([v, l]) => (
           <Card key={l} className="bg-white p-4">
-            <p className="text-xl font-black text-orange-600">{v}</p>
+            <p className="text-xl font-black text-saffron-600">{v}</p>
             <p className="mt-1 text-xs text-slate-500">{l}</p>
           </Card>
         ))}
@@ -391,7 +391,7 @@ export default function PaymentLedgerPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search donor, volunteer, reference…"
-            className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="flex-1 min-w-48 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-400"
           />
           <select
             value={statusFilter}
@@ -495,7 +495,7 @@ export default function PaymentLedgerPage() {
         {loading ? (
           <div className="space-y-2 p-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-12 animate-pulse rounded-xl bg-orange-50" />
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-white" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -503,7 +503,7 @@ export default function PaymentLedgerPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-[1000px] w-full text-sm">
-              <thead className="border-b border-orange-100 bg-orange-50/60">
+              <thead className="border-b border-saffron-100 bg-white">
                 <tr>
                   {canDelete && (
                     <th className="px-4 py-3">
@@ -537,9 +537,9 @@ export default function PaymentLedgerPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-orange-50">
+              <tbody className="divide-y divide-saffron-50">
                 {filtered.map((d) => (
-                  <tr key={d.id} className="hover:bg-orange-50/30 transition">
+                  <tr key={d.id} className="hover:bg-white transition">
                     {canDelete && (
                       <td className="px-4 py-3">
                         <input
@@ -557,12 +557,12 @@ export default function PaymentLedgerPage() {
                       <p className="font-semibold text-slate-800">{d.residentName || "—"}</p>
                       {d.phone && <p className="text-xs text-slate-400">{d.phone}</p>}
                     </td>
-                    <td className="px-4 py-3 font-black text-orange-600">
+                    <td className="px-4 py-3 font-black text-saffron-600">
                       ₹{Number(d.amount || 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-bold ${d.paymentMode === "cash" ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"}`}
+                        className={`rounded-full px-2 py-0.5 text-xs font-bold ${d.paymentMode === "cash" ? "bg-white text-saffron-700" : "bg-emerald-100 text-emerald-700"}`}
                       >
                         {(d.paymentMode ?? "").toUpperCase()}
                       </span>
@@ -642,7 +642,7 @@ export default function PaymentLedgerPage() {
             <h3 className="font-bold text-slate-900">Reject this collection?</h3>
             <p className="mt-1 text-sm text-slate-500">
               <strong>{rejectTarget.collectorName}</strong> · {rejectTarget.residentName} ·{" "}
-              <strong className="text-orange-600">₹{rejectTarget.amount?.toLocaleString()}</strong>
+              <strong className="text-saffron-600">₹{rejectTarget.amount?.toLocaleString()}</strong>
             </p>
             <label className="mt-4 block text-sm font-semibold text-slate-700">
               Reason <span className="font-normal text-slate-400">(optional)</span>
@@ -684,7 +684,7 @@ export default function PaymentLedgerPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-black uppercase tracking-widest text-orange-600">
+              <p className="text-xs font-black uppercase tracking-widest text-saffron-600">
                 Collection Receipt
               </p>
               <button

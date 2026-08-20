@@ -263,7 +263,7 @@ export default function AuditLogPage() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {cards.map(([value, name]) => (
           <Card key={String(name)} className="bg-white p-4">
-            <p className="text-2xl font-black text-orange-600">{value}</p>
+            <p className="text-2xl font-black text-saffron-600">{value}</p>
             <p className="mt-1 text-sm text-slate-600">{name}</p>
           </Card>
         ))}
@@ -361,13 +361,13 @@ export default function AuditLogPage() {
           <div className="flex gap-2">
             <button
               onClick={clear}
-              className="rounded-lg border border-orange-300 px-3 py-2 text-sm font-bold text-orange-700"
+              className="rounded-lg border border-saffron-200 px-3 py-2 text-sm font-bold text-saffron-700"
             >
               Clear Filters
             </button>
             <button
               onClick={exportCsv}
-              className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-bold text-white"
+              className="rounded-lg bg-saffron px-3 py-2 text-sm font-bold text-white"
             >
               Export CSV
             </button>
@@ -375,16 +375,16 @@ export default function AuditLogPage() {
         </div>
       </Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-lg bg-orange-50 p-1">
+        <div className="flex rounded-lg bg-white p-1">
           <button
             onClick={() => setView("table")}
-            className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "table" ? "bg-white text-orange-700 shadow" : "text-slate-600"}`}
+            className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "table" ? "bg-white text-saffron-700 shadow" : "text-slate-600"}`}
           >
             Table View
           </button>
           <button
             onClick={() => setView("timeline")}
-            className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "timeline" ? "bg-white text-orange-700 shadow" : "text-slate-600"}`}
+            className={`rounded-md px-3 py-1.5 text-sm font-bold ${view === "timeline" ? "bg-white text-saffron-700 shadow" : "text-slate-600"}`}
           >
             Timeline View
           </button>
@@ -410,7 +410,7 @@ export default function AuditLogPage() {
           <p className="font-bold text-slate-900">Unable to load audit activity</p>
           <button
             onClick={() => setRetry((value) => value + 1)}
-            className="mt-4 rounded-lg bg-orange-500 px-4 py-2 font-bold text-white"
+            className="mt-4 rounded-lg bg-saffron px-4 py-2 font-bold text-white"
           >
             Retry
           </button>
@@ -420,14 +420,14 @@ export default function AuditLogPage() {
           {paged.length === 0 ? (
             <Empty clear={clear} />
           ) : (
-            <div className="space-y-6 border-l-2 border-orange-200 pl-6">
+            <div className="space-y-6 border-l-2 border-saffron-200 pl-6">
               {paged.map((log) => (
                 <button
                   onClick={() => setSelected(log)}
                   key={log.id}
                   className="relative block w-full text-left"
                 >
-                  <span className="absolute -left-[34px] top-1 h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-50" />
+                  <span className="absolute -left-[34px] top-1 h-4 w-4 rounded-full bg-saffron ring-4 ring-saffron-50" />
                   <p className="text-xs font-semibold text-slate-500">{date(log.createdAt)}</p>
                   <p className="mt-1 font-bold text-slate-900">{readableAction(log.action)}</p>
                   <p className="mt-1 text-sm text-slate-600">
@@ -441,7 +441,7 @@ export default function AuditLogPage() {
       ) : (
         <Card className="overflow-x-auto">
           <table className="min-w-[1050px] w-full text-left text-sm">
-            <thead className="bg-orange-50 text-slate-700">
+            <thead className="bg-white text-slate-700">
               <tr>
                 {[
                   "Date & Time",
@@ -459,12 +459,12 @@ export default function AuditLogPage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-orange-100">
+            <tbody className="divide-y divide-saffron-100">
               {paged.map((log) => (
                 <tr key={log.id}>
                   <td className="px-4 py-4 text-slate-600">{date(log.createdAt)}</td>
                   <td className="px-4 py-4">
-                    <span className="mr-2 inline-grid h-7 w-7 place-items-center rounded-full bg-orange-100 text-xs font-black text-orange-700">
+                    <span className="mr-2 inline-grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-black text-saffron-700">
                       {(log.actorName || "?").slice(0, 1).toUpperCase()}
                     </span>
                     <span className="font-semibold text-slate-900">
@@ -483,7 +483,7 @@ export default function AuditLogPage() {
                     <Status value={statusOf(log)} />
                   </td>
                   <td className="px-4 py-4">
-                    <button onClick={() => setSelected(log)} className="font-bold text-orange-700">
+                    <button onClick={() => setSelected(log)} className="font-bold text-saffron-700">
                       View details
                     </button>
                   </td>
@@ -544,7 +544,7 @@ export default function AuditLogPage() {
 function Status({ value }: { value: string }) {
   return (
     <span
-      className={`rounded-full px-2 py-1 text-xs font-bold ${value === "Approved" || value === "Successful" ? "bg-emerald-50 text-emerald-700" : value === "Rejected" || value === "Failed" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}
+      className={`rounded-full px-2 py-1 text-xs font-bold ${value === "Approved" || value === "Successful" ? "bg-emerald-50 text-emerald-700" : value === "Rejected" || value === "Failed" ? "bg-rose-50 text-rose-700" : "bg-white text-saffron-700"}`}
     >
       {value}
     </span>
@@ -557,7 +557,7 @@ function Empty({ clear }: { clear: () => void }) {
       <p className="mt-1 text-sm text-slate-600">
         Try changing your filters or clearing the current search.
       </p>
-      <button onClick={clear} className="mt-3 font-bold text-orange-700">
+      <button onClick={clear} className="mt-3 font-bold text-saffron-700">
         Clear Filters
       </button>
     </div>
@@ -569,7 +569,7 @@ function Details({ log, onClose }: { log: AuditLog | null; onClose: () => void }
     <Modal open={!!log} onClose={onClose} title="Activity Details">
       {log && (
         <div className="space-y-5">
-          <div className="grid gap-3 rounded-xl bg-orange-50 p-4 text-sm sm:grid-cols-2">
+          <div className="grid gap-3 rounded-xl bg-white p-4 text-sm sm:grid-cols-2">
             <p>
               <b>Action</b>
               <br />
@@ -599,7 +599,7 @@ function Details({ log, onClose }: { log: AuditLog | null; onClose: () => void }
                     log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`,
                   )
                 }
-                className="font-mono text-orange-700"
+                className="font-mono text-saffron-700"
               >
                 {log.auditId || `AUD-${log.id.slice(0, 8).toUpperCase()}`} ⧉
               </button>
@@ -631,10 +631,10 @@ function Details({ log, onClose }: { log: AuditLog | null; onClose: () => void }
                   </thead>
                   <tbody>
                     {items.map((item) => (
-                      <tr key={item.key} className="border-b border-orange-50">
+                      <tr key={item.key} className="border-b border-saffron-50">
                         <td className="py-2 font-semibold">{label(item.key)}</td>
                         <td className="py-2 text-slate-600">{item.before}</td>
-                        <td className="py-2 font-semibold text-orange-700">{item.after}</td>
+                        <td className="py-2 font-semibold text-saffron-700">{item.after}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -647,7 +647,7 @@ function Details({ log, onClose }: { log: AuditLog | null; onClose: () => void }
             )}
           </div>
           {log.approvalStatus && (
-            <div className="rounded-xl border border-orange-200 p-4 text-sm">
+            <div className="rounded-xl border border-saffron-200 p-4 text-sm">
               <b>Approval information</b>
               <p className="mt-2">
                 Requested by: {log.actorName || "Unknown"} → Decision:{" "}

@@ -8,6 +8,8 @@ import WelcomeBanner from "@/components/layout/WelcomeBanner";
 import { db } from "@/lib/firebase";
 import { recordAudit } from "@/lib/audit";
 import { useAuth } from "@/lib/auth-context";
+import UploadHeroVideosModal from "@/components/admin/UploadHeroVideosModal";
+import type { HeroVideo } from "@/components/hero/HeroVideoCarousel";
 import {
   defaultRegistrationConfig,
   type RegistrationConfig,
@@ -28,6 +30,7 @@ export default function Dashboard() {
   const [registrationConfig, setRegistrationConfig] =
     useState<RegistrationConfig>(defaultRegistrationConfig);
   const [savingRegistrationSetting, setSavingRegistrationSetting] = useState(false);
+  const [heroVideos, setHeroVideos] = useState<HeroVideo[]>([]);
 
   useEffect(() => {
     const users = onSnapshot(collection(db, "users"), (snapshot) => {
@@ -66,6 +69,23 @@ export default function Dashboard() {
       online();
       field();
       registration();
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadVideos = async () => {
+      try {
+        const response = await fetch("/api/hero-videos", { cache: "no-store" });
+        const payload = (await response.json()) as { ok: boolean; videos?: HeroVideo[] };
+        if (!cancelled && response.ok && payload.ok) setHeroVideos(payload.videos ?? []);
+      } catch {
+        if (!cancelled) setHeroVideos([]);
+      }
+    };
+    void loadVideos();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -134,12 +154,12 @@ export default function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map(([value, label]) => (
           <Card key={label} className="bg-white p-5">
-            <p className="text-2xl font-black text-orange-600">{value}</p>
+            <p className="text-2xl font-black text-saffron-600">{value}</p>
             <p className="mt-2 text-sm text-slate-600">{label}</p>
           </Card>
         ))}
       </div>
-      <Card className="border-orange-200 bg-orange-50 p-5">
+      <Card className="border-saffron-200 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-bold text-slate-900">Registration & access control</p>
@@ -154,7 +174,7 @@ export default function Dashboard() {
           </span>
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
-          <label className="flex cursor-pointer gap-3 rounded-xl border border-orange-200 bg-white p-4">
+          <label className="flex cursor-pointer gap-3 rounded-xl border border-saffron-200 bg-white p-4">
             <input
               type="checkbox"
               checked={registrationConfig.isRegistrationOpen}
@@ -165,7 +185,7 @@ export default function Dashboard() {
                   isRegistrationOpen: event.target.checked,
                 })
               }
-              className="mt-1 h-4 w-4 accent-orange-600"
+              className="mt-1 h-4 w-4 accent-saffron-600"
             />
             <span>
               <b className="block text-sm text-slate-900">Allow new registrations</b>
@@ -174,7 +194,7 @@ export default function Dashboard() {
               </span>
             </span>
           </label>
-          <label className="flex cursor-pointer gap-3 rounded-xl border border-orange-200 bg-white p-4">
+          <label className="flex cursor-pointer gap-3 rounded-xl border border-saffron-200 bg-white p-4">
             <input
               type="checkbox"
               checked={registrationConfig.hideRegistrationUI}
@@ -185,7 +205,7 @@ export default function Dashboard() {
                   hideRegistrationUI: event.target.checked,
                 })
               }
-              className="mt-1 h-4 w-4 accent-orange-600"
+              className="mt-1 h-4 w-4 accent-saffron-600"
             />
             <span>
               <b className="block text-sm text-slate-900">Hide registration UI</b>
@@ -194,7 +214,7 @@ export default function Dashboard() {
               </span>
             </span>
           </label>
-          <div className="rounded-xl border border-orange-200 bg-white p-4">
+          <div className="rounded-xl border border-saffron-200 bg-white p-4">
             <p className="text-sm font-bold text-slate-900">Allowed registration roles</p>
             <div className="mt-3 space-y-2">
               <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -215,7 +235,7 @@ export default function Dashboard() {
                         : registrationConfig.allowedRoles.filter((role) => role !== "member"),
                     })
                   }
-                  className="h-4 w-4 accent-orange-600"
+                  className="h-4 w-4 accent-saffron-600"
                 />
                 Allow member registrations
               </label>
@@ -237,7 +257,7 @@ export default function Dashboard() {
                         : registrationConfig.allowedRoles.filter((role) => role !== "admin"),
                     })
                   }
-                  className="h-4 w-4 accent-orange-600"
+                  className="h-4 w-4 accent-saffron-600"
                 />
                 Allow admin registrations
               </label>
@@ -245,30 +265,39 @@ export default function Dashboard() {
           </div>
         </div>
         {savingRegistrationSetting && (
-          <p className="mt-3 text-xs font-semibold text-orange-700">
+          <p className="mt-3 text-xs font-semibold text-saffron-700">
             Saving registration settings…
           </p>
         )}
       </Card>
+      <Card id="hero-videos" className="scroll-mt-24 p-5">
+        <div className="mb-5">
+          <h2 className="font-bold text-slate-900">Home banner videos</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Upload up to 3 videos. They play on the public home banner and rotate automatically.
+          </p>
+        </div>
+        <UploadHeroVideosModal embedded videos={heroVideos} onUpdated={setHeroVideos} />
+      </Card>
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between border-b border-orange-100 p-5">
+        <div className="flex items-center justify-between border-b border-saffron-100 p-5">
           <div>
             <h2 className="font-bold text-slate-900">Action required</h2>
             <p className="mt-1 text-sm text-slate-600">Collectors holding cash for handover</p>
           </div>
-          <Link href="/admin/members" className="text-sm font-bold text-orange-600">
+          <Link href="/admin/members" className="text-sm font-bold text-saffron-600">
             View all →
           </Link>
         </div>
         {pendingMembers.length === 0 ? (
           <p className="p-6 text-center text-sm text-slate-600">No pending cash handovers.</p>
         ) : (
-          <div className="divide-y divide-orange-100">
+          <div className="divide-y divide-saffron-100">
             {pendingMembers.map((member) => (
               <div className="flex items-center gap-3 p-4" key={member.id}>
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-orange-50">👤</div>
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-white">👤</div>
                 <p className="flex-1 font-semibold text-slate-900">{member.name}</p>
-                <b className="text-orange-600">{rupees(member.pendingHandover)}</b>
+                <b className="text-saffron-600">{rupees(member.pendingHandover)}</b>
               </div>
             ))}
           </div>

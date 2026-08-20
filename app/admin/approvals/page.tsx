@@ -74,7 +74,7 @@ export default function Approvals() {
   return (
     <div>
       <div>
-        <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+        <p className="text-sm font-bold uppercase tracking-widest text-saffron-600">
           🛡️ Admin review
         </p>
         <h1 className="mt-2 text-3xl font-black text-slate-900">Registration Approvals</h1>
@@ -102,7 +102,7 @@ export default function Approvals() {
         ) : (
           registrations.map((user) => (
             <Card className="flex flex-wrap items-center gap-4 p-5" key={user.id}>
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-50 text-lg">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-white text-lg">
                 🛡️
               </span>
               <div className="flex-1">
@@ -118,7 +118,7 @@ export default function Approvals() {
               <div className="flex gap-2">
                 <button
                   onClick={() => void review(user, "active")}
-                  className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-bold text-white hover:bg-orange-600"
+                  className="rounded-lg bg-saffron px-3 py-2 text-xs font-bold text-white hover:bg-saffron-600"
                 >
                   Approve
                 </button>

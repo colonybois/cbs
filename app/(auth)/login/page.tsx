@@ -120,11 +120,11 @@ export default function Login() {
   const registrationHidden = registrationConfig.hideRegistrationUI;
 
   return (
-    <div className="mx-auto mt-8 max-w-md rounded-3xl border border-amber-200 bg-white/90 p-7 shadow-gold">
-      <div className="flex rounded-xl bg-orange-50 p-1">
+    <div className="mx-auto mt-8 max-w-md rounded-3xl border border-saffron-200 bg-white/90 p-7 shadow-gold">
+      <div className="flex rounded-xl bg-white p-1">
         <button
           onClick={() => changeMode("signin")}
-          className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === "signin" ? "bg-white text-orange-700 shadow-sm" : "text-slate-600"}`}
+          className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === "signin" ? "bg-white text-saffron-700 shadow-sm" : "text-slate-600"}`}
         >
           Sign in
         </button>
@@ -132,7 +132,7 @@ export default function Login() {
           <button
             onClick={() => changeMode("register")}
             disabled={regClosed}
-            className={`flex-1 rounded-lg py-2 text-sm font-bold disabled:cursor-not-allowed ${mode === "register" ? "bg-white text-orange-700 shadow-sm" : regClosed ? "text-slate-400" : "text-slate-600"}`}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold disabled:cursor-not-allowed ${mode === "register" ? "bg-white text-saffron-700 shadow-sm" : regClosed ? "text-slate-400" : "text-slate-600"}`}
           >
             Register {regClosed && <span className="ml-1 text-xs">(Closed)</span>}
           </button>
@@ -143,11 +143,11 @@ export default function Login() {
           Registrations are currently closed by the administration.
         </div>
       )}
-      <p className="mt-2 font-yatra text-lg text-orange-700">Ganpati Bappa Morya</p>
-      <p className="mt-4 text-xs font-semibold uppercase tracking-[.22em] text-orange-600">
+      <p className="mt-2 font-yatra text-lg text-saffron-700">Ganpati Bappa Morya</p>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[.22em] text-navy">
         Colony Bois secure access
       </p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-slate-900">
+      <h1 className="mt-2 font-display text-3xl font-semibold text-ink">
         {mode === "signin" ? "Welcome back" : "Create an account"}
       </h1>
       <p className="mt-2 text-sm text-slate-600">
@@ -163,7 +163,7 @@ export default function Login() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Full name"
-              className="w-full rounded-xl border border-orange-200 bg-white p-3"
+              className="w-full rounded-xl border border-saffron-200 bg-white p-3"
             />
           )}
           {mode === "register" && (
@@ -172,7 +172,7 @@ export default function Login() {
               <select
                 value={requestedRole}
                 onChange={(event) => setRequestedRole(event.target.value as RegistrationRole)}
-                className="mt-1 w-full rounded-xl border border-orange-200 bg-white p-3"
+                className="mt-1 w-full rounded-xl border border-saffron-200 bg-white p-3"
               >
                 {registrationConfig.allowedRoles.map((role) => (
                   <option key={role} value={role}>
@@ -188,7 +188,7 @@ export default function Login() {
             onChange={(event) => setEmail(event.target.value)}
             type="email"
             placeholder="Email address"
-            className="w-full rounded-xl border border-orange-200 bg-white p-3"
+            className="w-full rounded-xl border border-saffron-200 bg-white p-3"
           />
           <input
             required
@@ -197,10 +197,10 @@ export default function Login() {
             onChange={(event) => setPassword(event.target.value)}
             type="password"
             placeholder="Password (at least 6 characters)"
-            className="w-full rounded-xl border border-orange-200 bg-white p-3"
+            className="w-full rounded-xl border border-saffron-200 bg-white p-3"
           />
           {!isOnline && (
-            <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
+            <p className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-saffron-800">
               Offline — Reconnect to submit
             </p>
           )}

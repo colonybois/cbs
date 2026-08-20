@@ -3,43 +3,63 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
+import SectionHeading from "@/components/SectionHeading";
 import { COLONY_BOIS_CONTACT } from "@/lib/constants";
 import { db } from "@/lib/firebase";
 import { uploadImageToStorage } from "@/lib/storage";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
-export default function DonateSection() {
-  const isOnline = useNetworkStatus();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [amount, setAmount] = useState("");
-  const [message, setMessage] = useState("");
-  const [showPublicName, setShowPublicName] = useState(false);
-  const [showQrCode, setShowQrCode] = useState(false);
-  const [copiedUpiId, setCopiedUpiId] = useState(false);
+type DonationMethod = "upi" | "qr";
 
-  const [screenshot, setScreenshot] = useState<File | null>(null);
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
-  const phoneInputRef = useRef<HTMLInputElement>(null);
-  const emailInputRef = useRef<HTMLInputElement>(null);
-  const amountInputRef = useRef<HTMLInputElement>(null);
-  const screenshotUploadRef = useRef<HTMLButtonElement>(null);
-
-  const enteredAmount = Number(amount);
-  const hasValidAmount = Number.isFinite(enteredAmount) && enteredAmount > 0;
-  const upiPaymentLink = `upi://pay?${new URLSearchParams({
+function buildUpiLink(amount: number) {
+  return `upi://pay?${new URLSearchParams({
     pa: COLONY_BOIS_CONTACT.upiId,
     pn: "Colony Bois Rampuram",
     cu: "INR",
     tn: "Chanda contribution",
-    ...(hasValidAmount ? { am: enteredAmount.toFixed(2) } : {}),
+    am: amount.toFixed(2),
   }).toString()}`;
+}
+
+export default function DonateSection() {
+  const isOnline = useNetworkStatus();
+  const [activeTab, setActiveTab] = useState<DonationMethod>("upi");
+  const [copiedUpiId, setCopiedUpiId] = useState(false);
+  const [loadingMethod, setLoadingMethod] = useState<DonationMethod | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const [upiAmount, setUpiAmount] = useState("");
+  const [upiName, setUpiName] = useState("");
+  const [upiEmail, setUpiEmail] = useState("");
+  const [upiScreenshot, setUpiScreenshot] = useState<File | null>(null);
+  const [upiScreenshotPreview, setUpiScreenshotPreview] = useState<string | null>(null);
+
+  const [qrAmount, setQrAmount] = useState("");
+  const [qrName, setQrName] = useState("");
+  const [qrEmail, setQrEmail] = useState("");
+  const [qrScreenshot, setQrScreenshot] = useState<File | null>(null);
+  const [qrScreenshotPreview, setQrScreenshotPreview] = useState<string | null>(null);
+  const [showPublicName, setShowPublicName] = useState(false);
+
+  const upiFileRef = useRef<HTMLInputElement>(null);
+  const qrFileRef = useRef<HTMLInputElement>(null);
+  const upiNameRef = useRef<HTMLInputElement>(null);
+  const upiEmailRef = useRef<HTMLInputElement>(null);
+  const upiAmountRef = useRef<HTMLInputElement>(null);
+  const upiProofRef = useRef<HTMLButtonElement>(null);
+  const qrNameRef = useRef<HTMLInputElement>(null);
+  const qrEmailRef = useRef<HTMLInputElement>(null);
+  const qrAmountRef = useRef<HTMLInputElement>(null);
+  const qrProofRef = useRef<HTMLButtonElement>(null);
+
+  const upiEnteredAmount = Number(upiAmount);
+  const upiHasValidAmount = Number.isFinite(upiEnteredAmount) && upiEnteredAmount > 0;
+  const qrEnteredAmount = Number(qrAmount);
+  const qrHasValidAmount = Number.isFinite(qrEnteredAmount) && qrEnteredAmount > 0;
+
+  const fieldClass =
+    "mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-3 text-ink placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
   const copyUpiId = async () => {
     try {
@@ -51,110 +71,186 @@ export default function DonateSection() {
     }
   };
 
-  const handleScreenshotChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setScreenshot(file);
-    setScreenshotPreview(file ? URL.createObjectURL(file) : null);
-  };
-
-  const removeScreenshot = () => {
-    setScreenshot(null);
-    setScreenshotPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!isOnline) {
-      setError("Offline — reconnect to submit your contribution.");
-      return;
-    }
-    const warnAndFocus = (message: string, input: HTMLElement | null) => {
-      setError(message);
-      input?.scrollIntoView({ behavior: "smooth", block: "center" });
-      window.setTimeout(() => input?.focus(), 250);
+  const handleScreenshotChange =
+    (method: DonationMethod) => (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] ?? null;
+      setError("");
+      if (method === "upi") {
+        setUpiScreenshot(file);
+        setUpiScreenshotPreview(file ? URL.createObjectURL(file) : null);
+      } else {
+        setQrScreenshot(file);
+        setQrScreenshotPreview(file ? URL.createObjectURL(file) : null);
+      }
     };
+
+  const removeScreenshot = (method: DonationMethod) => {
+    if (method === "upi") {
+      setUpiScreenshot(null);
+      setUpiScreenshotPreview(null);
+      if (upiFileRef.current) upiFileRef.current.value = "";
+    } else {
+      setQrScreenshot(null);
+      setQrScreenshotPreview(null);
+      if (qrFileRef.current) qrFileRef.current.value = "";
+    }
+  };
+
+  const warnAndFocus = (message: string, input: HTMLElement | null) => {
+    setError(message);
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => input?.focus(), 250);
+  };
+
+  const validateCommon = (
+    method: DonationMethod,
+    name: string,
+    email: string,
+    amount: string,
+    screenshot: File | null,
+    refs: {
+      name: HTMLInputElement | null;
+      email: HTMLInputElement | null;
+      amount: HTMLInputElement | null;
+      proof: HTMLButtonElement | null;
+    },
+  ) => {
     if (name.trim().length === 0) {
-      warnAndFocus("Please enter your name before submitting your Chanda.", nameInputRef.current);
-      return;
+      warnAndFocus("Please enter your name before submitting your Chanda.", refs.name);
+      return false;
     }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       warnAndFocus(
         "Please enter a valid email address before submitting your Chanda.",
-        emailInputRef.current,
+        refs.email,
       );
-      return;
-    }
-    if (phone.length !== 10) {
-      warnAndFocus(
-        "Please enter your valid 10-digit mobile number before submitting your Chanda.",
-        phoneInputRef.current,
-      );
-      return;
+      return false;
     }
     if (Number(amount) <= 0) {
-      warnAndFocus("Please enter the Chanda amount before submitting.", amountInputRef.current);
-      return;
+      warnAndFocus("Please enter the Chanda amount before submitting.", refs.amount);
+      return false;
     }
     if (!screenshot) {
       warnAndFocus(
         "Please upload your payment screenshot before submitting your Chanda.",
-        screenshotUploadRef.current,
+        refs.proof,
       );
-      return;
+      return false;
     }
     if (!showPublicName) {
       setError("Please confirm that your name may be displayed in the Supporters section.");
-      return;
+      return false;
     }
-    if (
-      !window.confirm(
-        `Submit your Chanda contribution of ₹${Number(amount).toLocaleString("en-IN")} for admin verification?`,
-      )
-    )
-      return;
+    return true;
+  };
 
-    setLoading(true);
-    setError("");
-    try {
-      const screenshotUrl = await uploadImageToStorage(screenshot, "payment-proofs");
-
-      await addDoc(collection(db, "online_donations"), {
-        residentName: name.trim(),
-        donorName: name.trim(),
-        collectionSource: "direct_self",
-        donorEmail: email.trim() || null,
-        phone,
-        amount: Number(amount),
-        message: message.trim() || null,
-        paymentMethod: "upi",
-        screenshotUrl,
-        showPublicName,
-        emailStatus: "not_sent",
-        status: "pending",
-        createdAt: serverTimestamp(),
-      });
-
-      setSuccess(true);
-      setName("");
-      setEmail("");
-      setPhone("");
-      setAmount("");
-      setMessage("");
+  const resetForm = (method: DonationMethod) => {
+    if (method === "upi") {
+      setUpiAmount("");
+      setUpiName("");
+      setUpiEmail("");
+      setUpiScreenshot(null);
+      setUpiScreenshotPreview(null);
+      if (upiFileRef.current) upiFileRef.current.value = "";
+    } else {
+      setQrAmount("");
+      setQrName("");
+      setQrEmail("");
+      setQrScreenshot(null);
+      setQrScreenshotPreview(null);
       setShowPublicName(false);
-      setScreenshot(null);
-      setScreenshotPreview(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? `Submission failed: ${reason.message}`
-          : "Submission failed. Please try again.",
-      );
-    } finally {
-      setLoading(false);
+      if (qrFileRef.current) qrFileRef.current.value = "";
     }
   };
+
+  const submit =
+    (method: DonationMethod) => async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!isOnline) {
+        setError("Offline — reconnect to submit your contribution.");
+        return;
+      }
+
+      const isUpi = method === "upi";
+      const name = isUpi ? upiName : qrName;
+      const email = isUpi ? upiEmail : qrEmail;
+      const amount = isUpi ? upiAmount : qrAmount;
+      const screenshot = isUpi ? upiScreenshot : qrScreenshot;
+      const refs = isUpi
+        ? {
+            name: upiNameRef.current,
+            email: upiEmailRef.current,
+            amount: upiAmountRef.current,
+            proof: upiProofRef.current,
+          }
+        : {
+            name: qrNameRef.current,
+            email: qrEmailRef.current,
+            amount: qrAmountRef.current,
+            proof: qrProofRef.current,
+          };
+
+      if (!validateCommon(method, name, email, amount, screenshot, refs)) return;
+
+      if (
+        !window.confirm(
+          `Submit your Chanda contribution of ₹${Number(amount).toLocaleString("en-IN")} for admin verification?`,
+        )
+      ) {
+        return;
+      }
+
+      setLoadingMethod(method);
+      setError("");
+      try {
+        const screenshotUrl = await uploadImageToStorage(screenshot!, "payment-proofs");
+
+        const payload = {
+          residentName: name.trim(),
+          donorName: name.trim(),
+          collectionSource: "direct_self",
+          donorEmail: email.trim(),
+          phone: "",
+          amount: Number(amount),
+          paymentMethod: method,
+          screenshotUrl: screenshotUrl.slice(0, 60) + "…",
+          showPublicName,
+          emailStatus: "not_sent",
+          status: "pending",
+          createdAt: "serverTimestamp()",
+        };
+        console.log("[Donate] Payload being sent:", JSON.stringify(payload, null, 2));
+
+        await addDoc(collection(db, "online_donations"), {
+          residentName: name.trim(),
+          donorName: name.trim(),
+          collectionSource: "direct_self",
+          donorEmail: email.trim(),
+          phone: "",
+          amount: Number(amount),
+          paymentMethod: method,
+          screenshotUrl,
+          showPublicName,
+          emailStatus: "not_sent",
+          status: "pending",
+          createdAt: serverTimestamp(),
+        });
+
+        console.log("[Donate] Success!");
+        resetForm(method);
+        setSuccess(true);
+      } catch (reason: unknown) {
+        console.error("[Donate] FULL ERROR:", reason);
+        const err = reason as { code?: string; message?: string };
+        const code = err?.code || "";
+        const msg = err?.message || String(reason);
+        setError(
+          `[${code || "UNKNOWN"}] ${msg}`,
+        );
+      } finally {
+        setLoadingMethod(null);
+      }
+    };
 
   const reset = () => {
     setSuccess(false);
@@ -163,289 +259,305 @@ export default function DonateSection() {
 
   if (success) {
     return (
-      <div className="rounded-2xl border-2 border-orange-400 bg-orange-50 p-10 text-center">
-        <span className="font-yatra text-5xl text-orange-700">Ganpati Bappa Morya</span>
-        <h3 className="mt-3 font-display text-xl font-semibold text-slate-900">Jai Dev Ganesha!</h3>
-        <p className="mt-2 text-slate-700">
-          Your contribution has been logged for verification. Thank you!
+      <div className="mx-auto max-w-xl py-8 text-center">
+        <p className="font-yatra text-3xl text-primary">गणपति बप्पा मोरया</p>
+        <h3 className="mt-3 font-display text-2xl font-semibold text-ink">Thank you</h3>
+        <p className="mt-2 text-[var(--text-muted)]">
+          Your contribution is logged for verification. A receipt will be emailed after approval.
         </p>
-        <p className="mt-2 text-sm text-slate-500">
-          Your official receipt will be sent to your email after admin approval.
-        </p>
-        <button
-          onClick={reset}
-          className="mt-6 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-2.5 font-bold text-white shadow-temple hover:from-orange-600 hover:to-amber-600"
-        >
-          Submit Another Contribution
+        <button onClick={reset} className="btn-festive mt-6 px-6 py-2.5">
+          Submit another
         </button>
       </div>
     );
   }
 
+  const proofField = (
+    method: DonationMethod,
+    preview: string | null,
+    proofRef: { current: HTMLButtonElement | null },
+    fileRef: { current: HTMLInputElement | null },
+  ) => (
+    <div className="mt-4">
+      <p className="text-sm font-medium text-ink">Payment screenshot *</p>
+      {preview ? (
+        <div className="relative mt-2 inline-block">
+          <img
+            src={preview}
+            alt="Payment screenshot preview"
+            className="h-32 rounded-xl object-contain ring-1 ring-navy/10"
+          />
+          <button
+            type="button"
+            onClick={() => removeScreenshot(method)}
+            aria-label="Remove screenshot"
+            className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-primary text-xs text-on-primary"
+          >
+            ✕
+          </button>
+        </div>
+      ) : (
+        <button
+          ref={proofRef}
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="mt-2 w-full rounded-xl border border-dashed border-[#d8cbb8] bg-white py-3.5 text-sm font-medium text-ink"
+        >
+          Upload screenshot
+        </button>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleScreenshotChange(method)}
+      />
+    </div>
+  );
+
   return (
-    <div className="py-4">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-8 text-center">
-          <p className="font-yatra text-xl text-orange-700">Mangal May Utsav</p>
-          <h2 className="mt-1 font-display text-3xl font-semibold text-slate-900">
-            Online <span className="text-orange-600">Chanda / Contribution</span>
-          </h2>
-          <p className="mt-2 text-slate-500">Scan the QR, pay, then fill in your details below.</p>
+    <div className="mx-auto max-w-5xl">
+      <SectionHeading
+        align="center"
+        kicker="Chanda"
+        title="Online contribution"
+        symbol="ॐ"
+        tone="primary"
+        lede="Choose UPI or QR, pay, then share your details for verification."
+      />
+
+      {!isOnline && (
+        <p className="mt-6 text-center text-sm font-medium text-primary">
+          Offline — reconnect to submit
+        </p>
+      )}
+      {error && <p className="mt-4 text-center text-sm text-rose-600">{error}</p>}
+
+      <div className="mx-auto mt-8 max-w-xl">
+        <div className="flex overflow-hidden rounded-full border border-navy/10 bg-[var(--background-warm)] p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("upi")}
+            className={`flex-1 rounded-full py-2.5 text-sm font-bold transition ${
+              activeTab === "upi"
+                ? "bg-primary text-on-primary shadow-sm"
+                : "text-ink hover:bg-white"
+            }`}
+          >
+            UPI
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("qr")}
+            className={`flex-1 rounded-full py-2.5 text-sm font-bold transition ${
+              activeTab === "qr"
+                ? "bg-primary text-on-primary shadow-sm"
+                : "text-ink hover:bg-white"
+            }`}
+          >
+            QR Code
+          </button>
         </div>
 
+        {activeTab === "upi" && (
         <form
           noValidate
-          onSubmit={submit}
-          className="rounded-2xl border border-amber-200 bg-white/80 p-6 shadow-gold md:p-8 space-y-5"
+          onSubmit={submit("upi")}
+          className="mt-6 flex flex-col rounded-2xl border border-navy/10 bg-white p-5 shadow-temple sm:p-6"
         >
-          <p className="text-sm font-semibold text-slate-600">
-            After paying, fill in your details:
-          </p>
 
-          {/* Name + Phone */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-semibold text-slate-700">
-              Your Name *
-              <input
-                ref={nameInputRef}
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setError("");
-                }}
-                placeholder="Full name"
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </label>
-            <label className="block text-sm font-semibold text-slate-700">
-              Mobile Number *
-              <input
-                ref={phoneInputRef}
-                maxLength={10}
-                inputMode="numeric"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value.replace(/\D/g, ""));
-                  setError("");
-                }}
-                placeholder="10-digit number"
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </label>
+          <label className="mt-4 block text-sm font-medium text-ink">
+            Amount (₹) *
+            <input
+              ref={upiAmountRef}
+              type="number"
+              min="1"
+              value={upiAmount}
+              onChange={(e) => {
+                setUpiAmount(e.target.value);
+                setError("");
+              }}
+              placeholder="501"
+              className={fieldClass}
+            />
+          </label>
+
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[var(--background-warm)] px-3.5 py-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                UPI ID
+              </p>
+              <p className="mt-1 select-all truncate font-mono text-sm text-ink">
+                {COLONY_BOIS_CONTACT.upiId}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void copyUpiId()}
+              aria-label="Copy UPI ID"
+              className="flex-none rounded-full px-3 py-1.5 text-sm font-semibold text-primary ring-1 ring-primary/20"
+            >
+              {copiedUpiId ? "Copied" : "Copy"}
+            </button>
           </div>
 
-          {/* Email */}
-          <label className="block text-sm font-semibold text-slate-700">
-            Email Address *{" "}
-            <span className="font-normal text-slate-400">(for receipt after approval)</span>
+          <label className="mt-4 block text-sm font-medium text-ink">
+            Name *
             <input
-              required
-              ref={emailInputRef}
-              type="email"
-              value={email}
+              ref={upiNameRef}
+              value={upiName}
               onChange={(e) => {
-                setEmail(e.target.value);
+                setUpiName(e.target.value);
+                setError("");
+              }}
+              placeholder="Full name"
+              className={fieldClass}
+            />
+          </label>
+
+          <label className="mt-4 block text-sm font-medium text-ink">
+            Email *
+            <span className="font-normal text-[var(--text-light)]"> · for receipt</span>
+            <input
+              ref={upiEmailRef}
+              type="email"
+              value={upiEmail}
+              onChange={(e) => {
+                setUpiEmail(e.target.value);
                 setError("");
               }}
               placeholder="yourname@example.com"
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className={fieldClass}
             />
           </label>
 
-          {/* Amount */}
-          <label className="block text-sm font-semibold text-slate-700">
-            Amount Paid (₹) *
+          {proofField("upi", upiScreenshotPreview, upiProofRef, upiFileRef)}
+
+          <label className="mt-4 flex cursor-pointer items-start gap-3">
             <input
-              ref={amountInputRef}
-              type="number"
-              min="1"
-              value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value);
-                setError("");
-              }}
-              placeholder="e.g. 501"
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </label>
-
-          <div className="rounded-xl border border-orange-200 bg-white p-4">
-            <p className="text-sm font-bold text-slate-900">Pay directly with UPI</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Pay from any UPI app using the ID below, then submit your payment details for
-              verification.
-            </p>
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-orange-600">UPI ID</p>
-                <p className="mt-1 select-all font-mono font-bold text-slate-900">
-                  {COLONY_BOIS_CONTACT.upiId}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void copyUpiId()}
-                aria-label="Copy UPI ID"
-                className="inline-flex items-center gap-2 rounded-lg border border-orange-300 bg-white px-3 py-2 text-sm font-bold text-orange-700 hover:bg-orange-100"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <rect x="9" y="9" width="11" height="11" rx="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-                {copiedUpiId ? "Copied" : "Copy"}
-              </button>
-            </div>
-            <button
-              disabled={!isOnline}
-              type="button"
-              onClick={() => {
-                if (!hasValidAmount) {
-                  setError("Enter a Chanda amount before showing the payment QR code.");
-                  return;
-                }
-                setError("");
-                setShowQrCode(true);
-              }}
-              className="mt-3 w-full rounded-lg border-2 border-orange-300 bg-orange-50 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Pay using QR Code
-            </button>
-            {showQrCode && (
-              <div className="mt-5 border-t border-orange-100 pt-5 text-center">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-600">
-                  Scan &amp; Pay via any UPI app
-                </p>
-                <div className="inline-block rounded-xl bg-white p-3 shadow-inner ring-1 ring-orange-100">
-                  <QRCodeSVG
-                    value={upiPaymentLink}
-                    size={200}
-                    bgColor="#ffffff"
-                    fgColor="#1e1b4b"
-                    level="H"
-                    includeMargin={false}
-                  />
-                </div>
-                <p className="mt-4 text-xs text-slate-500">
-                  UPI ID:{" "}
-                  <span className="font-bold text-slate-800 select-all">
-                    {COLONY_BOIS_CONTACT.upiId}
-                  </span>
-                </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Works with PhonePe, GPay, Paytm, BHIM &amp; all UPI apps
-                </p>
-              </div>
-            )}
-          </div>
-
-          {!isOnline && (
-            <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
-              Offline — Reconnect to submit
-            </p>
-          )}
-
-          <label className="block text-sm font-semibold text-slate-700">
-            Message or payment details{" "}
-            <span className="font-normal text-slate-400">(optional)</span>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-              placeholder="Any details you would like us to know"
-              className="mt-1 w-full resize-y rounded-lg border border-slate-300 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </label>
-
-          {/* Screenshot upload */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700">Payment Screenshot *</p>
-            {screenshotPreview ? (
-              <div className="mt-2 relative inline-block">
-                <img
-                  src={screenshotPreview}
-                  alt="Payment screenshot preview"
-                  className="h-48 rounded-xl border border-orange-200 object-contain bg-white"
-                />
-                <button
-                  type="button"
-                  onClick={removeScreenshot}
-                  aria-label="Remove screenshot"
-                  className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <button
-                ref={screenshotUploadRef}
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-white py-5 text-sm font-semibold text-orange-600 hover:border-orange-400 hover:bg-orange-50 transition"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4 4 4"
-                  />
-                </svg>
-                Upload payment screenshot *
-              </button>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleScreenshotChange}
-            />
-          </div>
-
-          {error && <p className="text-sm text-rose-600">{error}</p>}
-
-          {/* Public name consent */}
-          <label className="flex items-start gap-3 cursor-pointer rounded-xl border border-orange-200 bg-white p-4">
-            <input
-              required
               type="checkbox"
               checked={showPublicName}
               onChange={(e) => {
                 setShowPublicName(e.target.checked);
                 setError("");
               }}
-              className="mt-0.5 h-4 w-4 flex-none accent-orange-500"
+              className="mt-1 h-4 w-4 flex-none accent-[var(--primary)]"
             />
-            <span className="text-sm text-slate-700">
-              <span className="font-semibold">Display my name on the Colony Bois website *</span>
-              <span className="block mt-0.5 text-slate-500 font-normal">
-                After admin approval, your name will appear in the public Supporters section. Your
-                phone number and payment details will never be shown.
-              </span>
+            <span className="text-sm leading-6 text-[var(--text-light)]">
+              <span className="font-medium text-ink">Show my name with supporters. *</span> Payment
+              details stay private.
             </span>
           </label>
 
           <button
             type="submit"
-            disabled={loading || !isOnline}
-            className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 py-3 font-bold text-white shadow-temple hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 transition"
+            disabled={loadingMethod !== null || !isOnline}
+            className="btn-festive mt-5 w-full py-3 disabled:opacity-50"
           >
-            {loading ? "Submitting…" : "Submit Contribution Details"}
+            {loadingMethod === "upi" ? "Submitting…" : "Submit contribution"}
           </button>
         </form>
+        )}
+
+        {activeTab === "qr" && (
+        <form
+          noValidate
+          onSubmit={submit("qr")}
+          className="mt-6 flex flex-col rounded-2xl border border-navy/10 bg-white p-5 shadow-temple sm:p-6"
+        >
+
+          <label className="mt-4 block text-sm font-medium text-ink">
+            Amount (₹) *
+            <input
+              ref={qrAmountRef}
+              type="number"
+              min="1"
+              value={qrAmount}
+              onChange={(e) => {
+                setQrAmount(e.target.value);
+                setError("");
+              }}
+              placeholder="501"
+              className={fieldClass}
+            />
+          </label>
+
+          <div className="mt-4 text-center">
+            <div className="inline-block rounded-2xl bg-white p-3 shadow-sm ring-1 ring-[#d8cbb8]">
+              <QRCodeSVG
+                value={qrHasValidAmount ? buildUpiLink(qrEnteredAmount) : COLONY_BOIS_CONTACT.upiId}
+                size={160}
+                bgColor="#ffffff"
+                fgColor="#2c1810"
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+            <p className="section-note mt-2">
+              {qrHasValidAmount
+                ? `Scan to pay ₹${qrEnteredAmount.toLocaleString("en-IN")}`
+                : "Enter an amount, then scan with any UPI app"}
+            </p>
+          </div>
+
+          <label className="mt-4 block text-sm font-medium text-ink">
+            Name *
+            <input
+              ref={qrNameRef}
+              value={qrName}
+              onChange={(e) => {
+                setQrName(e.target.value);
+                setError("");
+              }}
+              placeholder="Full name"
+              className={fieldClass}
+            />
+          </label>
+
+          <label className="mt-4 block text-sm font-medium text-ink">
+            Email *
+            <span className="font-normal text-[var(--text-light)]"> · for receipt</span>
+            <input
+              ref={qrEmailRef}
+              type="email"
+              value={qrEmail}
+              onChange={(e) => {
+                setQrEmail(e.target.value);
+                setError("");
+              }}
+              placeholder="yourname@example.com"
+              className={fieldClass}
+            />
+          </label>
+
+          {proofField("qr", qrScreenshotPreview, qrProofRef, qrFileRef)}
+
+          <label className="mt-4 flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={showPublicName}
+              onChange={(e) => {
+                setShowPublicName(e.target.checked);
+                setError("");
+              }}
+              className="mt-1 h-4 w-4 flex-none accent-[var(--primary)]"
+            />
+            <span className="text-sm leading-6 text-[var(--text-light)]">
+              <span className="font-medium text-ink">Show my name with supporters. *</span> Payment
+              details stay private.
+            </span>
+          </label>
+
+          <button
+            type="submit"
+            disabled={loadingMethod !== null || !isOnline}
+            className="btn-festive mt-5 w-full py-3 disabled:opacity-50"
+          >
+            {loadingMethod === "qr" ? "Submitting…" : "Submit contribution"}
+          </button>
+        </form>
+        )}
       </div>
     </div>
   );

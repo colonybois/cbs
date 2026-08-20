@@ -5,12 +5,15 @@ service firebase.storage {
     function isAdmin() {
       return request.auth != null
         && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'active'
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
     }
 
-    match /site-assets/{allPaths=**} {
+    match /site-assets/{fileName} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.contentType.matches('video/.*')
+        && request.resource.size < 30 * 1024 * 1024;
     }
     match /events/{allPaths=**} {
       allow read: if true;
