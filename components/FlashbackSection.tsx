@@ -192,7 +192,8 @@ export default function FlashbackSection() {
 
           <div
             ref={scrollRef}
-            className="flex touch-pan-x snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden"
+            className="flashback-track flex snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden"
+            style={{ touchAction: "pan-x pan-y" }}
             onMouseEnter={pauseAutoScroll}
             onPointerDown={pauseAutoScroll}
             onTouchStart={pauseAutoScroll}
@@ -200,7 +201,7 @@ export default function FlashbackSection() {
             {visibleMemories.map((memory, index) => (
               <article
                 key={memory.id}
-                className={`${CARD_SHELL} ${CARD_CLASS} pointer-events-none select-none`}
+                className={`${CARD_SHELL} ${CARD_CLASS} select-none`}
               >
                 <div className="relative flex w-full flex-col overflow-hidden">
                   <div className="relative aspect-square w-full overflow-hidden bg-navy/5">
@@ -214,7 +215,7 @@ export default function FlashbackSection() {
                         src={memory.imageUrl}
                         alt={`${memory.year} ${memory.title}`}
                         draggable={false}
-                        className="h-full w-full object-cover"
+                        className="pointer-events-none h-full w-full object-cover"
                         onError={() => markFailed(memory.id)}
                       />
                     )}

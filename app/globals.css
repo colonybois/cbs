@@ -102,6 +102,12 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
+  .flashback-track {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+    touch-action: pan-x pan-y;
+  }
   .full-bleed {
     position: relative;
     width: 100vw;
