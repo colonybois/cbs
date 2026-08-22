@@ -59,7 +59,7 @@ export default function HomePage() {
           <section id="about" className="scroll-mt-24">
             <div className="mx-auto max-w-3xl">
               <div className="text-center">
-                <ScrollReveal variant="fade" className="text-center">
+                <ScrollReveal variant="fade" once={false} className="text-center">
                   <p className="font-yatra text-2xl text-primary sm:text-3xl">
                     ॐ &nbsp;|| श्री गणेशाय नमः ||&nbsp; ॐ
                   </p>
@@ -76,7 +76,7 @@ export default function HomePage() {
               </div>
 
               <div className="mt-8 space-y-6 sm:mt-10 sm:space-y-7">
-                <ScrollReveal variant="left" delay={80}>
+                <ScrollReveal variant="left" delay={80} once={false}>
                   <p className="text-[15px] leading-8 text-[var(--text)] sm:text-base sm:leading-8">
                     Colony Bois, Rampuram began in{" "}
                     <strong className="font-semibold text-ink">2019</strong> as a small group of
@@ -88,16 +88,18 @@ export default function HomePage() {
                   </p>
                 </ScrollReveal>
 
-                <div
-                  className="flex items-center justify-center gap-3 py-1"
-                  aria-hidden="true"
-                >
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                  <span className="font-yatra text-xl leading-none text-primary/75">ॐ</span>
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                </div>
+                <ScrollReveal variant="fade" delay={40} once={false}>
+                  <div
+                    className="flex items-center justify-center gap-3 py-1"
+                    aria-hidden="true"
+                  >
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                    <span className="font-yatra text-xl leading-none text-primary/75">ॐ</span>
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                  </div>
+                </ScrollReveal>
 
-                <ScrollReveal variant="right" delay={160}>
+                <ScrollReveal variant="right" delay={100} once={false}>
                   <p className="text-[15px] leading-8 text-[var(--text)] sm:text-base sm:leading-8">
                     What started as a gathering of friends has grown into a community celebration, made
                     possible by the constant love, encouragement, and support of the families and
@@ -106,18 +108,20 @@ export default function HomePage() {
                   </p>
                 </ScrollReveal>
 
-                <div
-                  className="flex items-center justify-center gap-3 py-1"
-                  aria-hidden="true"
-                >
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                  <span className="font-yatra text-lg leading-none tracking-[0.18em] text-primary/70">
-                    ॥ श्री ॥
-                  </span>
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                </div>
+                <ScrollReveal variant="fade" delay={40} once={false}>
+                  <div
+                    className="flex items-center justify-center gap-3 py-1"
+                    aria-hidden="true"
+                  >
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                    <span className="font-yatra text-lg leading-none tracking-[0.18em] text-primary/70">
+                      ॥ श्री ॥
+                    </span>
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                  </div>
+                </ScrollReveal>
 
-                <ScrollReveal variant="left" delay={80}>
+                <ScrollReveal variant="left" delay={80} once={false}>
                   <p className="text-[15px] leading-8 text-[var(--text)] sm:text-base sm:leading-8">
                     With the blessings of Lord Ganesha, we come together each year with the same
                     enthusiasm and devotion, while adding something new to every celebration. One of
@@ -127,16 +131,18 @@ export default function HomePage() {
                   </p>
                 </ScrollReveal>
 
-                <div
-                  className="flex items-center justify-center gap-3 py-1"
-                  aria-hidden="true"
-                >
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                  <span className="font-yatra text-xl leading-none text-primary/75">ॐ</span>
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                </div>
+                <ScrollReveal variant="fade" delay={40} once={false}>
+                  <div
+                    className="flex items-center justify-center gap-3 py-1"
+                    aria-hidden="true"
+                  >
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                    <span className="font-yatra text-xl leading-none text-primary/75">ॐ</span>
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                  </div>
+                </ScrollReveal>
 
-                <ScrollReveal variant="right" delay={160}>
+                <ScrollReveal variant="right" delay={100} once={false}>
                   <p className="text-[15px] leading-8 text-[var(--text)] sm:text-base sm:leading-8">
                     For us, Ganesh Chaturthi is more than a festival. It is a celebration of
                     friendship, unity, devotion, creativity, and community spirit. It is about bringing
@@ -145,18 +151,20 @@ export default function HomePage() {
                   </p>
                 </ScrollReveal>
 
-                <div
-                  className="flex items-center justify-center gap-3 py-1"
-                  aria-hidden="true"
-                >
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                  <span className="font-yatra text-lg leading-none tracking-[0.18em] text-primary/70">
-                    ॥ श्री ॥
-                  </span>
-                  <span className="h-px w-10 bg-primary/20 sm:w-14" />
-                </div>
+                <ScrollReveal variant="fade" delay={40} once={false}>
+                  <div
+                    className="flex items-center justify-center gap-3 py-1"
+                    aria-hidden="true"
+                  >
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                    <span className="font-yatra text-lg leading-none tracking-[0.18em] text-primary/70">
+                      ॥ श्री ॥
+                    </span>
+                    <span className="h-px w-10 bg-primary/20 sm:w-14" />
+                  </div>
+                </ScrollReveal>
 
-                <ScrollReveal variant="up" delay={120}>
+                <ScrollReveal variant="up" delay={120} once={false}>
                   <p className="text-[15px] leading-8 text-[var(--text)] sm:text-base sm:leading-8">
                     From a small group of friends in{" "}
                     <strong className="font-semibold text-ink">2019</strong> to a celebration
@@ -166,7 +174,7 @@ export default function HomePage() {
                 </ScrollReveal>
               </div>
 
-              <ScrollReveal variant="scale" delay={80} className="mt-10 text-center">
+              <ScrollReveal variant="scale" delay={80} once={false} className="mt-10 text-center">
                 <p className="font-display text-xl font-semibold text-ink sm:text-2xl">
                   Our Story. Our Tradition. Our Community.
                 </p>

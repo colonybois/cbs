@@ -25,7 +25,7 @@ export default function ScrollReveal({
   id,
   variant = "up",
   delay = 0,
-  threshold = 0.15,
+  threshold = 0.12,
   stagger = false,
   once = true,
   as: Tag = "div",
@@ -35,18 +35,22 @@ export default function ScrollReveal({
   const [visible, setVisible] = useState(false);
   const [from, setFrom] = useState<RevealFrom>("down");
 
+  // Mount in the hidden state first so CSS transitions have a starting point.
   useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setReady(true);
       setVisible(true);
       return;
     }
-
-    // Paint the hidden state first, then observe — otherwise transitions never run.
     setReady(true);
+  }, []);
+
+  // Observe only after the hidden state has painted.
+  useEffect(() => {
+    if (!ready) return;
+    const node = ref.current;
+    if (!node) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let frame = 0;
     const observer = new IntersectionObserver(
@@ -54,24 +58,31 @@ export default function ScrollReveal({
         if (!entry) return;
         setFrom(entry.boundingClientRect.top > 0 ? "down" : "up");
         if (entry.isIntersecting) {
-          frame = window.requestAnimationFrame(() => setVisible(true));
-          if (once) observer.disconnect();
+          if (once) {
+            frame = window.requestAnimationFrame(() => setVisible(true));
+            observer.disconnect();
+          } else {
+            setVisible(false);
+            frame = window.requestAnimationFrame(() => {
+              frame = window.requestAnimationFrame(() => setVisible(true));
+            });
+          }
         } else if (!once) {
           setVisible(false);
         }
       },
-      { threshold, rootMargin: "0px 0px -10% 0px" },
+      { threshold, rootMargin: "0px 0px -8% 0px" },
     );
 
     frame = window.requestAnimationFrame(() => {
-      observer.observe(node);
+      frame = window.requestAnimationFrame(() => observer.observe(node));
     });
 
     return () => {
       window.cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [threshold, once]);
+  }, [ready, threshold, once]);
 
   const style: CSSProperties | undefined =
     ready && delay > 0 && visible

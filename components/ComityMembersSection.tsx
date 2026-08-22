@@ -84,7 +84,7 @@ function MemberCard({
   delay?: number;
 }) {
   return (
-    <ScrollReveal variant="right" delay={delay}>
+    <ScrollReveal variant={featured ? "scale" : "up"} delay={delay} once={false}>
       <MemberPlate member={member} featured={featured} />
     </ScrollReveal>
   );
@@ -188,7 +188,7 @@ export default function ComityMembersSection() {
       )}
 
       {!loading && canToggle && (
-        <div className="mt-8 flex justify-center">
+        <ScrollReveal variant="fade" delay={80} once={false} className="mt-8 flex justify-center">
           {expanded ? (
             <button type="button" onClick={collapseRoster} className="btn-festive px-6 py-2.5 text-xs uppercase">
               View Less
@@ -198,7 +198,7 @@ export default function ComityMembersSection() {
               View More
             </button>
           )}
-        </div>
+        </ScrollReveal>
       )}
     </div>
   );
