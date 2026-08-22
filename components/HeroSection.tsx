@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import HeroVideoCarousel, { type HeroVideo } from "@/components/hero/HeroVideoCarousel";
 import { GoldDivider, GoldFlourish, HangingToran, HeroMandala } from "@/components/hero/HeroOrnaments";
@@ -12,6 +12,8 @@ export default function HeroSection() {
   const { loading, signedIn, role } = useAuth();
   const { config: registrationConfig } = useRegistrationConfig();
   const [videos, setVideos] = useState<HeroVideo[]>([]);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [heroPlaying, setHeroPlaying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +42,41 @@ export default function HeroSection() {
   const dashboardHref =
     role === "admin" || role === "super_admin" ? "/admin/dashboard" : "/member/dashboard";
   const hasHeroVideos = videos.length > 0;
+  const enterClass = heroPlaying ? "home-enter is-playing" : "home-enter";
+
+  useEffect(() => {
+    const node = sectionRef.current;
+    if (!node) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setHeroPlaying(true);
+      return;
+    }
+
+    let enterFrame = 0;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        window.cancelAnimationFrame(enterFrame);
+        if (entry.isIntersecting) {
+          // Reset first so the CSS animation can restart on every re-entry.
+          setHeroPlaying(false);
+          enterFrame = window.requestAnimationFrame(() => {
+            enterFrame = window.requestAnimationFrame(() => setHeroPlaying(true));
+          });
+        } else {
+          setHeroPlaying(false);
+        }
+      },
+      { threshold: 0.35, rootMargin: "0px 0px -12% 0px" },
+    );
+
+    observer.observe(node);
+    return () => {
+      window.cancelAnimationFrame(enterFrame);
+      observer.disconnect();
+    };
+  }, [hasHeroVideos]);
 
   const actions = (
     <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -49,7 +86,7 @@ export default function HeroSection() {
           event.preventDefault();
           smoothScrollToId("events");
         }}
-        className="btn-festive px-8 py-3.5 text-sm sm:text-[15px]"
+        className="btn-festive px-8 py-3.5 text-sm transition duration-300 hover:shadow-lg sm:text-[15px]"
       >
         Join Celebration
       </a>
@@ -58,7 +95,7 @@ export default function HeroSection() {
       ) : signedIn ? (
         <Link
           href={dashboardHref}
-          className={`rounded-full border px-6 py-3 text-sm font-semibold tracking-wide transition ${
+          className={`rounded-full border px-6 py-3 text-sm font-semibold tracking-wide transition duration-300 ${
             hasHeroVideos
               ? "border-[#FFF8E8]/70 text-[#FFF8E8] hover:bg-[#FFF8E8]/10"
               : "border-gold text-primary hover:bg-[var(--background-warm)]"
@@ -69,7 +106,7 @@ export default function HeroSection() {
       ) : !registrationConfig.hideRegistrationUI ? (
         <Link
           href="/register"
-          className={`rounded-full border px-6 py-3 text-sm font-semibold tracking-wide transition ${
+          className={`rounded-full border px-6 py-3 text-sm font-semibold tracking-wide transition duration-300 ${
             hasHeroVideos
               ? "border-[#FFF8E8]/70 text-[#FFF8E8] hover:bg-[#FFF8E8]/10"
               : "border-gold text-primary hover:bg-[var(--background-warm)]"
@@ -83,9 +120,14 @@ export default function HeroSection() {
 
   if (hasHeroVideos) {
     return (
-      <section className="relative isolate min-h-[32rem] overflow-hidden sm:min-h-[38rem] lg:min-h-[44rem]">
+      <section
+        ref={sectionRef}
+        className="relative isolate min-h-[32rem] overflow-hidden sm:min-h-[38rem] lg:min-h-[44rem]"
+      >
         <HeroVideoCarousel videos={videos} />
-        <div className="relative z-10 mx-auto flex min-h-[32rem] w-full max-w-3xl flex-col items-center justify-center px-5 py-16 text-center sm:min-h-[38rem] sm:px-8 sm:py-20 lg:min-h-[44rem]">
+        <div
+          className={`${enterClass} relative z-10 mx-auto flex min-h-[32rem] w-full max-w-3xl flex-col items-center justify-center px-5 py-16 text-center sm:min-h-[38rem] sm:px-8 sm:py-20 lg:min-h-[44rem]`}
+        >
           <p className="font-cinzel text-lg font-semibold uppercase tracking-[0.22em] text-[#FFF8E8] sm:text-2xl lg:text-3xl">
             Colony Bois
           </p>
@@ -106,12 +148,15 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#FFFFFF] px-5 py-10 sm:px-10 sm:py-14 lg:px-16 lg:py-16">
+    <section
+      ref={sectionRef}
+      className="relative isolate overflow-hidden bg-[#FFFFFF] px-5 py-10 sm:px-10 sm:py-14 lg:px-16 lg:py-16"
+    >
       <HangingToran className="pointer-events-none absolute left-3 top-0 hidden h-36 w-16 opacity-80 sm:block" />
       <HangingToran className="pointer-events-none absolute right-4 top-0 h-40 w-[4.5rem] -scale-x-100 opacity-90" />
 
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2 lg:gap-6">
-        <div className="order-2 flex flex-col items-center text-center lg:order-1">
+        <div className={`${enterClass} order-2 flex flex-col items-center text-center lg:order-1`}>
           <h1 className="font-display text-[2.35rem] font-bold leading-[1.15] text-ink sm:text-5xl lg:text-[3.4rem]">
             Happy Vinayaka Chavithi
           </h1>
@@ -127,12 +172,14 @@ export default function HeroSection() {
           <GoldFlourish className="mt-7 h-8 w-44 opacity-90" />
         </div>
 
-        <div className="relative order-1 mx-auto flex min-h-[20rem] w-full max-w-lg items-end justify-center sm:min-h-[26rem] lg:order-2 lg:max-w-none lg:min-h-[32rem]">
-          <HeroMandala className="pointer-events-none absolute left-1/2 top-[42%] h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 opacity-70" />
+        <div
+          className={`${heroPlaying ? "home-enter-image is-playing" : "home-enter-image"} relative order-1 mx-auto flex min-h-[20rem] w-full max-w-lg items-end justify-center sm:min-h-[26rem] lg:order-2 lg:max-w-none lg:min-h-[32rem]`}
+        >
+          <HeroMandala className="home-enter-mandala pointer-events-none absolute left-1/2 top-[42%] h-[120%] w-[120%] opacity-70" />
           <img
             src="/assets/hero-ganesha.png"
             alt="Lord Ganesha seated on a golden throne with diyas and marigolds"
-            className="relative z-10 w-full max-w-md object-contain sm:max-w-lg lg:max-w-xl"
+            className="relative z-10 w-full max-w-md object-contain transition duration-700 sm:max-w-lg lg:max-w-xl"
           />
         </div>
       </div>

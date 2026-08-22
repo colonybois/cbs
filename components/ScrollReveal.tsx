@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import "./scroll-reveal.css";
 
-type RevealVariant = "up" | "fade" | "scale" | "left" | "right";
+type RevealVariant = "up" | "fade" | "scale" | "left" | "right" | "image";
 type RevealFrom = "down" | "up";
 
 type ScrollRevealProps = {
@@ -14,6 +14,8 @@ type ScrollRevealProps = {
   delay?: number;
   threshold?: number;
   stagger?: boolean;
+  /** When true (default), reveal once and stay visible. */
+  once?: boolean;
   as?: "div" | "section" | "header" | "footer" | "article";
 };
 
@@ -23,12 +25,13 @@ export default function ScrollReveal({
   id,
   variant = "up",
   delay = 0,
-  threshold = 0.12,
+  threshold = 0.15,
   stagger = false,
+  once = true,
   as: Tag = "div",
 }: ScrollRevealProps) {
   const ref = useRef<HTMLElement | null>(null);
-  const [enabled, setEnabled] = useState(false);
+  const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
   const [from, setFrom] = useState<RevealFrom>("down");
 
@@ -37,52 +40,51 @@ export default function ScrollReveal({
     if (!node) return;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setReady(true);
       setVisible(true);
       return;
     }
 
-    const inViewNow = () => {
-      const rect = node.getBoundingClientRect();
-      return rect.top < window.innerHeight * 0.92 && rect.bottom > window.innerHeight * 0.08;
-    };
-
-    setEnabled(true);
+    // Paint the hidden state first, then observe — otherwise transitions never run.
+    setReady(true);
 
     let frame = 0;
-    frame = window.requestAnimationFrame(() => {
-      frame = window.requestAnimationFrame(() => {
-        if (inViewNow()) setVisible(true);
-      });
-    });
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry) return;
         setFrom(entry.boundingClientRect.top > 0 ? "down" : "up");
-        setVisible(entry.isIntersecting);
+        if (entry.isIntersecting) {
+          frame = window.requestAnimationFrame(() => setVisible(true));
+          if (once) observer.disconnect();
+        } else if (!once) {
+          setVisible(false);
+        }
       },
-      { threshold: [0, threshold], rootMargin: "-8% 0px -12% 0px" },
+      { threshold, rootMargin: "0px 0px -10% 0px" },
     );
 
-    observer.observe(node);
+    frame = window.requestAnimationFrame(() => {
+      observer.observe(node);
+    });
+
     return () => {
       window.cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [threshold]);
+  }, [threshold, once]);
 
   const style: CSSProperties | undefined =
-    enabled && delay > 0 && visible
+    ready && delay > 0 && visible
       ? { transitionDelay: `${delay}ms` }
-      : enabled
+      : ready
         ? { transitionDelay: "0ms" }
         : undefined;
 
   const classes = [
-    enabled && "scroll-reveal",
-    enabled && `scroll-reveal-${variant}`,
-    enabled && stagger && "scroll-reveal-stagger",
-    enabled && visible && "is-visible",
+    ready && "scroll-reveal",
+    ready && `scroll-reveal-${variant}`,
+    ready && stagger && "scroll-reveal-stagger",
+    ready && visible && "is-visible",
     className,
   ]
     .filter(Boolean)
@@ -93,7 +95,7 @@ export default function ScrollReveal({
       id={id}
       ref={ref as never}
       style={style}
-      data-from={enabled ? from : undefined}
+      data-from={ready ? from : undefined}
       className={classes}
     >
       {children}

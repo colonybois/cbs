@@ -26,42 +26,44 @@ export default function HomePage() {
       )}
       <div className="mt-12 space-y-16 sm:mt-16 sm:space-y-20">
         {isEnabled("gallery") && (
-          <ScrollReveal as="section" id="gallery" className="scroll-mt-24" variant="up">
+          <section id="gallery" className="scroll-mt-24">
             <FlashbackSection />
-          </ScrollReveal>
+          </section>
         )}
         {isEnabled("events") && (
-          <ScrollReveal as="section" id="events" className="scroll-mt-24" variant="up" delay={40}>
+          <section id="events" className="scroll-mt-24">
             <EventsSection />
-          </ScrollReveal>
+          </section>
         )}
         {isEnabled("festival") && (
-          <ScrollReveal as="section" id="festival" className="scroll-mt-24" variant="scale" delay={60}>
+          <section id="festival" className="scroll-mt-24">
             <FestivalJourney />
-          </ScrollReveal>
+          </section>
         )}
         {isEnabled("comity") && (
-          <ScrollReveal as="section" id="comity" className="scroll-mt-24" variant="up" delay={40}>
+          <section id="comity" className="scroll-mt-24">
             <ComityMembersSection />
-          </ScrollReveal>
+          </section>
         )}
         {isEnabled("supporters") && (
-          <ScrollReveal as="section" id="supporters" className="scroll-mt-24" variant="fade" delay={40}>
+          <section id="supporters" className="scroll-mt-24">
             <SupportersSection />
-          </ScrollReveal>
+          </section>
         )}
         {isEnabled("donate") && (
-          <ScrollReveal as="section" id="donate" className="scroll-mt-24" variant="scale" delay={60}>
+          <section id="donate" className="scroll-mt-24">
             <DonateSection />
-          </ScrollReveal>
+          </section>
         )}
         {isEnabled("about") && (
           <section id="about" className="scroll-mt-24">
             <div className="mx-auto max-w-3xl">
-              <ScrollReveal variant="fade" className="text-center">
-                <p className="font-yatra text-2xl text-primary sm:text-3xl">
-                  ॐ &nbsp;|| श्री गणेशाय नमः ||&nbsp; ॐ
-                </p>
+              <div className="text-center">
+                <ScrollReveal variant="fade" className="text-center">
+                  <p className="font-yatra text-2xl text-primary sm:text-3xl">
+                    ॐ &nbsp;|| श्री गणेशाय नमः ||&nbsp; ॐ
+                  </p>
+                </ScrollReveal>
                 <div className="mt-5">
                   <SectionHeading
                     align="center"
@@ -71,7 +73,7 @@ export default function HomePage() {
                     tone="gold"
                   />
                 </div>
-              </ScrollReveal>
+              </div>
 
               <div className="mt-8 space-y-6 sm:mt-10 sm:space-y-7">
                 <ScrollReveal variant="left" delay={80}>
@@ -180,7 +182,7 @@ export default function HomePage() {
           </section>
         )}
         {isEnabled("contact") && (
-          <ScrollReveal as="section" id="contact" className="scroll-mt-24" variant="up" delay={40} stagger>
+          <section id="contact" className="scroll-mt-24">
             <SectionHeading
               kicker="We're here to help"
               title="Contact Colony Bois"
@@ -188,10 +190,10 @@ export default function HomePage() {
               tone="accent"
               lede="For pandal information, volunteering or festival support, reach our organizers directly."
             />
-            <div className="mt-7 max-w-3xl">
+            <ScrollReveal variant="up" delay={80} className="mt-7 max-w-3xl">
               <ContactSection />
-            </div>
-          </ScrollReveal>
+            </ScrollReveal>
+          </section>
         )}
       </div>
     </div>

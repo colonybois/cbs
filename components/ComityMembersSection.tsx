@@ -26,7 +26,7 @@ function MemberPlate({ member, featured = false }: { member: ComityMember; featu
             alt={member.fullName}
             loading="lazy"
             onError={() => setImgErr(true)}
-            className="h-full w-full rounded-full border-[3px] border-white object-cover"
+            className="h-full w-full rounded-full border-[3px] border-white object-cover transition duration-500 hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center rounded-full bg-primary font-display text-3xl text-on-primary">
@@ -36,7 +36,7 @@ function MemberPlate({ member, featured = false }: { member: ComityMember; featu
       </div>
 
       <div
-        className={`rounded-[1.75rem] bg-white px-4 pb-5 shadow-sm ring-1 ring-[#e8b8bc] ${
+        className={`rounded-[1.75rem] bg-white px-4 pb-5 shadow-sm ring-1 ring-[#c9a8ae] ${
           featured ? "pt-[5.25rem] sm:px-8 sm:pt-[5.75rem]" : "pt-[4.15rem]"
         }`}
       >

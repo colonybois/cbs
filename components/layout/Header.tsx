@@ -254,7 +254,7 @@ export default function Header() {
         <Link
           href={dashboardPath}
           onClick={() => trackMenu("Dashboard", dashboardPath, "header_auth")}
-          className="hidden rounded-full border border-[#e8b8bc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary hover:bg-[var(--background-warm)] lg:inline-flex"
+          className="hidden rounded-full border border-[#c9a8ae] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary hover:bg-[var(--background-warm)] lg:inline-flex"
         >
           Dashboard
         </Link>
@@ -280,7 +280,7 @@ export default function Header() {
       <Link
         href="/login"
         onClick={() => trackMenu("Sign In", "/login", "header_auth")}
-        className="hidden rounded-full border border-[#e8b8bc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary hover:bg-[var(--background-warm)] lg:inline-flex"
+        className="hidden rounded-full border border-[#c9a8ae] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary hover:bg-[var(--background-warm)] lg:inline-flex"
       >
         Sign In
       </Link>
@@ -303,7 +303,7 @@ export default function Header() {
 
   return (
     <>
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-[#e8b8bc] bg-[var(--background)]">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-[#c9a8ae] bg-[var(--background)]">
       <div className="relative z-50 mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-4 lg:px-6">
         {brand}
         <nav className="hidden items-center gap-6 lg:flex xl:gap-7">
@@ -321,7 +321,7 @@ export default function Header() {
                 >
                   {label}
                   {pathname === "/" && activeSection === id && (
-                    <span className="absolute inset-x-1 -bottom-0.5 h-[3px] rounded-full bg-[#e8b8bc]" />
+                    <span className="absolute inset-x-1 -bottom-0.5 h-[3px] rounded-full bg-[#c9a8ae]" />
                   )}
                 </button>
               ))}
@@ -342,7 +342,7 @@ export default function Header() {
             onClick={() => setIsMobileMenuOpen((value) => !value)}
             aria-expanded={isMobileMenuOpen}
             aria-label="Toggle navigation menu"
-            className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-[#e8b8bc] bg-[var(--background-warm)] text-primary touch-manipulation lg:hidden"
+            className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-[#c9a8ae] bg-[var(--background-warm)] text-primary touch-manipulation lg:hidden"
           >
             <span className="relative block h-4 w-5">
               <span
@@ -367,7 +367,7 @@ export default function Header() {
             className={`mobile-menu-backdrop fixed inset-0 z-40 bg-primary-dark/35 lg:hidden ${isMobileMenuOpen ? "" : "is-closing"}`}
           />
           <div
-            className={`mobile-menu-panel fixed inset-x-0 top-[calc(4.25rem+0.25rem)] z-50 flex max-h-[min(78dvh,calc(100dvh-4.75rem))] flex-col overflow-y-auto overscroll-contain border-b border-[#e8b8bc] bg-[var(--background)] px-3 py-3 text-left shadow-xl lg:hidden ${isMobileMenuOpen ? "" : "is-closing"}`}
+            className={`mobile-menu-panel fixed inset-x-0 top-[calc(4.25rem+0.25rem)] z-50 flex max-h-[min(78dvh,calc(100dvh-4.75rem))] flex-col overflow-y-auto overscroll-contain border-b border-[#c9a8ae] bg-[var(--background)] px-3 py-3 text-left shadow-xl lg:hidden ${isMobileMenuOpen ? "" : "is-closing"}`}
           >
             <p className="mobile-menu-item px-2 pb-2 font-yatra text-sm text-primary">
               गणपति बप्पा मोरया
@@ -382,7 +382,7 @@ export default function Header() {
                       closeMenu();
                     }}
                     style={{ animationDelay: `${60 + index * 45}ms` }}
-                    className={`mobile-menu-item mb-1 flex items-center gap-3 rounded-2xl border px-3 py-3 text-left font-medium transition ${pathname === href ? "border-[#e8b8bc] bg-[var(--background-warm)] font-bold text-primary" : "border-[#e8b8bc] bg-white text-[var(--text)]"}`}
+                    className={`mobile-menu-item mb-1 flex items-center gap-3 rounded-2xl border px-3 py-3 text-left font-medium transition ${pathname === href ? "border-[#c9a8ae] bg-[var(--background-warm)] font-bold text-primary" : "border-[#c9a8ae] bg-white text-[var(--text)]"}`}
                   >
                     {label}
                   </Link>
@@ -394,7 +394,7 @@ export default function Header() {
                       key={id}
                       onClick={() => scrollToSection(label, id, "public_header_mobile")}
                       style={{ animationDelay: `${60 + index * 45}ms` }}
-                      className={`mobile-menu-item mb-1.5 flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition active:scale-[0.99] ${id === "donate" ? "border-primary/30 bg-primary/5 font-bold text-primary" : "border-[#e8b8bc] bg-white text-[var(--text)]"}`}
+                      className={`mobile-menu-item mb-1.5 flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition active:scale-[0.99] ${id === "donate" ? "border-primary/30 bg-primary/5 font-bold text-primary" : "border-[#c9a8ae] bg-white text-[var(--text)]"}`}
                     >
                       <span
                         className={`grid h-10 w-10 flex-none place-items-center rounded-xl ${id === "donate" ? "bg-primary text-on-primary" : "bg-[var(--background-warm)] text-primary"}`}
@@ -402,7 +402,7 @@ export default function Header() {
                         <MenuIcon id={id} />
                       </span>
                       <span className="min-w-0 flex-1 leading-snug">{label}</span>
-                      <span className="text-lg text-[#c45c64]" aria-hidden>
+                      <span className="text-lg text-[#5a1725]" aria-hidden>
                         ›
                       </span>
                     </button>
@@ -411,13 +411,13 @@ export default function Header() {
                     type="button"
                     onClick={() => openPublicChat("public_header_mobile")}
                     style={{ animationDelay: `${60 + mobileSections.length * 45}ms` }}
-                    className="mobile-menu-item mb-1.5 flex w-full items-center gap-3 rounded-2xl border border-[#e8b8bc] bg-white px-3 py-3 text-left text-[var(--text)] transition active:scale-[0.99]"
+                    className="mobile-menu-item mb-1.5 flex w-full items-center gap-3 rounded-2xl border border-[#c9a8ae] bg-white px-3 py-3 text-left text-[var(--text)] transition active:scale-[0.99]"
                   >
                     <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[var(--background-warm)] text-primary">
                       <MenuIcon id="chat" />
                     </span>
                     <span className="min-w-0 flex-1 leading-snug">Chat</span>
-                    <span className="text-lg text-[#c45c64]" aria-hidden>
+                    <span className="text-lg text-[#5a1725]" aria-hidden>
                       ›
                     </span>
                   </button>
@@ -444,7 +444,7 @@ export default function Header() {
                 )}
                 <button
                   onClick={() => void handleSignOut()}
-                  className="rounded-full border border-[#e8b8bc] px-3 py-2.5 text-sm font-bold text-primary"
+                  className="rounded-full border border-[#c9a8ae] px-3 py-2.5 text-sm font-bold text-primary"
                 >
                   Sign Out
                 </button>
@@ -461,7 +461,7 @@ export default function Header() {
                       trackMenu("Register", "/register", "mobile_header_auth");
                       closeMenu();
                     }}
-                    className="flex-1 rounded-full border border-[#e8b8bc] py-2.5 text-center font-bold text-primary"
+                    className="flex-1 rounded-full border border-[#c9a8ae] py-2.5 text-center font-bold text-primary"
                   >
                     Register
                   </Link>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import { db } from "@/lib/firebase";
 
@@ -124,10 +125,11 @@ export default function FlashbackSection() {
         lede="A live collection of Colony Bois pandal themes, devotion, and beautiful memories."
       />
       {!loading && years.length > 0 && (
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        <ScrollReveal variant="up" delay={80} className="mt-5">
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
           <button
             onClick={() => setSelectedYear("all")}
-            className={`flex-none rounded-full px-3.5 py-1.5 text-sm font-bold ${selectedYear === "all" ? "bg-primary text-on-primary shadow-sm" : "bg-white text-ink ring-1 ring-navy/10"}`}
+            className={`flex-none rounded-full px-3.5 py-1.5 text-sm font-bold transition duration-300 ${selectedYear === "all" ? "bg-primary text-on-primary shadow-sm" : "bg-white text-ink ring-1 ring-navy/10 hover:ring-navy/25"}`}
           >
             All
           </button>
@@ -135,12 +137,13 @@ export default function FlashbackSection() {
             <button
               key={year}
               onClick={() => setSelectedYear(year)}
-              className={`flex-none rounded-full px-3.5 py-1.5 text-sm font-bold ${selectedYear === year ? "bg-primary text-on-primary shadow-sm" : "bg-white text-ink ring-1 ring-navy/10"}`}
+              className={`flex-none rounded-full px-3.5 py-1.5 text-sm font-bold transition duration-300 ${selectedYear === year ? "bg-primary text-on-primary shadow-sm" : "bg-white text-ink ring-1 ring-navy/10 hover:ring-navy/25"}`}
             >
               {year}
             </button>
           ))}
-        </div>
+          </div>
+        </ScrollReveal>
       )}
 
       {loading && (
@@ -166,7 +169,7 @@ export default function FlashbackSection() {
       )}
 
       {!loading && visibleMemories.length > 0 && (
-        <div className="relative mt-6 -mx-4 sm:mx-0">
+        <ScrollReveal variant="image" delay={100} className="relative mt-6 -mx-4 sm:mx-0">
           <button
             onClick={() => {
               pauseAutoScroll();
@@ -175,7 +178,7 @@ export default function FlashbackSection() {
               );
             }}
             aria-label="Previous memory"
-            className="absolute -left-2 top-[42%] z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-lg text-ink shadow-sm md:grid"
+            className="absolute -left-2 top-[42%] z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-lg text-ink shadow-sm transition duration-300 hover:border-primary/30 hover:text-primary md:grid"
           >
             ‹
           </button>
@@ -185,7 +188,7 @@ export default function FlashbackSection() {
               scrollToIndex((activeIndex + 1) % visibleMemories.length);
             }}
             aria-label="Next memory"
-            className="absolute -right-2 top-[42%] z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-lg text-ink shadow-sm md:grid"
+            className="absolute -right-2 top-[42%] z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-lg text-ink shadow-sm transition duration-300 hover:border-primary/30 hover:text-primary md:grid"
           >
             ›
           </button>
@@ -201,10 +204,10 @@ export default function FlashbackSection() {
             {visibleMemories.map((memory, index) => (
               <article
                 key={memory.id}
-                className={`${CARD_SHELL} ${CARD_CLASS} select-none`}
+                className={`${CARD_SHELL} ${CARD_CLASS} home-card select-none`}
               >
                 <div className="relative flex w-full flex-col overflow-hidden">
-                  <div className="relative aspect-square w-full overflow-hidden bg-navy/5">
+                  <div className="home-media relative aspect-square w-full overflow-hidden bg-navy/5">
                     {failed.has(memory.id) ? (
                       <div className="grid h-full place-items-center p-4 text-center">
                         <span className="text-4xl">🚩</span>
@@ -268,14 +271,14 @@ export default function FlashbackSection() {
                     pauseAutoScroll();
                     scrollToIndex(index);
                   }}
-                  className={`h-1.5 rounded-full transition-all ${
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
                     index === activeIndex ? "w-6 bg-primary" : "w-1.5 bg-navy/20"
                   }`}
                 />
               ))}
             </div>
           )}
-        </div>
+        </ScrollReveal>
       )}
     </div>
   );

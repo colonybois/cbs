@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import Modal from "@/components/ui/Modal";
 import { db } from "@/lib/firebase";
@@ -89,68 +90,69 @@ export default function EventsSection() {
         {grouped.map(
           ([category, items]) =>
             items.length > 0 && (
-              <section key={category}>
+              <ScrollReveal key={category} as="section" variant="up">
                 <h3 className="mb-3 font-display text-lg font-semibold text-ink">{category}</h3>
                 <div className="grid gap-4 lg:grid-cols-2">
-                  {items.map((event) => {
+                  {items.map((event, index) => {
                     const state = eventState(event);
                     return (
-                      <button
-                        key={event.id}
-                        onClick={() => setSelected(event)}
-                        className={`text-left ${state === "live" ? "rounded-2xl ring-2 ring-rose-400 ring-offset-2" : ""}`}
-                      >
-                        <div className="h-full overflow-hidden rounded-2xl bg-white transition hover:-translate-y-0.5 hover:shadow-md">
-                          <div className="flex h-full flex-col">
-                            {event.imageUrl && (
-                              <div className="relative aspect-square w-full overflow-hidden bg-white">
-                                <img
-                                  src={event.imageUrl}
-                                  alt=""
-                                  className="absolute inset-0 h-full w-full object-cover"
-                                />
-                              </div>
-                            )}
-                            <div className="min-w-0 flex-1 p-5">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs font-bold uppercase tracking-wider text-saffron-600">
-                                  {event.eventDate}
-                                </span>
-                                <span
-                                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${state === "live" ? "bg-rose-100 text-rose-700" : state === "upcoming" ? "bg-white text-saffron-700" : "bg-slate-100 text-slate-600"}`}
-                                >
-                                  {state === "live"
-                                    ? "🔴 Live Now"
-                                    : state === "upcoming"
-                                      ? "🟡 Upcoming"
-                                      : "⚪ Completed"}
-                                </span>
-                              </div>
-                              <h4 className="mt-2 font-display font-semibold text-ink">{event.title}</h4>
-                              <p className="mt-1 text-sm font-semibold text-saffron-700">
-                                🕐 {eventTimes(event)} · {event.venue}
-                              </p>
-                              <p className="mt-2 line-clamp-2 text-sm text-slate-600">
-                                {event.description}
-                              </p>
-                              {event.prasadam && (
-                                <p className="mt-3 text-xs font-semibold text-slate-600">
-                                  🍚 Prasadam: {event.prasadam}
-                                </p>
+                      <ScrollReveal key={event.id} variant="up" delay={index * 70}>
+                        <button
+                          onClick={() => setSelected(event)}
+                          className={`w-full text-left ${state === "live" ? "rounded-2xl ring-2 ring-rose-400 ring-offset-2" : ""}`}
+                        >
+                          <div className="home-card h-full overflow-hidden rounded-2xl bg-white shadow-sm">
+                            <div className="flex h-full flex-col">
+                              {event.imageUrl && (
+                                <div className="home-media relative aspect-square w-full overflow-hidden bg-white">
+                                  <img
+                                    src={event.imageUrl}
+                                    alt=""
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                  />
+                                </div>
                               )}
-                              {event.coordinator && (
-                                <p className="mt-1 text-xs text-slate-500">
-                                  Coordinator: {event.coordinator}
+                              <div className="min-w-0 flex-1 p-5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs font-bold uppercase tracking-wider text-saffron-600">
+                                    {event.eventDate}
+                                  </span>
+                                  <span
+                                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${state === "live" ? "bg-rose-100 text-rose-700" : state === "upcoming" ? "bg-white text-saffron-700" : "bg-slate-100 text-slate-600"}`}
+                                  >
+                                    {state === "live"
+                                      ? "🔴 Live Now"
+                                      : state === "upcoming"
+                                        ? "🟡 Upcoming"
+                                        : "⚪ Completed"}
+                                  </span>
+                                </div>
+                                <h4 className="mt-2 font-display font-semibold text-ink">{event.title}</h4>
+                                <p className="mt-1 text-sm font-semibold text-saffron-700">
+                                  🕐 {eventTimes(event)} · {event.venue}
                                 </p>
-                              )}
+                                <p className="mt-2 line-clamp-2 text-sm text-slate-600">
+                                  {event.description}
+                                </p>
+                                {event.prasadam && (
+                                  <p className="mt-3 text-xs font-semibold text-slate-600">
+                                    🍚 Prasadam: {event.prasadam}
+                                  </p>
+                                )}
+                                {event.coordinator && (
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    Coordinator: {event.coordinator}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
+                        </button>
+                      </ScrollReveal>
                     );
                   })}
                 </div>
-              </section>
+              </ScrollReveal>
             ),
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import ScrollReveal from "@/components/ScrollReveal";
 import SectionHeading from "@/components/SectionHeading";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
@@ -87,21 +88,24 @@ export default function FestivalJourney() {
 
       {!loading && days.length > 0 && (
         <div className="mt-8 -mx-4 grid gap-6 sm:mx-0 lg:grid-cols-2">
-          {days.map((day) => (
-            <article
+          {days.map((day, index) => (
+            <ScrollReveal
               key={day.id}
-              className={`group flex flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:shadow-temple sm:transition sm:hover:-translate-y-0.5 sm:hover:shadow-gold ${
+              as="article"
+              variant="image"
+              delay={index * 80}
+              className={`group home-card flex flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:shadow-temple ${
                 day.featured
                   ? "sm:border-saffron-400 sm:ring-2 sm:ring-saffron-200/50"
                   : "sm:border-zinc-200"
               }`}
             >
-              <div className="relative aspect-square overflow-hidden bg-navy/5">
+              <div className="home-media relative aspect-square overflow-hidden bg-navy/5">
                 <img
                   src={day.coverImageUrl}
                   alt={day.heading}
                   loading="lazy"
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover"
                 />
               </div>
 
@@ -134,7 +138,7 @@ export default function FestivalJourney() {
                   View the day
                 </Link>
               </div>
-            </article>
+            </ScrollReveal>
           ))}
         </div>
       )}
