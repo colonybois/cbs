@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { uploadImage, type StorageFolder } from "@/lib/storage";
@@ -12,16 +12,31 @@ import { recordAudit } from "@/lib/audit";
 type CollectionName = "flashback" | "events";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
+export type FlashbackEditItem = {
+  id: string;
+  title: string;
+  year: number;
+  imageUrl: string;
+  caption?: string;
+  credit?: string | null;
+  relatedEvent?: string | null;
+  featured?: boolean;
+  status?: "published" | "hidden";
+};
+
 export default function UploadMemoryModal({
   open,
   onClose,
   collectionName = "flashback",
+  editItem = null,
 }: {
   open: boolean;
   onClose: () => void;
   collectionName?: CollectionName;
+  editItem?: FlashbackEditItem | null;
 }) {
   const { uid, role, name } = useAuth();
+  const isEdit = Boolean(editItem) && collectionName === "flashback";
   const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
   const [year, setYear] = useState(String(new Date().getFullYear()));
@@ -35,7 +50,6 @@ export default function UploadMemoryModal({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset all state whenever the modal opens/closes
   useEffect(() => {
     if (!open) {
       setTitle("");
@@ -50,15 +64,31 @@ export default function UploadMemoryModal({
       setError("");
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
-  }, [open]);
+
+    if (editItem && collectionName === "flashback") {
+      setTitle(editItem.title || "");
+      setCaption(editItem.caption || "");
+      setYear(String(editItem.year || new Date().getFullYear()));
+      setCredit(editItem.credit || "");
+      setRelatedEvent(editItem.relatedEvent || "");
+      setFeatured(!!editItem.featured);
+      setPublished(editItem.status !== "hidden");
+      setFile(null);
+      setPreview(editItem.imageUrl || null);
+      setError("");
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [open, editItem, collectionName]);
 
   const selectFile = (e: ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] ?? null;
     if (!selected) return;
     if (selected.size > MAX_FILE_SIZE) {
       setFile(null);
-      setPreview(null);
+      setPreview(isEdit ? editItem?.imageUrl || null : null);
       setError("Please choose an image smaller than 5 MB.");
       return;
     }
@@ -67,13 +97,19 @@ export default function UploadMemoryModal({
     setError("");
   };
 
+  const clearImage = () => {
+    setFile(null);
+    setPreview(isEdit ? editItem?.imageUrl || null : null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if ((role !== "admin" && role !== "super_admin") || !uid) {
       setError("Only verified admins can upload memories.");
       return;
     }
-    if (!file) {
+    if (!isEdit && !file) {
       setError("Choose an image to upload.");
       return;
     }
@@ -83,16 +119,20 @@ export default function UploadMemoryModal({
     }
     if (
       !window.confirm(
-        `Upload “${title.trim()}” to ${collectionName === "flashback" ? "the gallery" : "events"}?`,
+        isEdit
+          ? `Save changes to “${title.trim()}”?`
+          : `Upload “${title.trim()}” to ${collectionName === "flashback" ? "the gallery" : "events"}?`,
       )
     )
       return;
     setUploading(true);
     setError("");
     try {
-      const imageUrl = await uploadImage(file, collectionName as StorageFolder);
       if (collectionName === "flashback") {
-        const added = await addDoc(collection(db, "flashback"), {
+        const imageUrl = file
+          ? await uploadImage(file, collectionName as StorageFolder)
+          : editItem!.imageUrl;
+        const payload = {
           title: title.trim(),
           caption: caption.trim(),
           year: Number(year),
@@ -100,21 +140,66 @@ export default function UploadMemoryModal({
           credit: credit.trim() || null,
           relatedEvent: relatedEvent.trim() || null,
           featured,
-          slideOrderIndex: Date.now(),
-          status: published ? "published" : "hidden",
-          uploadedBy: uid,
-          createdAt: serverTimestamp(),
-        });
-        await recordAudit({
-          actorId: uid,
-          actorName: name || "Admin",
-          action: "Uploaded gallery image",
-          module: "Gallery",
-          targetId: added.id,
-          newValue: { title: title.trim(), year: Number(year), featured, published },
-          approvalStatus: "approved",
-        });
+          status: published ? ("published" as const) : ("hidden" as const),
+        };
+
+        if (isEdit && editItem) {
+          await updateDoc(doc(db, "flashback", editItem.id), {
+            ...payload,
+            updatedAt: serverTimestamp(),
+            updatedBy: uid,
+          });
+          await recordAudit({
+            actorId: uid,
+            actorName: name || "Admin",
+            action: "Updated gallery image",
+            module: "Gallery",
+            targetId: editItem.id,
+            previousValue: {
+              title: editItem.title,
+              year: editItem.year,
+              caption: editItem.caption || "",
+              featured: !!editItem.featured,
+              status: editItem.status || "published",
+            },
+            newValue: {
+              title: payload.title,
+              year: payload.year,
+              caption: payload.caption,
+              featured: payload.featured,
+              status: payload.status,
+              imageChanged: Boolean(file),
+            },
+            approvalStatus: "approved",
+          });
+        } else {
+          const added = await addDoc(collection(db, "flashback"), {
+            ...payload,
+            slideOrderIndex: Date.now(),
+            uploadedBy: uid,
+            createdAt: serverTimestamp(),
+          });
+          await recordAudit({
+            actorId: uid,
+            actorName: name || "Admin",
+            action: "Uploaded gallery image",
+            module: "Gallery",
+            targetId: added.id,
+            newValue: {
+              title: payload.title,
+              year: payload.year,
+              featured: payload.featured,
+              published,
+            },
+            approvalStatus: "approved",
+          });
+        }
       } else {
+        if (!file) {
+          setError("Choose an image to upload.");
+          return;
+        }
+        const imageUrl = await uploadImage(file, collectionName as StorageFolder);
         await addDoc(collection(db, "events"), {
           title: title.trim(),
           caption: caption.trim(),
@@ -137,15 +222,16 @@ export default function UploadMemoryModal({
     }
   };
 
+  const modalTitle = isEdit
+    ? "Edit Utsav memory"
+    : collectionName === "flashback"
+      ? "Upload Utsav memory"
+      : "Upload event poster";
+
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={collectionName === "flashback" ? "Upload Utsav memory" : "Upload event poster"}
-    >
+    <Modal open={open} onClose={onClose} title={modalTitle}>
       <form onSubmit={submit} className="space-y-4">
         <fieldset disabled={uploading} className="space-y-4 disabled:opacity-60">
-          {/* Title */}
           <label className="block text-sm font-semibold text-slate-700">
             Title *
             <input
@@ -202,7 +288,6 @@ export default function UploadMemoryModal({
             </div>
           )}
 
-          {/* Year — flashback only */}
           {collectionName === "flashback" && (
             <label className="block text-sm font-semibold text-slate-700">
               Celebration Year *
@@ -218,7 +303,6 @@ export default function UploadMemoryModal({
             </label>
           )}
 
-          {/* Caption */}
           <label className="block text-sm font-semibold text-slate-700">
             Caption <span className="font-normal text-slate-400">(optional)</span>
             <textarea
@@ -230,7 +314,6 @@ export default function UploadMemoryModal({
             />
           </label>
 
-          {/* File picker */}
           {preview ? (
             <div className="relative">
               <img
@@ -241,15 +324,26 @@ export default function UploadMemoryModal({
               <button
                 type="button"
                 onClick={() => {
-                  setFile(null);
-                  setPreview(null);
-                  if (fileInputRef.current) fileInputRef.current.value = "";
+                  if (isEdit && !file) {
+                    fileInputRef.current?.click();
+                    return;
+                  }
+                  clearImage();
                 }}
                 className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600"
-                aria-label="Remove image"
+                aria-label={isEdit && !file ? "Change image" : "Remove image"}
               >
-                ✕
+                {isEdit && !file ? "↻" : "✕"}
               </button>
+              {isEdit && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-2 right-2 rounded-lg bg-white/95 px-2.5 py-1 text-xs font-bold text-slate-700 shadow hover:bg-white"
+                >
+                  {file ? "Change again" : "Replace image"}
+                </button>
+              )}
             </div>
           ) : (
             <button
@@ -283,7 +377,6 @@ export default function UploadMemoryModal({
           />
         </fieldset>
 
-        {/* Error */}
         {error && (
           <p
             role="alert"
@@ -293,9 +386,17 @@ export default function UploadMemoryModal({
           </p>
         )}
 
-        <Button disabled={uploading || !file} type="submit" className="w-full">
-          {uploading ? "Uploading…" : "Upload photo"}
-        </Button>
+        <div className="sticky bottom-0 -mx-1 border-t border-saffron-100 bg-[var(--background)] pt-3">
+          <Button disabled={uploading || (!isEdit && !file)} type="submit" className="w-full">
+            {uploading
+              ? isEdit
+                ? "Saving…"
+                : "Uploading…"
+              : isEdit
+                ? "Save changes"
+                : "Upload photo"}
+          </Button>
+        </div>
       </form>
     </Modal>
   );

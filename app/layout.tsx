@@ -9,7 +9,7 @@ import { ChatPanelProvider } from "@/components/chat/ChatPanelContext";
 import PublicFaqChat from "@/components/chat/PublicFaqChat";
 import SiteVisitTracker from "@/components/SiteVisitTracker";
 import SmoothHashScroll from "@/components/SmoothHashScroll";
-import ScrollToTop from "@/components/ScrollToTop";
+import ChatFab from "@/components/chat/ChatFab";
 import { SiteMushikaCompanion } from "@/components/mushika/SiteMushikaCompanion";
 
 const poppins = Poppins({
@@ -61,7 +61,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               {children}
             </main>
             <Footer />
-            <ScrollToTop />
+            <ChatFab />
             <SiteMushikaCompanion />
             <SmoothHashScroll />
             <PublicFaqChat />

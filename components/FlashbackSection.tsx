@@ -19,16 +19,14 @@ type Flashback = {
 
 const SLIDE_MS = 5000;
 const RESUME_MS = 8000;
-const SWIPE_PX = 56;
 const CARD_CLASS =
   "w-full flex-none snap-center sm:w-[min(28rem,calc(100vw-3rem))]";
 const CARD_SHELL =
-  "flex flex-col overflow-hidden bg-white rounded-none border-0 shadow-none sm:rounded-2xl sm:border sm:border-zinc-200 sm:shadow-temple";
+  "flex flex-col overflow-hidden rounded-none border border-zinc-200 bg-white sm:rounded-2xl sm:shadow-temple";
 
 export default function FlashbackSection() {
   const [memories, setMemories] = useState<Flashback[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Flashback | null>(null);
   const [failed, setFailed] = useState<Set<string>>(new Set());
   const [selectedYear, setSelectedYear] = useState<number | "all">("all");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -36,23 +34,11 @@ export default function FlashbackSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
   const pauseTimer = useRef<ReturnType<typeof setTimeout>>();
-  const swipeRef = useRef<{ x: number; y: number } | null>(null);
   const publishedMemories = memories.filter((memory) => memory.status !== "hidden");
   const years = [...new Set(publishedMemories.map((memory) => memory.year))].sort((a, b) => b - a);
   const visibleMemories = publishedMemories.filter(
     (memory) => selectedYear === "all" || memory.year === selectedYear,
   );
-  const selectedIndex = selected
-    ? visibleMemories.findIndex((memory) => memory.id === selected.id)
-    : -1;
-  const moveSelected = (direction: -1 | 1) => {
-    if (selectedIndex < 0 || visibleMemories.length < 2) return;
-    setSelected(
-      visibleMemories[
-        (selectedIndex + direction + visibleMemories.length) % visibleMemories.length
-      ],
-    );
-  };
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -112,7 +98,7 @@ export default function FlashbackSection() {
   }, [visibleMemories]);
 
   useEffect(() => {
-    if (visibleMemories.length < 2 || selected) return;
+    if (visibleMemories.length < 2) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) return;
 
@@ -124,29 +110,9 @@ export default function FlashbackSection() {
 
     const id = window.setInterval(tick, SLIDE_MS);
     return () => window.clearInterval(id);
-  }, [visibleMemories.length, activeIndex, selected]);
+  }, [visibleMemories.length, activeIndex]);
 
   const markFailed = (id: string) => setFailed((prev) => new Set([...prev, id]));
-
-  useEffect(() => {
-    if (!selected) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [selected]);
-
-  useEffect(() => {
-    if (!selected) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelected(null);
-      if (event.key === "ArrowLeft") moveSelected(-1);
-      if (event.key === "ArrowRight") moveSelected(1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [selected, selectedIndex, visibleMemories.length]);
 
   return (
     <div>
@@ -179,11 +145,11 @@ export default function FlashbackSection() {
 
       {loading && (
         <div className="mt-7 -mx-4 overflow-hidden sm:mx-0">
-          <div className={`${CARD_SHELL} ${CARD_CLASS} mx-auto`}>
+          <div className={`${CARD_SHELL} ${CARD_CLASS}`}>
             <div className="aspect-square animate-pulse bg-navy/5" />
-            <div className="space-y-3 p-5">
-              <div className="h-7 w-20 animate-pulse rounded bg-navy/5" />
-              <div className="h-4 w-3/4 animate-pulse rounded bg-navy/5" />
+            <div className="space-y-2 border-t border-zinc-100 px-5 py-4 text-center">
+              <div className="mx-auto h-7 w-16 animate-pulse rounded bg-navy/5" />
+              <div className="mx-auto h-4 w-2/3 animate-pulse rounded bg-navy/5" />
             </div>
           </div>
         </div>
@@ -226,73 +192,66 @@ export default function FlashbackSection() {
 
           <div
             ref={scrollRef}
-            className="flex snap-x snap-mandatory gap-0 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden"
+            className="flex touch-pan-x snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden"
             onMouseEnter={pauseAutoScroll}
             onPointerDown={pauseAutoScroll}
             onTouchStart={pauseAutoScroll}
           >
-            {visibleMemories.map((memory) => (
+            {visibleMemories.map((memory, index) => (
               <article
                 key={memory.id}
-                className={`${CARD_SHELL} ${CARD_CLASS}`}
+                className={`${CARD_SHELL} ${CARD_CLASS} pointer-events-none select-none`}
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    pauseAutoScroll();
-                    setSelected(memory);
-                  }}
-                  className="relative aspect-square w-full overflow-hidden bg-navy/5 text-left"
-                >
-                  {failed.has(memory.id) ? (
-                    <div className="grid h-full place-items-center p-4 text-center">
-                      <span className="text-4xl">🚩</span>
-                      <span className="mt-2 text-xs font-bold text-primary">Image unavailable</span>
-                    </div>
-                  ) : (
-                    <img
-                      src={memory.imageUrl}
-                      alt={`${memory.year} ${memory.title}`}
-                      className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
-                      onError={() => markFailed(memory.id)}
-                    />
-                  )}
-                </button>
-
-                <div className="flex flex-1 flex-col border-t border-navy/5 px-4 pb-4 pt-3.5 sm:px-5 sm:pb-5 sm:pt-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-display text-[1.65rem] font-semibold leading-none tracking-tight text-primary sm:text-2xl">
-                      {memory.year}
-                    </p>
+                <div className="relative flex w-full flex-col overflow-hidden">
+                  <div className="relative aspect-square w-full overflow-hidden bg-navy/5">
+                    {failed.has(memory.id) ? (
+                      <div className="grid h-full place-items-center p-4 text-center">
+                        <span className="text-4xl">🚩</span>
+                        <span className="mt-2 text-xs font-bold text-primary">Image unavailable</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={memory.imageUrl}
+                        alt={`${memory.year} ${memory.title}`}
+                        draggable={false}
+                        className="h-full w-full object-cover"
+                        onError={() => markFailed(memory.id)}
+                      />
+                    )}
                     {memory.featured && (
-                      <span className="rounded-full bg-secondary/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-saffron-800">
+                      <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-saffron-800 shadow-sm">
                         Featured
                       </span>
                     )}
                   </div>
-                  {memory.relatedEvent && (
-                    <p className="mt-1.5 text-xs font-medium text-[var(--text-light)]">
-                      {memory.relatedEvent}
-                    </p>
-                  )}
-                  <h3 className="mt-2 font-display text-[15px] font-semibold leading-snug text-[var(--text-muted)] sm:text-base">
-                    {memory.title}
-                  </h3>
-                  {(memory.caption || memory.credit) && (
-                    <p className="section-note mt-1 line-clamp-2">
-                      {memory.caption || (memory.credit ? `Photo: ${memory.credit}` : "")}
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      pauseAutoScroll();
-                      setSelected(memory);
-                    }}
-                    className="btn-festive mt-3.5 w-full py-2.5 text-[11px] sm:mt-4"
+
+                  <div
+                    key={`${memory.id}-${index === activeIndex ? activeIndex : "idle"}`}
+                    className={`flashback-caption border-t border-zinc-100 bg-white px-4 py-4 text-center sm:px-5 sm:py-5 ${
+                      index === activeIndex ? "is-active" : ""
+                    }`}
                   >
-                    View memory
-                  </button>
+                    <p className="flashback-year font-display text-[1.75rem] font-semibold leading-none tracking-tight text-primary sm:text-[1.85rem]">
+                      {memory.year}
+                    </p>
+                    <div
+                      className="flashback-rule mx-auto mt-2.5 h-px w-10 bg-secondary/80"
+                      aria-hidden
+                    />
+                    <h3 className="flashback-title mt-2.5 font-display text-[15px] font-semibold leading-snug text-ink sm:text-base">
+                      {memory.title}
+                    </h3>
+                    {memory.relatedEvent && (
+                      <p className="flashback-meta mt-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--text-light)]">
+                        {memory.relatedEvent}
+                      </p>
+                    )}
+                    {(memory.caption || memory.credit) && (
+                      <p className="flashback-meta section-note mt-2 line-clamp-2">
+                        {memory.caption || (memory.credit ? `Photo: ${memory.credit}` : "")}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}
@@ -315,106 +274,6 @@ export default function FlashbackSection() {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {selected && (
-        <div
-          className="fixed inset-0 z-[80] flex h-[100dvh] flex-col bg-zinc-950"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${selected.year} ${selected.title}`}
-        >
-          <div
-            className="flex items-center justify-between gap-3 px-4 pb-2"
-            style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
-          >
-            <div className="min-w-0">
-              <p className="font-display text-xl font-semibold leading-none text-secondary">
-                {selected.year}
-              </p>
-              {visibleMemories.length > 1 && selectedIndex >= 0 && (
-                <p className="mt-1 text-[11px] font-medium text-white/55">
-                  {selectedIndex + 1} / {visibleMemories.length}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => setSelected(null)}
-              aria-label="Close"
-              className="grid h-10 w-10 flex-none place-items-center rounded-full bg-white text-lg font-bold text-ink"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div
-            className="relative flex min-h-0 flex-1 items-center justify-center px-3"
-            onTouchStart={(event) => {
-              swipeRef.current = {
-                x: event.touches[0].clientX,
-                y: event.touches[0].clientY,
-              };
-            }}
-            onTouchEnd={(event) => {
-              if (!swipeRef.current) return;
-              const dx = event.changedTouches[0].clientX - swipeRef.current.x;
-              const dy = event.changedTouches[0].clientY - swipeRef.current.y;
-              swipeRef.current = null;
-              if (Math.abs(dy) > Math.abs(dx) && dy > SWIPE_PX) {
-                setSelected(null);
-                return;
-              }
-              if (Math.abs(dx) > SWIPE_PX) moveSelected(dx < 0 ? 1 : -1);
-            }}
-          >
-            {visibleMemories.length > 1 && (
-              <>
-                <button
-                  onClick={() => moveSelected(-1)}
-                  aria-label="Previous image"
-                  className="absolute left-2 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-2xl text-ink shadow-sm"
-                >
-                  ‹
-                </button>
-                <button
-                  onClick={() => moveSelected(1)}
-                  aria-label="Next image"
-                  className="absolute right-2 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-2xl text-ink shadow-sm"
-                >
-                  ›
-                </button>
-              </>
-            )}
-            {failed.has(selected.id) ? (
-              <p className="px-6 text-center text-sm text-white/70">Image unavailable</p>
-            ) : (
-              <img
-                src={selected.imageUrl}
-                alt={`${selected.year} ${selected.title}`}
-                className="h-full w-full object-contain"
-                onError={() => markFailed(selected.id)}
-              />
-            )}
-          </div>
-
-          <div
-            className="bg-white px-5 pt-4"
-            style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
-          >
-            <h3 className="font-display text-lg font-semibold leading-snug text-ink">
-              {selected.title}
-            </h3>
-            {selected.caption && (
-              <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">{selected.caption}</p>
-            )}
-            {(selected.relatedEvent || selected.credit) && (
-              <div className="mt-2 flex flex-wrap gap-x-4 text-xs text-[var(--text-light)]">
-                {selected.relatedEvent && <span>{selected.relatedEvent}</span>}
-                {selected.credit && <span>Credit: {selected.credit}</span>}
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>

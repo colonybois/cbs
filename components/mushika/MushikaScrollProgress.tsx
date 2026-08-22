@@ -7,7 +7,7 @@ import "./mushika.css";
 
 /**
  * Mushika rides a bottom progress rail. Hidden when the footer is on screen
- * so he does not sit on top of copyright or the back-to-top control.
+ * so he does not sit on top of copyright or the floating chat control.
  */
 export function MushikaScrollProgress() {
   const { percent, running, facing } = useScrollProgress();

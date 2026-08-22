@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   collection,
   deleteDoc,
@@ -12,21 +13,15 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Button from "@/components/ui/Button";
-import UploadMemoryModal from "@/components/admin/UploadMemoryModal";
+import UploadMemoryModal, {
+  type FlashbackEditItem,
+} from "@/components/admin/UploadMemoryModal";
 import { useAuth } from "@/lib/auth-context";
 import { recordAudit } from "@/lib/audit";
 
-type Memory = {
-  id: string;
-  title: string;
-  year: number;
-  imageUrl: string;
-  caption?: string;
-  featured?: boolean;
-  status?: "published" | "hidden";
-};
+type Memory = FlashbackEditItem;
 
-function IconReplace() {
+function IconEdit() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -39,11 +34,12 @@ function IconReplace() {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        d="M4 4v5h.582M20 20v-5h-.581M5.635 15A9 9 0 1 0 6.06 9H4"
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
       />
     </svg>
   );
 }
+
 function IconDelete() {
   return (
     <svg
@@ -65,20 +61,22 @@ function IconDelete() {
 
 function ActionDialog({
   item,
-  onReplace,
+  onEdit,
   onDelete,
   onCancel,
   deleting,
 }: {
   item: Memory;
-  onReplace: () => void;
+  onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
   deleting: boolean;
 }) {
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4"
+      className="fixed inset-0 z-[100] grid place-items-center bg-slate-900/60 p-4"
       onClick={onCancel}
     >
       <div
@@ -86,31 +84,32 @@ function ActionDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <img src={item.imageUrl} alt={item.title} className="h-40 w-full rounded-xl object-cover" />
-        <p className="mt-3 font-bold text-slate-900 truncate">{item.title}</p>
+        <p className="mt-3 truncate font-bold text-slate-900">{item.title}</p>
         <p className="text-xs text-slate-400">{item.year}</p>
         <div className="mt-4 flex flex-col gap-2">
           <button
-            onClick={onReplace}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-800 hover:bg-white transition"
+            onClick={onEdit}
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-800 transition hover:bg-white"
           >
-            <IconReplace /> Replace image
+            <IconEdit /> Edit details
           </button>
           <button
             onClick={onDelete}
             disabled={deleting}
-            className="flex items-center justify-center gap-2 rounded-xl bg-rose-500 py-2.5 text-sm font-bold text-white hover:bg-rose-600 disabled:opacity-50 transition"
+            className="flex items-center justify-center gap-2 rounded-xl bg-rose-500 py-2.5 text-sm font-bold text-white transition hover:bg-rose-600 disabled:opacity-50"
           >
             <IconDelete /> {deleting ? "Deleting…" : "Delete image"}
           </button>
           <button
             onClick={onCancel}
-            className="rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 transition"
+            className="rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50"
           >
             Cancel
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -120,7 +119,7 @@ export default function AdminGallery() {
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [actionTarget, setActionTarget] = useState<Memory | null>(null);
-  const [replaceTarget, setReplaceTarget] = useState<Memory | null>(null);
+  const [editTarget, setEditTarget] = useState<Memory | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -134,7 +133,6 @@ export default function AdminGallery() {
     );
   }, []);
 
-  // Sort newest year first, side-by-side (no grouping rows)
   const sorted = [...memories].sort((a, b) => b.year - a.year);
 
   const handleDelete = async () => {
@@ -160,11 +158,12 @@ export default function AdminGallery() {
     }
   };
 
-  const handleReplace = () => {
+  const handleEdit = () => {
     if (!actionTarget) return;
-    setReplaceTarget(actionTarget);
+    setEditTarget(actionTarget);
     setActionTarget(null);
   };
+
   const toggle = async (item: Memory, field: "featured" | "status") => {
     if (!uid || !name) return;
     const next =
@@ -193,13 +192,12 @@ export default function AdminGallery() {
         <div>
           <h1 className="text-3xl font-black text-slate-900">Utsav Flashback</h1>
           <p className="mt-1 text-slate-500">
-            Sorted by year, newest first. Click any image to replace or delete.
+            Sorted by year, newest first. Click any card to edit or delete.
           </p>
         </div>
         <Button onClick={() => setUploadOpen(true)}>+ Upload memory</Button>
       </div>
 
-      {/* Skeletons */}
       {loading && (
         <div className="mt-8 flex flex-wrap gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -208,7 +206,6 @@ export default function AdminGallery() {
         </div>
       )}
 
-      {/* Empty */}
       {!loading && sorted.length === 0 && (
         <div className="mt-8 rounded-2xl border border-dashed border-saffron-200 bg-white p-12 text-center">
           <div className="text-4xl">📸</div>
@@ -222,7 +219,6 @@ export default function AdminGallery() {
         </div>
       )}
 
-      {/* Side-by-side grid, sorted by year desc */}
       {!loading && sorted.length > 0 && (
         <div className="mt-8 flex flex-wrap gap-4">
           {sorted.map((item) => (
@@ -236,7 +232,6 @@ export default function AdminGallery() {
                 alt={item.title}
                 className="h-full w-full object-cover transition duration-200 group-hover:brightness-75"
               />
-              {/* Year pill */}
               <span className="absolute left-2 top-2 rounded-lg bg-saffron/90 px-2 py-0.5 text-xs font-black text-white shadow">
                 {item.year}
               </span>
@@ -245,17 +240,20 @@ export default function AdminGallery() {
                   Featured
                 </span>
               )}
-              {/* Hover icons */}
+              {item.status === "hidden" && (
+                <span className="absolute right-2 bottom-10 rounded-lg bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  Hidden
+                </span>
+              )}
               <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
                 <span className="rounded-full bg-white/90 p-2 text-slate-700">
-                  <IconReplace />
+                  <IconEdit />
                 </span>
                 <span className="rounded-full bg-rose-500/90 p-2 text-white">
                   <IconDelete />
                 </span>
               </div>
-              {/* Title */}
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 to-transparent px-2 pb-2 pt-6 text-xs font-bold text-white truncate">
+              <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-slate-950/70 to-transparent px-2 pb-2 pt-6 text-xs font-bold text-white">
                 {item.title}
               </span>
             </button>
@@ -271,6 +269,12 @@ export default function AdminGallery() {
               className="flex items-center gap-2 rounded-lg border border-saffron-100 bg-white px-3 py-2 text-xs"
             >
               <span className="max-w-32 truncate font-semibold text-slate-700">{item.title}</span>
+              <button
+                onClick={() => setEditTarget(item)}
+                className="font-bold text-slate-700"
+              >
+                Edit
+              </button>
               <button
                 onClick={() => void toggle(item, "featured")}
                 className="font-bold text-saffron-700"
@@ -288,11 +292,10 @@ export default function AdminGallery() {
         </div>
       )}
 
-      {/* Action dialog */}
       {actionTarget && (
         <ActionDialog
           item={actionTarget}
-          onReplace={handleReplace}
+          onEdit={handleEdit}
           onDelete={handleDelete}
           onCancel={() => setActionTarget(null)}
           deleting={deleting}
@@ -301,19 +304,10 @@ export default function AdminGallery() {
 
       <UploadMemoryModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
 
-      {/* Replace: upload new, then delete old on close */}
       <UploadMemoryModal
-        open={replaceTarget !== null}
-        onClose={async () => {
-          if (replaceTarget) {
-            try {
-              await deleteDoc(doc(db, "flashback", replaceTarget.id));
-            } catch {
-              /* ignore */
-            }
-          }
-          setReplaceTarget(null);
-        }}
+        open={editTarget !== null}
+        editItem={editTarget}
+        onClose={() => setEditTarget(null)}
       />
     </div>
   );
